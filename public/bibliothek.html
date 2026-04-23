@@ -24662,7 +24662,7 @@ async function saveBooks() {
   const slim = books.map(b => {
     const out = { ...b };
     delete out.fileData;
-    if (out.coverUrl?.startsWith('data:')) out.coverUrl = out._remoteCoverUrl || (out.isbn ? `https://covers.openlibrary.org/b/isbn/${out.isbn}-L.jpg` : null);
+    if (out.coverUrl?.startsWith('data:')) out.coverUrl = null;
     delete out._remoteCoverUrl;
     return out;
   });
@@ -25479,6 +25479,26 @@ async function uploadToR2(bookId, fileData) {
     if (idx !== -1) {
       books[idx].r2Key = json.key;
       books[idx].fileData = null;
+      // Last opp cover til R2 hvis det er en data-URL
+      if (fileData.coverDataUrl && fileData.coverDataUrl.startsWith('data:')) {
+        try {
+          var cArr = fileData.coverDataUrl.split(',');
+          var cMime = cArr[0].match(/:(.*?);/)[1];
+          var cBstr = atob(cArr[1]);
+          var cU8 = new Uint8Array(cBstr.length);
+          for (var ci = 0; ci < cBstr.length; ci++) cU8[ci] = cBstr.charCodeAt(ci);
+          var cBlob = new Blob([cU8], { type: cMime });
+          var cForm = new FormData();
+          cForm.append('file', cBlob, 'cover.jpg');
+          cForm.append('pin', pin);
+          cForm.append('bookId', String(bookId) + '_cover');
+          var cRes = await fetch(server + '/files/upload', { method: 'POST', body: cForm });
+          var cJson = await cRes.json();
+          if (cJson.ok) {
+            books[idx].coverUrl = server + '/files/download/' + encodeURIComponent(pin) + '/' + String(bookId) + '_cover/cover.jpg';
+          }
+        } catch(ce) { console.warn('cover upload failed:', ce); }
+      }
       await saveBooks();
       render();
       showToast('☁ Fil lagret i skyen');
@@ -25502,7 +25522,7 @@ async function saveBook() {
     progress: Math.min(100, Math.max(0, parseInt(document.getElementById('fProgress').value) || 0)),
     rating: Math.min(5, Math.max(0, parseInt(document.getElementById('fRating').value) || 0)),
     coverUrl: (pendingCoverUrl?.startsWith('data:')
-      ? (pendingFileData?._remoteCoverUrl || (pendingFileData?.isbn ? `https://covers.openlibrary.org/b/isbn/${pendingFileData.isbn}-L.jpg` : null) || pendingCoverUrl)
+      ? (pendingFileData?._remoteCoverUrl || null)
       : pendingCoverUrl) || null,
     added: Date.now(),
     isbn: pendingFileData?.isbn || null,
@@ -25543,6 +25563,7 @@ async function saveBook() {
   try {
     await saveBooks();
     var _fileDataCopy = pendingFileData ? Object.assign({}, pendingFileData) : null;
+    if (_fileDataCopy && pendingCoverUrl && pendingCoverUrl.startsWith('data:')) _fileDataCopy.coverDataUrl = pendingCoverUrl;
     var _bidCopy = editingId !== null ? editingId : books[books.length-1].id;
     closeModal();
     render();
