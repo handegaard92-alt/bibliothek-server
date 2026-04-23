@@ -1,22 +1,29 @@
 const express = require('express');
 const multer  = require('multer');
-const nodemailer = require('nodemailer');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
 
-app.use(express.json({ limit: '5mb' }));
+app.use(express.json({ limit: '10mb' }));
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', process.env.ALLOWED_ORIGIN || '*');
-  res.header('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.sendStatus(200);
   next();
 });
 
-// Serve bibliothek.html from /public
+// In-memory PIN store (resets on redeploy - use for sync, localStorage as backup)
+const pinStore = new Map(); // pin-hash -> { books, updatedAt }
+
+function hashPin(pin) {
+  return crypto.createHash('sha256').update(String(pin)).digest('hex').slice(0, 16);
+}
+
+// Serve app
 const publicDir = path.join(__dirname, 'public');
 app.use(express.static(publicDir));
 app.get('/', (req, res) => {
@@ -31,9 +38,26 @@ app.get('/health', (req, res) => {
     features: {
       app: fs.existsSync(path.join(publicDir, 'bibliothek.html')),
       kindle: !!(process.env.SENDGRID_API_KEY && process.env.FROM_EMAIL),
-      ai: !!process.env.ANTHROPIC_API_KEY
+      ai: !!process.env.ANTHROPIC_API_KEY,
+      sync: true
     }
   });
+});
+
+// PIN-based library sync
+app.get('/library/:pin', (req, res) => {
+  const key = hashPin(req.params.pin);
+  const data = pinStore.get(key);
+  if (!data) return res.json({ ok: true, books: [], updatedAt: null });
+  res.json({ ok: true, books: data.books, updatedAt: data.updatedAt });
+});
+
+app.put('/library/:pin', (req, res) => {
+  const key = hashPin(req.params.pin);
+  const { books } = req.body;
+  if (!Array.isArray(books)) return res.status(400).json({ ok: false, error: 'books must be array' });
+  pinStore.set(key, { books, updatedAt: new Date().toISOString() });
+  res.json({ ok: true, updatedAt: pinStore.get(key).updatedAt });
 });
 
 // AI chat proxy
@@ -72,7 +96,7 @@ app.post('/ai-chat', async (req, res) => {
 // Send to Kindle via SendGrid
 app.post('/send-to-kindle', upload.single('file'), async (req, res) => {
   try {
-    const { toEmail, bookTitle, bookAuthor } = req.body;
+    const { toEmail, bookTitle } = req.body;
     if (!req.file) return res.status(400).json({ ok: false, error: 'No file uploaded' });
     if (!toEmail) return res.status(400).json({ ok: false, error: 'No target email' });
     if (!process.env.SENDGRID_API_KEY) return res.status(503).json({ ok: false, error: 'SendGrid not configured' });
