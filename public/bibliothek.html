@@ -26701,30 +26701,28 @@ async function connectPin() {
     if (resp.ok) {
       var json = await resp.json();
       var serverTs = json.updatedAt ? new Date(json.updatedAt).getTime() : 0;
-        var localTs  = parseInt(localStorage.getItem('bibliothek_ts') || '0');
-        if (serverTs > localTs) {
-          // Server er nyere – bruk server-data
-          books = json.books;
-          await saveBooks();
-          render();
-          setPinStatus('✓ Hentet ' + books.length + ' bøker fra server', 'var(--green)');
-        } else {
-          // Lokalt er nyere eller likt – push lokalt til server
-          await pushToPin();
-          setPinStatus('✓ Lastet opp ' + books.length + ' bøker til server', 'var(--green)');
-        }
-        try {
-          var devResp = await fetch(server + '/library/' + encodeURIComponent(key + '_devices'));
-          if (devResp.ok) {
-            var devJson = await devResp.json();
-            if (Array.isArray(devJson.books) && devJson.books.length > 0) {
-              kindleDevices = devJson.books;
-              await saveKindleDevices();
-              renderKindleDeviceList();
-            }
+      var localTs = parseInt(localStorage.getItem('bibliothek_ts') || '0');
+      if (serverTs > localTs) {
+        books = json.books;
+        await saveBooks();
+        render();
+        setPinStatus('✓ Hentet ' + books.length + ' bøker fra server', 'var(--green)');
+      } else {
+        await pushToPin();
+        setPinStatus('✓ Lastet opp ' + books.length + ' bøker til server', 'var(--green)');
+      }
+      // Last inn Kindle-enheter uansett
+      try {
+        var devResp = await fetch(server + '/library/' + encodeURIComponent(key + '_devices'));
+        if (devResp.ok) {
+          var devJson = await devResp.json();
+          if (Array.isArray(devJson.books) && devJson.books.length > 0) {
+            kindleDevices = devJson.books;
+            await saveKindleDevices();
+            renderKindleDeviceList();
           }
-        } catch(de) { console.warn('device load failed:', de); }
         }
+      } catch(de) { console.warn('device load failed:', de); }
     } else {
       setPinStatus('✗ Feil: ' + resp.status, 'var(--red)');
       window._pinKey = null;
@@ -26734,7 +26732,6 @@ async function connectPin() {
     window._pinKey = null;
   }
 }
-
 async function init() {
   await loadBooks();
   var savedPin = localStorage.getItem('bibliothek_pin');
