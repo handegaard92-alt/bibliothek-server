@@ -26712,6 +26712,7 @@ async function connectPin() {
           // Lokalt er nyere eller likt – push lokalt til server
           await pushToPin();
           setPinStatus('✓ Lastet opp ' + books.length + ' bøker til server', 'var(--green)');
+        }
         try {
           var devResp = await fetch(server + '/library/' + encodeURIComponent(key + '_devices'));
           if (devResp.ok) {
