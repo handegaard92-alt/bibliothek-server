@@ -1,1 +1,3450 @@
-<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Bibliothek - laster...</title></head><body><p>Laster opp app...</p></body></html>
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bibliothek</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0c;
+  --surface: #111114;
+  --surface2: #18181d;
+  --surface3: #1f1f26;
+  --border: rgba(255,255,255,0.06);
+  --border2: rgba(255,255,255,0.1);
+  --gold: #c8a96e;
+  --gold2: #e4cc9e;
+  --gold-dim: rgba(200,169,110,0.12);
+  --text: #edeae4;
+  --muted: #6e6b65;
+  --muted2: #3d3b38;
+  --red: #e05555;
+  --blue: #5b9bd5;
+  --green: #5bb578;
+  --r: 12px;
+  --r2: 8px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { height:100%; }
+body {
+  font-family:'Outfit',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  display:flex;
+  overflow:hidden;
+  height:100vh;
+}
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width:230px;
+  min-width:230px;
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+.logo-area {
+  padding:28px 22px 22px;
+  border-bottom:1px solid var(--border);
+}
+.logo-area h1 {
+  font-family:'Cormorant Garamond',serif;
+  font-size:26px;
+  font-weight:700;
+  color:var(--gold);
+  letter-spacing:0.03em;
+  line-height:1;
+}
+.logo-area p {
+  font-size:11px;
+  color:var(--muted);
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+  margin-top:4px;
+  font-weight:300;
+}
+.nav { padding:16px 12px; flex:1; overflow-y:auto; }
+.nav-group { margin-bottom:24px; }
+.nav-label {
+  font-size:10px;
+  font-weight:600;
+  letter-spacing:0.18em;
+  text-transform:uppercase;
+  color:var(--muted2);
+  padding:0 10px;
+  margin-bottom:6px;
+}
+.nav-item {
+  display:flex;
+  align-items:center;
+  gap:9px;
+  padding:8px 10px;
+  border-radius:var(--r2);
+  cursor:pointer;
+  font-size:13.5px;
+  color:var(--muted);
+  font-weight:400;
+  transition:background 0.15s, color 0.15s;
+  user-select:none;
+}
+.nav-item:hover { background:var(--surface2); color:var(--text); }
+.nav-item.active { background:var(--gold-dim); color:var(--gold); font-weight:500; }
+.nav-item .cnt {
+  margin-left:auto;
+  font-size:11px;
+  background:var(--surface3);
+  color:var(--muted);
+  padding:2px 7px;
+  border-radius:20px;
+  min-width:22px;
+  text-align:center;
+}
+.nav-item.active .cnt { background:rgba(200,169,110,0.18); color:var(--gold); }
+.sidebar-bottom {
+  padding:14px 12px;
+  border-top:1px solid var(--border);
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.kindle-email-area {
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:var(--r2);
+  padding:10px 12px;
+}
+.kindle-label {
+  font-size:10px;
+  color:var(--muted);
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  margin-bottom:5px;
+  display:flex; align-items:center; gap:5px;
+}
+.kindle-input {
+  width:100%;
+  background:transparent;
+  border:none;
+  color:var(--text);
+  font-family:'Outfit',sans-serif;
+  font-size:12px;
+  outline:none;
+  padding:0;
+}
+.kindle-input::placeholder { color:var(--muted2); }
+.btn-add {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  width:100%;
+  padding:10px;
+  border-radius:var(--r2);
+  border:1px dashed var(--muted2);
+  background:transparent;
+  color:var(--muted);
+  font-family:'Outfit',sans-serif;
+  font-size:13px;
+  cursor:pointer;
+  transition:all 0.15s;
+}
+.btn-add:hover { border-color:var(--gold); color:var(--gold); background:var(--gold-dim); }
+
+/* ── MAIN ── */
+.main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+.topbar {
+  display:flex;
+  align-items:center;
+  gap:14px;
+  padding:15px 28px;
+  border-bottom:1px solid var(--border);
+  background:rgba(10,10,12,0.8);
+  backdrop-filter:blur(16px);
+  flex-shrink:0;
+}
+.topbar-title {
+  font-family:'Cormorant Garamond',serif;
+  font-size:18px;
+  font-weight:600;
+  color:var(--text);
+  margin-right:4px;
+  white-space:nowrap;
+}
+.search-wrap { flex:1; max-width:380px; position:relative; }
+.search-icon { position:absolute; left:11px; top:50%; transform:translateY(-50%); color:var(--muted); pointer-events:none; }
+.search {
+  width:100%;
+  background:var(--surface2);
+  border:1px solid var(--border);
+  color:var(--text);
+  font-family:'Outfit',sans-serif;
+  font-size:13.5px;
+  padding:9px 13px 9px 35px;
+  border-radius:var(--r2);
+  outline:none;
+  transition:border-color 0.15s;
+}
+.search::placeholder { color:var(--muted2); }
+.search:focus { border-color:var(--gold); }
+.view-btns { display:flex; gap:3px; background:var(--surface2); padding:3px; border-radius:var(--r2); }
+.vbtn { padding:5px 7px; border-radius:6px; border:none; background:transparent; color:var(--muted); cursor:pointer; transition:all 0.13s; display:flex; align-items:center; }
+.vbtn.active { background:var(--surface3); color:var(--text); }
+.sort-sel {
+  background:var(--surface2);
+  border:1px solid var(--border);
+  color:var(--muted);
+  font-family:'Outfit',sans-serif;
+  font-size:12.5px;
+  padding:7px 11px;
+  border-radius:var(--r2);
+  outline:none;
+  cursor:pointer;
+}
+
+/* ── CONTENT ── */
+.content {
+  flex:1;
+  overflow-y:auto;
+  padding:28px 28px 40px;
+}
+.content::-webkit-scrollbar { width:5px; }
+.content::-webkit-scrollbar-thumb { background:var(--muted2); border-radius:3px; }
+
+/* Stats row */
+.stats-row {
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:12px;
+  margin-bottom:32px;
+}
+.stat {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:16px 18px;
+  transition:border-color 0.15s;
+}
+.stat:hover { border-color:rgba(200,169,110,0.2); }
+.stat-v {
+  font-family:'Cormorant Garamond',serif;
+  font-size:32px;
+  font-weight:700;
+  color:var(--gold);
+  line-height:1;
+  margin-bottom:4px;
+}
+.stat-l { font-size:12px; color:var(--muted); }
+
+/* Hero */
+.hero-wrap { margin-bottom:32px; }
+.hero-card {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:24px;
+  display:flex;
+  gap:22px;
+  align-items:center;
+  cursor:pointer;
+  transition:border-color 0.2s;
+  position:relative;
+  overflow:hidden;
+}
+.hero-card::after {
+  content:'';
+  position:absolute;
+  top:-80px; right:-80px;
+  width:240px; height:240px;
+  background:radial-gradient(circle, rgba(200,169,110,0.07) 0%, transparent 70%);
+  pointer-events:none;
+}
+.hero-card:hover { border-color:rgba(200,169,110,0.3); }
+.hero-cover {
+  width:90px; height:132px;
+  border-radius:7px;
+  flex-shrink:0;
+  object-fit:cover;
+  box-shadow:0 10px 36px rgba(0,0,0,0.6);
+  background:var(--surface3);
+  display:flex; align-items:center; justify-content:center;
+}
+.hero-cover img { width:100%; height:100%; object-fit:cover; border-radius:7px; }
+.hero-info { flex:1; min-width:0; }
+.hero-tag { font-size:10px; letter-spacing:0.16em; text-transform:uppercase; color:var(--gold); font-weight:600; margin-bottom:8px; }
+.hero-t { font-family:'Cormorant Garamond',serif; font-size:24px; font-weight:700; line-height:1.15; margin-bottom:4px; }
+.hero-a { font-size:13px; color:var(--muted); margin-bottom:14px; }
+.prog-label { display:flex; justify-content:space-between; font-size:11px; color:var(--muted); margin-bottom:5px; }
+.prog-bar { height:3px; background:var(--muted2); border-radius:2px; max-width:260px; overflow:hidden; margin-bottom:14px; }
+.prog-fill { height:100%; background:linear-gradient(90deg,var(--gold),var(--gold2)); border-radius:2px; }
+.btn-read {
+  display:inline-flex; align-items:center; gap:7px;
+  background:var(--gold); color:#0a0a0c;
+  font-family:'Outfit',sans-serif; font-weight:600; font-size:13px;
+  padding:9px 18px; border-radius:var(--r2); border:none; cursor:pointer;
+  transition:all 0.15s;
+}
+.btn-read:hover { background:var(--gold2); transform:translateY(-1px); }
+
+/* Section header */
+.sec-hdr { display:flex; align-items:baseline; gap:10px; margin-bottom:18px; }
+.sec-title { font-family:'Cormorant Garamond',serif; font-size:20px; font-weight:700; }
+.sec-cnt { font-size:12px; color:var(--muted); }
+
+/* Genre pills */
+.pills { display:flex; gap:7px; flex-wrap:wrap; margin-bottom:24px; }
+.pill {
+  padding:5px 15px; border-radius:20px;
+  border:1px solid var(--border); background:transparent;
+  color:var(--muted); font-family:'Outfit',sans-serif; font-size:13px;
+  cursor:pointer; transition:all 0.13s;
+}
+.pill:hover { border-color:var(--gold); color:var(--gold); }
+.pill.active { background:var(--gold); color:#0a0a0c; border-color:var(--gold); font-weight:500; }
+
+/* GRID */
+.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(145px,1fr)); gap:20px; }
+.grid.lv { grid-template-columns:1fr; gap:8px; }
+
+/* Book card – grid */
+.bk {
+  cursor:pointer;
+  animation:fadeUp 0.3s ease both;
+}
+@keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:none} }
+.bk-cover-wrap {
+  position:relative;
+  border-radius:var(--r2);
+  overflow:hidden;
+  aspect-ratio:2/3;
+  background:var(--surface2);
+  box-shadow:0 5px 20px rgba(0,0,0,0.45);
+  transition:transform 0.22s, box-shadow 0.22s;
+  margin-bottom:10px;
+}
+.bk:hover .bk-cover-wrap { transform:translateY(-4px) scale(1.012); box-shadow:0 14px 38px rgba(0,0,0,0.65); }
+.bk-cover-wrap img, .bk-cover-wrap .cover-fallback {
+  width:100%; height:100%; object-fit:cover; display:block;
+}
+.cover-fallback {
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  padding:12px; text-align:center;
+}
+.cover-fallback-t {
+  font-family:'Cormorant Garamond',serif;
+  font-size:12px; color:rgba(255,255,255,0.92); line-height:1.3; margin-bottom:8px;
+}
+.cover-fallback-a { font-size:10px; color:rgba(255,255,255,0.45); font-style:italic; }
+.bk-overlay {
+  position:absolute; inset:0;
+  background:linear-gradient(to top,rgba(0,0,0,0.82) 0%,transparent 55%);
+  opacity:0; transition:opacity 0.18s;
+  display:flex; flex-direction:column;
+  justify-content:flex-end; padding:10px; gap:5px;
+}
+.bk:hover .bk-overlay { opacity:1; }
+.ov-btn {
+  width:100%; padding:7px; border:none; border-radius:5px;
+  font-family:'Outfit',sans-serif; font-size:11.5px; font-weight:500;
+  cursor:pointer; transition:opacity 0.12s;
+}
+.ov-btn:hover { opacity:0.85; }
+.ov-edit { background:rgba(255,255,255,0.18); color:#fff; }
+.ov-kindle { background:var(--gold); color:#0a0a0c; }
+.bk-badge {
+  position:absolute; top:7px; right:7px;
+  padding:2px 7px; border-radius:4px;
+  font-size:10px; font-weight:600; letter-spacing:0.04em;
+}
+.b-reading { background:rgba(91,155,213,0.9); color:#fff; }
+.b-done { background:rgba(91,181,120,0.9); color:#fff; }
+.b-wish { background:rgba(224,85,85,0.85); color:#fff; }
+.prog-mini {
+  position:absolute; bottom:0; left:0; right:0; height:3px;
+  background:rgba(0,0,0,0.4);
+}
+.prog-mini-fill { height:100%; background:linear-gradient(90deg,var(--gold),var(--gold2)); }
+.bk-t { font-size:13px; font-weight:500; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:2px; }
+.bk-a { font-size:12px; color:var(--muted); }
+.stars { display:flex; gap:2px; margin-top:4px; }
+.star { font-size:11px; }
+.s-on { color:var(--gold); }
+.s-off { color:var(--muted2); }
+.cover-loading {
+  width:100%; height:100%; display:flex; align-items:center; justify-content:center;
+  background:var(--surface3);
+}
+.spin {
+  width:20px; height:20px;
+  border:2px solid var(--muted2);
+  border-top-color:var(--gold);
+  border-radius:50%;
+  animation:spin 0.7s linear infinite;
+}
+@keyframes spin { to{transform:rotate(360deg)} }
+
+/* LIST VIEW */
+.bk.lv-item {
+  display:flex; align-items:center; gap:14px;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--r); padding:12px 16px;
+  transition:border-color 0.13s;
+}
+.bk.lv-item:hover { border-color:rgba(200,169,110,0.22); }
+.bk.lv-item .bk-cover-wrap {
+  width:44px; height:66px; aspect-ratio:unset;
+  flex-shrink:0; margin-bottom:0;
+  border-radius:5px;
+}
+.bk.lv-item:hover .bk-cover-wrap { transform:none; }
+.lv-info { flex:1; min-width:0; }
+.lv-t { font-size:14.5px; font-weight:500; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.lv-a { font-size:12.5px; color:var(--muted); }
+.lv-meta { display:flex; align-items:center; gap:14px; flex-shrink:0; }
+.lv-tag {
+  background:var(--surface2); padding:3px 8px;
+  border-radius:4px; font-size:11px; color:var(--muted);
+}
+.lv-prog { font-size:12px; color:var(--blue); }
+.lv-btns { display:flex; gap:6px; }
+.lv-ic-btn {
+  padding:5px 8px; border-radius:6px; border:1px solid var(--border);
+  background:transparent; color:var(--muted); cursor:pointer;
+  font-size:11px; font-family:'Outfit',sans-serif;
+  transition:all 0.13s; display:flex; align-items:center; gap:4px;
+}
+.lv-ic-btn:hover { border-color:var(--gold); color:var(--gold); }
+
+/* Empty */
+.empty { text-align:center; padding:60px 20px; grid-column:1/-1; }
+.empty h3 { font-family:'Cormorant Garamond',serif; font-size:22px; margin-bottom:8px; }
+.empty p { font-size:13.5px; color:var(--muted); margin-bottom:20px; }
+
+/* ── MODAL ── */
+.backdrop {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,0.72); backdrop-filter:blur(10px);
+  z-index:300; align-items:center; justify-content:center;
+}
+.backdrop.open { display:flex; }
+.modal {
+  background:var(--surface);
+  border:1px solid var(--border2);
+  border-radius:18px;
+  padding:32px;
+  width:100%; max-width:520px;
+  animation:mIn 0.22s ease;
+  max-height:90vh; overflow-y:auto;
+}
+.modal::-webkit-scrollbar { width:4px; }
+.modal::-webkit-scrollbar-thumb { background:var(--muted2); border-radius:2px; }
+@keyframes mIn { from{opacity:0;transform:scale(0.96) translateY(10px)} to{opacity:1;transform:none} }
+.modal-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
+.modal-hdr h2 { font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:700; }
+.modal-close { background:none; border:none; color:var(--muted); cursor:pointer; font-size:20px; line-height:1; padding:0; }
+.modal-close:hover { color:var(--text); }
+.fg { margin-bottom:14px; }
+.fl { display:block; font-size:11px; color:var(--muted); letter-spacing:0.1em; text-transform:uppercase; margin-bottom:5px; font-weight:500; }
+.fi, .fs {
+  width:100%;
+  background:var(--surface2);
+  border:1px solid var(--border);
+  color:var(--text);
+  font-family:'Outfit',sans-serif;
+  font-size:13.5px;
+  padding:10px 13px;
+  border-radius:var(--r2);
+  outline:none;
+  transition:border-color 0.15s;
+}
+.fi:focus, .fs:focus { border-color:var(--gold); }
+.fi::placeholder { color:var(--muted2); }
+.fr { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.file-drop {
+  border:2px dashed var(--muted2);
+  border-radius:var(--r2);
+  padding:22px;
+  text-align:center;
+  cursor:pointer;
+  transition:all 0.15s;
+  position:relative;
+}
+.file-drop:hover, .file-drop.drag { border-color:var(--gold); background:var(--gold-dim); }
+.file-drop input { position:absolute; inset:0; opacity:0; cursor:pointer; }
+.file-drop-icon { font-size:28px; margin-bottom:6px; }
+.file-drop p { font-size:13px; color:var(--muted); }
+.file-drop .filename { font-size:12.5px; color:var(--gold); margin-top:5px; }
+.cover-preview {
+  margin-top:10px;
+  display:none;
+  align-items:center;
+  gap:10px;
+}
+.cover-preview img { width:50px; height:75px; object-fit:cover; border-radius:5px; }
+.cover-preview span { font-size:12px; color:var(--green); }
+.mfooter {
+  display:flex; gap:10px; justify-content:flex-end; margin-top:22px;
+  padding-top:18px; border-top:1px solid var(--border);
+}
+.btn-cancel {
+  padding:9px 18px; background:transparent;
+  border:1px solid var(--border); color:var(--muted);
+  font-family:'Outfit',sans-serif; font-size:13px;
+  border-radius:var(--r2); cursor:pointer; transition:all 0.13s;
+}
+.btn-cancel:hover { border-color:var(--muted); color:var(--text); }
+.btn-save {
+  padding:9px 22px; background:var(--gold);
+  border:none; color:#0a0a0c;
+  font-family:'Outfit',sans-serif; font-size:13px; font-weight:600;
+  border-radius:var(--r2); cursor:pointer; transition:all 0.13s;
+}
+.btn-save:hover { background:var(--gold2); }
+.btn-delete {
+  padding:9px 18px; background:transparent;
+  border:1px solid rgba(224,85,85,0.3); color:var(--red);
+  font-family:'Outfit',sans-serif; font-size:13px;
+  border-radius:var(--r2); cursor:pointer; transition:all 0.13s;
+  margin-right:auto;
+}
+.btn-delete:hover { background:rgba(224,85,85,0.1); }
+
+/* Kindle modal */
+.kindle-modal {
+  background:var(--surface);
+  border:1px solid var(--border2);
+  border-radius:18px;
+  padding:32px;
+  width:100%; max-width:420px;
+  animation:mIn 0.22s ease;
+}
+.km-book { display:flex; gap:14px; align-items:center; margin-bottom:22px; padding-bottom:18px; border-bottom:1px solid var(--border); }
+.km-cover { width:52px; height:78px; border-radius:6px; object-fit:cover; background:var(--surface3); flex-shrink:0; }
+.km-title { font-family:'Cormorant Garamond',serif; font-size:18px; font-weight:700; }
+.km-author { font-size:13px; color:var(--muted); margin-top:3px; }
+.km-info { font-size:13px; color:var(--muted); line-height:1.6; margin-bottom:18px; }
+.km-info strong { color:var(--text); }
+.km-email { font-size:13px; color:var(--gold); word-break:break-all; margin-bottom:18px; }
+.km-no-email {
+  background:rgba(200,169,110,0.1); border:1px solid rgba(200,169,110,0.25);
+  border-radius:var(--r2); padding:12px 14px; font-size:13px; color:var(--gold2);
+  margin-bottom:18px;
+}
+.btn-send {
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  width:100%; padding:12px; border-radius:var(--r2); border:none;
+  background:var(--gold); color:#0a0a0c;
+  font-family:'Outfit',sans-serif; font-size:14px; font-weight:600;
+  cursor:pointer; transition:all 0.15s;
+}
+.btn-send:hover { background:var(--gold2); }
+.toast {
+  position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(80px);
+  background:var(--surface3); border:1px solid var(--border2);
+  color:var(--text); padding:11px 22px; border-radius:10px;
+  font-size:13.5px; z-index:9999;
+  transition:transform 0.3s ease, opacity 0.3s;
+  opacity:0; pointer-events:none;
+}
+.toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
+.tag-dot {
+  width:7px; height:7px; border-radius:50%; flex-shrink:0;
+}
+
+  /* ── STATS VIEW ── */
+  .stats-big-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:12px; margin-bottom:28px; }
+  .stat-big { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:18px; transition:border-color 0.15s; }
+  .stat-big:hover { border-color:rgba(200,169,110,0.2); }
+  .stat-big .sv { font-family:'Cormorant Garamond',serif; font-size:36px; font-weight:700; color:var(--gold); line-height:1; }
+  .stat-big .sl { font-size:12px; color:var(--muted); margin-top:4px; }
+  .bar-row { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+  .bar-label { font-size:12px; color:var(--muted); width:80px; flex-shrink:0; text-align:right; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .bar-track { flex:1; height:8px; background:var(--surface2); border-radius:4px; overflow:hidden; }
+  .bar-fill { height:100%; background:linear-gradient(90deg,var(--gold),var(--gold2)); border-radius:4px; }
+  .bar-val { font-size:12px; color:var(--muted); width:20px; flex-shrink:0; }
+  .chart-section { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:20px; margin-bottom:20px; }
+  .chart-title { font-family:'Cormorant Garamond',serif; font-size:16px; font-weight:700; margin-bottom:16px; color:var(--text); }
+
+  /* ── RECOMMENDATIONS VIEW ── */
+  .rec-chat { display:flex; flex-direction:column; height:calc(100vh - 130px); }
+  .rec-messages { flex:1; overflow-y:auto; padding-bottom:16px; display:flex; flex-direction:column; gap:14px; }
+  .rec-messages::-webkit-scrollbar { width:4px; }
+  .rec-messages::-webkit-scrollbar-thumb { background:var(--muted2); border-radius:2px; }
+  .msg { display:flex; gap:10px; animation:fadeUp 0.3s ease; }
+  .msg.user { flex-direction:row-reverse; }
+  .msg-avatar { width:28px; height:28px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:13px; }
+  .msg.ai .msg-avatar { background:var(--gold-dim); border:1px solid rgba(200,169,110,0.3); }
+  .msg.user .msg-avatar { background:var(--surface2); }
+  .msg-bubble { max-width:80%; padding:11px 14px; border-radius:12px; font-size:13.5px; line-height:1.6; }
+  .msg.ai .msg-bubble { background:var(--surface); border:1px solid var(--border); color:var(--text); border-radius:4px 12px 12px 12px; }
+  .msg.user .msg-bubble { background:var(--gold); color:#0a0a0c; font-weight:500; border-radius:12px 4px 12px 12px; }
+  .typing { display:flex; gap:5px; align-items:center; }
+  .typing span { width:7px; height:7px; border-radius:50%; background:var(--muted); animation:typingDot 1.2s infinite; }
+  .typing span:nth-child(2) { animation-delay:0.2s; }
+  .typing span:nth-child(3) { animation-delay:0.4s; }
+  @keyframes typingDot { 0%,60%,100%{opacity:0.25;transform:scale(0.8)} 30%{opacity:1;transform:scale(1)} }
+  .rec-input-wrap { display:flex; gap:8px; padding-top:14px; border-top:1px solid var(--border); flex-shrink:0; }
+  .rec-input { flex:1; background:var(--surface2); border:1px solid var(--border); color:var(--text); font-family:'Outfit',sans-serif; font-size:14px; padding:11px 14px; border-radius:var(--r2); outline:none; transition:border-color 0.15s; }
+  .rec-input:focus { border-color:var(--gold); }
+  .rec-input::placeholder { color:var(--muted2); }
+  .rec-send { padding:11px 18px; background:var(--gold); border:none; color:#0a0a0c; border-radius:var(--r2); cursor:pointer; font-size:18px; transition:all 0.15s; flex-shrink:0; }
+  .rec-send:hover { background:var(--gold2); }
+  .rec-send:disabled { opacity:0.4; cursor:default; }
+  .chip { padding:6px 13px; border-radius:20px; border:1px solid var(--border); background:transparent; color:var(--muted); font-family:'Outfit',sans-serif; font-size:12px; cursor:pointer; transition:all 0.13s; white-space:nowrap; }
+  .chip:hover { border-color:var(--gold); color:var(--gold); }
+
+
+  /* ── BATCH UPLOAD ── */
+  #batchDrop.drag { border-color:var(--gold); background:var(--gold-dim); }
+  .batch-item {
+    background:var(--surface2);
+    border:1px solid var(--border);
+    border-radius:var(--r2);
+    padding:11px 14px;
+    display:grid;
+    grid-template-columns:44px 1fr auto;
+    gap:12px;
+    align-items:center;
+    transition:border-color 0.15s;
+  }
+  .batch-item.done  { border-color:rgba(91,181,120,0.4); }
+  .batch-item.error { border-color:rgba(224,85,85,0.35); }
+  .batch-item.loading { border-color:rgba(200,169,110,0.3); }
+  .batch-cover {
+    width:44px; height:66px;
+    border-radius:5px;
+    object-fit:cover;
+    background:var(--surface3);
+    display:flex; align-items:center; justify-content:center;
+    font-size:18px; flex-shrink:0;
+    overflow:hidden;
+  }
+  .batch-cover img { width:100%; height:100%; object-fit:cover; }
+  .batch-info { min-width:0; }
+  .batch-title { font-size:13.5px; font-weight:500; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .batch-sub   { font-size:11.5px; color:var(--muted); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .batch-status { font-size:11.5px; margin-top:3px; }
+  .batch-status.ok  { color:var(--green); }
+  .batch-status.err { color:var(--red); }
+  .batch-status.pending { color:var(--gold); }
+  .batch-actions { display:flex; gap:6px; flex-shrink:0; align-items:center; }
+  .batch-remove { background:none; border:none; color:var(--muted); cursor:pointer; font-size:16px; padding:2px 4px; border-radius:4px; transition:color 0.13s; line-height:1; }
+  .batch-remove:hover { color:var(--red); }
+
+
+/* ── SIDEBAR TOGGLE ── */
+.sidebar-toggle {
+  display:none;
+  position:fixed;
+  top:14px; left:14px;
+  z-index:200;
+  background:var(--surface);
+  border:1px solid var(--border2);
+  color:var(--text);
+  width:38px; height:38px;
+  border-radius:10px;
+  align-items:center; justify-content:center;
+  cursor:pointer; font-size:18px;
+  box-shadow:0 4px 16px rgba(0,0,0,0.4);
+  transition:all 0.15s;
+}
+.sidebar-toggle:hover { background:var(--surface2); }
+.sidebar-overlay {
+  display:none;
+  position:fixed; inset:0;
+  background:rgba(0,0,0,0.55);
+  z-index:98;
+  backdrop-filter:blur(2px);
+}
+.sidebar-overlay.open { display:block; }
+
+/* ── MOBILE RESPONSIVE ── */
+@media (max-width: 700px) {
+  body { overflow:hidden; }
+
+  .sidebar-toggle { display:flex; }
+
+  .sidebar {
+    position:fixed;
+    left:0; top:0; bottom:0;
+    z-index:99;
+    transform:translateX(-100%);
+    transition:transform 0.28s cubic-bezier(.4,0,.2,1);
+    width:260px !important;
+    min-width:260px !important;
+  }
+  .sidebar.open { transform:translateX(0); box-shadow:4px 0 32px rgba(0,0,0,0.6); }
+
+  .main { margin-left:0 !important; width:100%; }
+
+  .topbar {
+    padding:12px 14px 12px 58px !important;
+    gap:8px !important;
+  }
+  .topbar-title { display:none; }
+  .search-wrap { max-width:none !important; }
+  .sort-sel { display:none; }
+  .view-btns { display:none; }
+
+  .content { padding:16px 14px 80px !important; }
+
+  .stats-row { grid-template-columns:repeat(2,1fr) !important; }
+
+  .grid { grid-template-columns:repeat(auto-fill,minmax(110px,1fr)) !important; gap:14px !important; }
+
+  .rec-chat { height:calc(100vh - 180px) !important; }
+
+  /* Mobile bottom nav */
+  .mobile-nav {
+    display:flex;
+    position:fixed;
+    bottom:0; left:0; right:0;
+    background:var(--surface);
+    border-top:1px solid var(--border);
+    z-index:97;
+    padding:6px 0 max(6px, env(safe-area-inset-bottom));
+  }
+  .mobile-nav-btn {
+    flex:1;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    gap:3px; padding:6px 4px;
+    cursor:pointer;
+    color:var(--muted);
+    font-size:10px;
+    border:none; background:transparent;
+    font-family:'Outfit',sans-serif;
+    transition:color 0.15s;
+  }
+  .mobile-nav-btn.active { color:var(--gold); }
+  .mobile-nav-btn svg { flex-shrink:0; }
+}
+
+@media (min-width: 701px) {
+  .mobile-nav { display:none !important; }
+  .sidebar-overlay { display:none !important; }
+}
+
+/* ── SERIE BADGE ── */
+.serie-badge {
+  display:inline-flex; align-items:center; gap:4px;
+  font-size:10px; color:var(--gold);
+  background:var(--gold-dim);
+  border:1px solid rgba(200,169,110,0.2);
+  border-radius:4px;
+  padding:2px 6px;
+  margin-top:4px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  max-width:100%;
+}
+
+  /* ── GOOGLE DRIVE SYNC ── */
+  .gdrive-bar {
+    display:flex; align-items:center; gap:8px;
+    padding:10px 12px;
+    background:var(--surface2);
+    border:1px solid var(--border);
+    border-radius:var(--r2);
+    font-size:12px;
+  }
+  .gdrive-dot {
+    width:8px; height:8px; border-radius:50%; flex-shrink:0;
+    background:var(--muted2);
+    transition:background 0.3s;
+  }
+  .gdrive-dot.connected { background:var(--green); box-shadow:0 0 6px rgba(91,181,120,0.5); }
+  .gdrive-dot.syncing   { background:var(--gold); animation:pulse 1s infinite; }
+  .gdrive-dot.error     { background:var(--red); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .gdrive-label { flex:1; color:var(--muted); }
+  .gdrive-btn {
+    padding:4px 10px; border-radius:5px; font-size:11px;
+    font-family:'Outfit',sans-serif; cursor:pointer;
+    border:1px solid var(--border); background:transparent;
+    color:var(--muted); transition:all 0.15s;
+  }
+  .gdrive-btn:hover { border-color:var(--gold); color:var(--gold); }
+  .gdrive-btn.primary { background:var(--gold); color:#0a0a0c; border-color:var(--gold); font-weight:600; }
+</style>
+</head>
+<body>
+
+<button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()" title="Meny">☰</button>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<!-- ── SIDEBAR ── -->
+<aside class="sidebar" id="sidebar">
+  <div class="logo-area">
+    <h1>Bibliothek</h1>
+    <p>Ditt digitale bibliotek</p>
+  </div>
+  <nav class="nav">
+    <div class="nav-group">
+      <div class="nav-label">Bibliotek</div>
+      <div class="nav-item active" data-view="all" onclick="setView(this,'all')">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Alle bøker
+        <span class="cnt" id="cnt-all">0</span>
+      </div>
+      <div class="nav-item" data-view="reading" onclick="setView(this,'reading')">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 6.25v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.25v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.25m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.25v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.25"/></svg>
+        Leser nå
+        <span class="cnt" id="cnt-reading">0</span>
+      </div>
+      <div class="nav-item" data-view="done" onclick="setView(this,'done')">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Lest
+        <span class="cnt" id="cnt-done">0</span>
+      </div>
+      <div class="nav-item" data-view="wishlist" onclick="setView(this,'wishlist')">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+        Ønskeliste
+        <span class="cnt" id="cnt-wishlist">0</span>
+      </div>
+      <div class="nav-item" data-view="unread" onclick="setView(this,'unread')">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l2 2"/></svg>
+        Ikke lest
+        <span class="cnt" id="cnt-unread">0</span>
+      </div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Verktøy</div>
+      <div class="nav-item" data-view="stats" onclick="setView(this,'stats')">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Statistikk
+      </div>
+      <div class="nav-item" data-view="recommendations" onclick="setView(this,'recommendations')">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+        Anbefalinger ✨
+      </div>
+      <div class="nav-item" onclick="exportLibrary()">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Eksport CSV
+      </div>
+    </div>
+  </nav>
+  <div class="sidebar-bottom">
+    <!-- Google Drive Sync -->
+    <div class="gdrive-bar" id="gdriveBar">
+      <div class="gdrive-dot" id="gdriveDot"></div>
+      <span class="gdrive-label" id="gdriveLabel">Google Drive</span>
+      <button class="gdrive-btn primary" id="gdriveBtn" onclick="gdriveAuth()">Koble til</button>
+    </div>
+    <div class="kindle-email-area">
+      <div class="kindle-label">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        Kindle-enheter
+      </div>
+      <div id="kindleDeviceList" style="margin-top:4px;display:flex;flex-direction:column;gap:4px;"></div>
+      <button onclick="openKindleDeviceModal()" style="margin-top:6px;width:100%;padding:6px;background:transparent;border:1px dashed var(--muted2);border-radius:6px;color:var(--muted);font-family:'Outfit',sans-serif;font-size:12px;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--muted2)';this.style.color='var(--muted)'">
+        + Legg til enhet
+      </button>
+    </div>
+    <button class="btn-add" onclick="openAddModal()">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+      Legg til bok
+    </button>
+    <button class="btn-add" onclick="openBatchModal()" style="border-style:dashed;">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/><rect x="3" y="3" width="7" height="7" rx="1" opacity=".5"/><rect x="14" y="3" width="7" height="7" rx="1" opacity=".5"/></svg>
+      Last opp flere bøker
+    </button>
+    <div style="padding-top:8px;border-top:1px solid var(--border);">
+      <div class="kindle-label" style="margin-bottom:5px;">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+        Server-URL
+      </div>
+      <input class="kindle-input" id="serverUrl" placeholder="https://din-server.onrender.com" oninput="saveServerUrl(this.value)" style="font-size:11px;">
+    </div>
+  </div>
+</aside>
+
+<!-- ── MAIN ── -->
+<div class="main">
+  <div class="topbar">
+    <span class="topbar-title" id="topbarTitle">Alle bøker</span>
+    <div class="search-wrap">
+      <svg class="search-icon" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <input class="search" id="searchInput" placeholder="Søk på tittel, forfatter, sjanger…" oninput="render()">
+    </div>
+    <div class="view-btns">
+      <button class="vbtn active" id="vbtnGrid" onclick="setViewMode('grid')" title="Rutenett">
+        <svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24"><path d="M3 3h7v7H3zm11 0h7v7h-7zM3 14h7v7H3zm11 0h7v7h-7z"/></svg>
+      </button>
+      <button class="vbtn" id="vbtnList" onclick="setViewMode('list')" title="Liste">
+        <svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24"><path d="M3 4h18v2H3zm0 7h18v2H3zm0 7h18v2H3z"/></svg>
+      </button>
+    </div>
+    <select class="sort-sel" onchange="render()">
+      <option value="title">Tittel A–Å</option>
+      <option value="author">Forfatter</option>
+      <option value="series">Serie</option>
+      <option value="year">Nyeste</option>
+      <option value="rating">Beste vurdering</option>
+      <option value="added">Sist lagt til</option>
+      <option value="finished">Sist lest</option>
+    </select>
+  </div>
+
+  <div class="content">
+    <div class="stats-row" id="statsRow"></div>
+    <div class="hero-wrap" id="heroWrap"></div>
+    <div class="pills" id="pillsWrap"></div>
+    <div class="sec-hdr"><span class="sec-title" id="secTitle">Alle bøker</span><span class="sec-cnt" id="secCnt"></span></div>
+    <div class="grid" id="booksGrid"></div>
+  </div>
+</div>
+
+<!-- ── ADD/EDIT MODAL ── -->
+<div class="backdrop" id="bookModal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <h2 id="modalTitle">Legg til bok</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="fr">
+      <div class="fg">
+        <label class="fl">Tittel *</label>
+        <input class="fi" id="fTitle" placeholder="Boktittel" oninput="debounceCoverSearch()">
+      </div>
+      <div class="fg">
+        <label class="fl">Forfatter *</label>
+        <input class="fi" id="fAuthor" placeholder="Forfatternavn" oninput="debounceCoverSearch()">
+      </div>
+    </div>
+    <!-- Cover preview -->
+    <div class="fg">
+      <label class="fl">Bokomslag</label>
+      <div id="coverPreviewArea" style="display:flex;gap:10px;align-items:center;min-height:52px;">
+        <div id="coverThumb" style="width:44px;height:66px;background:var(--surface2);border-radius:5px;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+          <svg width="16" height="16" fill="none" stroke="var(--muted2)" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg>
+        </div>
+        <div>
+          <div id="coverStatus" style="font-size:12px;color:var(--muted);">Skriv inn tittel for å søke etter omslag…</div>
+          <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;" id="coverAltBtns"></div>
+        </div>
+      </div>
+    </div>
+    <div class="fr">
+      <div class="fg">
+        <label class="fl">Sjanger</label>
+        <select class="fs" id="fGenre">
+          <option>Roman</option><option>Thriller</option><option>Krim</option>
+          <option>Sci-Fi</option><option>Fantasy</option><option>Sakprosa</option>
+          <option>Biografi</option><option>Humor</option><option>Annet</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label class="fl">Utgivelsesår</label>
+        <input class="fi" id="fYear" type="number" placeholder="2024">
+      </div>
+    </div>
+    <div class="fr">
+      <div class="fg">
+        <label class="fl">Status</label>
+        <select class="fs" id="fStatus" onchange="toggleFinishedDate()">
+          <option value="unread">Ikke lest</option>
+          <option value="reading">Leser nå</option>
+          <option value="done">Lest</option>
+          <option value="wishlist">Ønskeliste</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label class="fl">Fremgang (%)</label>
+        <input class="fi" id="fProgress" type="number" min="0" max="100" placeholder="0">
+      </div>
+    </div>
+    <div class="fr" id="finishedDateRow" style="display:none;">
+      <div class="fg">
+        <label class="fl">Dato ferdiglest</label>
+        <input class="fi" id="fFinishedDate" type="date">
+      </div>
+      <div class="fg" style="display:flex;align-items:flex-end;">
+        <button type="button" class="btn-cancel" style="width:100%;padding:10px;" onclick="document.getElementById('fFinishedDate').value=new Date().toISOString().slice(0,10)">I dag</button>
+      </div>
+    </div>
+    <div class="fr">
+      <div class="fg">
+        <label class="fl">Serie</label>
+        <input class="fi" id="fSeries" placeholder="f.eks. Harry Potter">
+      </div>
+      <div class="fg">
+        <label class="fl">Del nr.</label>
+        <input class="fi" id="fSeriesNum" type="number" min="1" placeholder="1">
+      </div>
+    </div>
+    <div class="fg">
+      <label class="fl">Vurdering (0–5)</label>
+      <input class="fi" id="fRating" type="number" min="0" max="5" placeholder="0">
+    </div>
+    <div class="fg">
+      <label class="fl">Last opp fil (epub, mobi, pdf, azw3)</label>
+      <div class="file-drop" id="fileDrop">
+        <input type="file" accept=".epub,.mobi,.pdf,.azw3,.azw" id="fileInput" onchange="handleFile(this)">
+        <div class="file-drop-icon">📂</div>
+        <p>Slipp fil her eller klikk for å velge</p>
+        <div class="filename" id="fileLabel"></div>
+      </div>
+    </div>
+    <div id="isbnStatus" style="display:none;font-size:12.5px;margin-top:-6px;margin-bottom:2px;padding:9px 12px;background:var(--surface2);border-radius:var(--r2);border:1px solid var(--border);gap:6px;align-items:center;"></div>
+    <div class="mfooter">
+      <button class="btn-delete" id="deleteBtn" onclick="deleteBook()" style="display:none">Slett bok</button>
+      <button class="btn-cancel" onclick="closeModal()">Avbryt</button>
+      <button class="btn-save" onclick="saveBook()">Lagre</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── KINDLE SEND MODAL ── -->
+<div class="backdrop" id="kindleModal">
+  <div class="kindle-modal">
+    <div class="modal-hdr">
+      <h2>Send til Kindle</h2>
+      <button class="modal-close" onclick="closeKindleModal()">✕</button>
+    </div>
+    <div class="km-book">
+      <div id="kmCover" class="km-cover"></div>
+      <div>
+        <div class="km-title" id="kmTitle"></div>
+        <div class="km-author" id="kmAuthor"></div>
+      </div>
+    </div>
+    <div class="km-info" id="kmInfo"></div>
+
+    <!-- Device selector -->
+    <div id="kmDeviceWrap" style="margin-bottom:16px;">
+      <label class="fl">Send til enhet</label>
+      <select class="fs" id="kmDeviceSelect" style="margin-top:5px;" onchange="updateKindleSteps()"></select>
+    </div>
+
+    <!-- Step-by-step guide -->
+    <div id="kmSteps" style="display:none;margin-bottom:16px;">
+      <div style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;font-weight:600;">Slik sender du til Kindle</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <div style="width:22px;height:22px;border-radius:50%;background:var(--gold);color:#0a0a0c;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">1</div>
+          <div>
+            <div style="font-size:13px;font-weight:500;color:var(--text);">Last ned filen</div>
+            <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">Trykk knappen under for å lagre epub-filen til enheten</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <div style="width:22px;height:22px;border-radius:50%;background:var(--gold);color:#0a0a0c;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">2</div>
+          <div>
+            <div style="font-size:13px;font-weight:500;color:var(--text);">Send som e-postvedlegg</div>
+            <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">Åpne Mail-appen, lag ny e-post til <span id="kmTargetEmail" style="color:var(--gold);font-weight:500;"></span>, legg ved filen og send</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <div style="width:22px;height:22px;border-radius:50%;background:var(--gold);color:#0a0a0c;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">3</div>
+          <div>
+            <div style="font-size:13px;font-weight:500;color:var(--text);">Boken dukker opp på Kindle</div>
+            <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">Husk at avsender-e-posten din må være godkjent i <a href="https://www.amazon.com/hz/mycd/myx#/home/settings/payment" target="_blank" style="color:var(--gold);">Amazon-innstillingene</a></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="kmNoFile" style="display:none;" class="km-no-email">⚠️ Ingen fil er lastet opp for denne boken. Last opp en epub/mobi-fil først.</div>
+    <div id="kmNoDevice" style="display:none;" class="km-no-email">⚠️ Legg til en Kindle-enhet i sidemenyen først.</div>
+
+    <div class="mfooter" style="margin-top:0;padding-top:12px;border-top:1px solid var(--border);flex-direction:column;gap:8px;">
+      <!-- Primary: direct send via server -->
+      <button class="btn-send" id="kindleDirectBtn" onclick="sendDirectToKindle()" style="width:100%;">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        <span id="kindleDirectLabel">Send direkte til Kindle</span>
+      </button>
+      <!-- Fallbacks -->
+      <div style="display:flex;gap:8px;">
+        <button class="btn-send" id="kindleDownloadBtn" onclick="downloadForKindle()" style="flex:1;background:var(--surface2);color:var(--text);border:1px solid var(--border2);font-size:12px;padding:9px 10px;">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Last ned
+        </button>
+        <button class="btn-send" id="kindleMailBtn" onclick="openMailForKindle()" style="flex:1;background:var(--surface2);color:var(--text);border:1px solid var(--border2);font-size:12px;padding:9px 10px;">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          Mail-appen
+        </button>
+        <button class="btn-send" onclick="window.open('https://send.amazon.com','_blank')" style="flex:1;background:var(--surface2);color:var(--gold);border:1px solid rgba(200,169,110,0.25);font-size:12px;padding:9px 10px;">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Amazon
+        </button>
+      </div>
+      <button class="btn-cancel" onclick="closeKindleModal()" style="width:100%;text-align:center;">Lukk</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── KINDLE DEVICE MANAGER MODAL ── -->
+<div class="backdrop" id="kindleDeviceModal">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-hdr">
+      <h2>Kindle-enheter</h2>
+      <button class="modal-close" onclick="closeKindleDeviceModal()">✕</button>
+    </div>
+    <div id="deviceListEdit" style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px;"></div>
+    <div style="border-top:1px solid var(--border);padding-top:16px;">
+      <div class="fl" style="margin-bottom:8px;">Legg til ny enhet</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div class="fg" style="margin:0;">
+          <input class="fi" id="newDeviceName" placeholder="Navn (f.eks. Min iPhone)">
+        </div>
+        <div class="fg" style="margin:0;">
+          <input class="fi" id="newDeviceEmail" placeholder="navn@kindle.com">
+        </div>
+      </div>
+      <button class="btn-save" style="width:100%;" onclick="addKindleDevice()">Legg til</button>
+    </div>
+    <div class="mfooter">
+      <button class="btn-cancel" onclick="closeKindleDeviceModal()">Lukk</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ── MOBILE BOTTOM NAV ── -->
+<nav class="mobile-nav" id="mobileNav">
+  <button class="mobile-nav-btn active" data-view="all" onclick="setViewMobile(this,'all')">
+    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    Bibliotek
+  </button>
+  <button class="mobile-nav-btn" data-view="reading" onclick="setViewMobile(this,'reading')">
+    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24"><path d="M12 6.25v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.25v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.25m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.25v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.25"/></svg>
+    Leser nå
+  </button>
+  <button class="mobile-nav-btn" onclick="openBatchModal()">
+    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+    Legg til
+  </button>
+  <button class="mobile-nav-btn" data-view="stats" onclick="setViewMobile(this,'stats')">
+    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    Statistikk
+  </button>
+  <button class="mobile-nav-btn" data-view="recommendations" onclick="setViewMobile(this,'recommendations')">
+    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+    Tips ✨
+  </button>
+</nav>
+
+<!-- ── BATCH UPLOAD MODAL ── -->
+<div class="backdrop" id="batchModal">
+  <div class="modal" style="max-width:640px;max-height:90vh;display:flex;flex-direction:column;">
+    <div class="modal-hdr" style="flex-shrink:0;">
+      <h2>Last opp flere bøker</h2>
+      <button class="modal-close" onclick="closeBatchModal()">✕</button>
+    </div>
+
+    <!-- Drop zone -->
+    <div id="batchDrop" style="border:2px dashed var(--muted2);border-radius:var(--r2);padding:28px;text-align:center;cursor:pointer;transition:all 0.15s;margin-bottom:16px;flex-shrink:0;position:relative;">
+      <input type="file" id="batchInput" accept=".epub,.mobi,.pdf,.azw3,.azw" multiple style="position:absolute;inset:0;opacity:0;cursor:pointer;">
+      <div style="font-size:32px;margin-bottom:8px;">📚</div>
+      <div style="font-size:14px;color:var(--text);font-weight:500;margin-bottom:4px;">Slipp epub-filer her</div>
+      <div style="font-size:12px;color:var(--muted);">eller klikk for å velge — epub, mobi, pdf, azw3</div>
+    </div>
+
+    <!-- File queue -->
+    <div id="batchQueue" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;min-height:0;margin-bottom:16px;"></div>
+
+    <!-- Footer -->
+    <div style="flex-shrink:0;border-top:1px solid var(--border);padding-top:14px;display:flex;gap:10px;align-items:center;">
+      <div id="batchSummary" style="flex:1;font-size:13px;color:var(--muted);"></div>
+      <button class="btn-cancel" onclick="closeBatchModal()">Avbryt</button>
+      <button class="btn-save" id="batchSaveBtn" onclick="saveBatchBooks()" style="min-width:120px;">Lagre alle</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── STATE ──
+let books = [];
+let view = 'all';
+let genreFilter = null;
+let viewMode = 'grid';
+let editingId = null;
+let coverDebounceTimer = null;
+let pendingCoverUrl = null;
+let pendingCoverAlts = [];
+let kindleBookId = null;
+let pendingFileData = null; // {name, type, dataUrl}
+
+const STORAGE_KEY  = 'bibliothek_books';
+const DEVICES_KEY  = 'bibliothek_kindle_devices';
+const SERVER_KEY   = 'bibliothek_server_url';
+
+// ── STORAGE & SERVER AUTO-DETECT ──
+const _memStore = new Map();
+
+// Detect if we're running as a hosted web app (on Render or localhost)
+// vs sandboxed inside Claude app
+const IS_WEB = (() => {
+  try {
+    localStorage.setItem('_test', '1');
+    localStorage.removeItem('_test');
+    return true;
+  } catch(e) { return false; }
+})();
+
+// If hosted, use our own URL as server base (no need to configure manually)
+const AUTO_SERVER_URL = IS_WEB && location.hostname !== 'claude.ai'
+  ? location.origin
+  : null;
+
+async function storageGet(key) {
+  if (IS_WEB) {
+    try { const v = localStorage.getItem(key); if (v !== null) return v; } catch(e) {}
+  }
+  return _memStore.get(key) ?? null;
+}
+
+async function storageSet(key, value) {
+  _memStore.set(key, value);
+  if (IS_WEB) {
+    try { localStorage.setItem(key, value); } catch(e) {}
+  }
+}
+
+let kindleDevices = []; // [{name, email}]
+
+// ── STORAGE ──
+async function loadBooks() {
+  try {
+    const raw = await storageGet(STORAGE_KEY);
+    if (raw) books = JSON.parse(raw);
+  } catch(e) { books = []; }
+}
+
+async function saveBooks() {
+  const slim = books.map(b => {
+    const out = { ...b };
+    delete out.fileData;
+    if (out.coverUrl?.startsWith('data:')) out.coverUrl = out._remoteCoverUrl || null;
+    delete out._remoteCoverUrl;
+    return out;
+  });
+  await storageSet(STORAGE_KEY, JSON.stringify(slim));
+}
+
+async function loadServerUrl() {
+  try {
+    // If hosted on Render, server URL = our own origin
+    if (AUTO_SERVER_URL) {
+      const el = document.getElementById('serverUrl');
+      if (el) el.value = AUTO_SERVER_URL;
+      await storageSet(SERVER_KEY, AUTO_SERVER_URL);
+      return;
+    }
+    const v = await storageGet(SERVER_KEY);
+    if (v) document.getElementById('serverUrl').value = v;
+  } catch(e) {}
+}
+
+async function saveServerUrl(v) {
+  await storageSet(SERVER_KEY, v.trim());
+}
+
+function getServerUrl() {
+  if (AUTO_SERVER_URL) return AUTO_SERVER_URL;
+  return (document.getElementById('serverUrl')?.value || '').trim().replace(/\/$/, '');
+}
+
+async function loadKindleDevices() {
+  try {
+    const raw = await storageGet(DEVICES_KEY);
+    if (raw) kindleDevices = JSON.parse(raw);
+    if (!kindleDevices.length) {
+      const old = await storageGet('bibliothek_kindle');
+      if (old?.includes('@')) {
+        kindleDevices = [{ name: 'Min Kindle', email: old }];
+        saveKindleDevices();
+      }
+    }
+  } catch(e) { kindleDevices = []; }
+  renderKindleDeviceList();
+}
+
+async function saveKindleDevices() {
+  await storageSet(DEVICES_KEY, JSON.stringify(kindleDevices));
+}
+
+function renderKindleDeviceList() {
+  const el = document.getElementById('kindleDeviceList');
+  if (!el) return;
+  if (!kindleDevices.length) {
+    el.innerHTML = '<div style="font-size:11px;color:var(--muted2);padding:2px 0;">Ingen enheter lagt til</div>';
+    return;
+  }
+  el.innerHTML = kindleDevices.map((d,i) => `
+    <div style="display:flex;align-items:center;gap:6px;padding:5px 8px;background:var(--surface2);border-radius:6px;">
+      <svg width="11" height="11" fill="none" stroke="var(--gold)" stroke-width="2" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18.01"/></svg>
+      <span style="font-size:12px;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.name}</span>
+      <span style="font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100px;">${d.email}</span>
+    </div>
+  `).join('');
+}
+
+// ── KINDLE DEVICE MANAGER ──
+function openKindleDeviceModal() {
+  renderDeviceListEdit();
+  document.getElementById('newDeviceName').value = '';
+  document.getElementById('newDeviceEmail').value = '';
+  document.getElementById('kindleDeviceModal').classList.add('open');
+}
+function closeKindleDeviceModal() {
+  document.getElementById('kindleDeviceModal').classList.remove('open');
+}
+
+function renderDeviceListEdit() {
+  const el = document.getElementById('deviceListEdit');
+  if (!kindleDevices.length) {
+    el.innerHTML = '<div style="font-size:13px;color:var(--muted);text-align:center;padding:12px;">Ingen enheter ennå</div>';
+    return;
+  }
+  el.innerHTML = kindleDevices.map((d,i) => `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface2);border-radius:var(--r2);border:1px solid var(--border);">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13.5px;font-weight:500;color:var(--text);">${d.name}</div>
+        <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">${d.email}</div>
+      </div>
+      <button onclick="removeKindleDevice(${i})" style="padding:5px 10px;background:transparent;border:1px solid rgba(224,85,85,0.3);color:var(--red);border-radius:6px;font-size:11px;cursor:pointer;flex-shrink:0;">Slett</button>
+    </div>
+  `).join('');
+}
+
+async function addKindleDevice() {
+  const name  = document.getElementById('newDeviceName').value.trim();
+  const email = document.getElementById('newDeviceEmail').value.trim();
+  if (!name || !email || !email.includes('@')) {
+    showToast('⚠️ Fyll inn navn og gyldig e-post'); return;
+  }
+  kindleDevices.push({ name, email });
+  await saveKindleDevices();
+  renderKindleDeviceList();
+  renderDeviceListEdit();
+  document.getElementById('newDeviceName').value = '';
+  document.getElementById('newDeviceEmail').value = '';
+  showToast('✓ Enhet lagt til');
+}
+
+async function removeKindleDevice(idx) {
+  kindleDevices.splice(idx, 1);
+  await saveKindleDevices();
+  renderKindleDeviceList();
+  renderDeviceListEdit();
+  showToast('🗑 Enhet fjernet');
+}
+
+// ── COVER SEARCH (Open Library) ──
+async function fetchCover(title, author) {
+  try {
+    const q = encodeURIComponent(`${title} ${author||''}`.trim());
+    const url = `https://openlibrary.org/search.json?q=${q}&limit=5&fields=key,title,author_name,cover_i,isbn`;
+    const data = await fetchJSON(url);
+    if (!data) return null;
+    const docs = (data.docs || []).filter(d => d.cover_i);
+    if (!docs.length) return null;
+    return docs.slice(0,4).map(d => ({
+      url: `https://covers.openlibrary.org/b/id/${d.cover_i}-L.jpg`,
+      title: d.title || title,
+    }));
+  } catch(e) { return null; }
+}
+
+function debounceCoverSearch() {
+  clearTimeout(coverDebounceTimer);
+  const title = document.getElementById('fTitle').value.trim();
+  const author = document.getElementById('fAuthor').value.trim();
+  if (title.length < 2) return;
+  coverDebounceTimer = setTimeout(() => searchCover(title, author), 700);
+}
+
+async function searchCover(title, author) {
+  const statusEl = document.getElementById('coverStatus');
+  const thumbEl = document.getElementById('coverThumb');
+  const altsEl = document.getElementById('coverAltBtns');
+  statusEl.textContent = 'Søker etter omslag…';
+  statusEl.style.color = 'var(--muted)';
+  thumbEl.innerHTML = '<div class="spin"></div>';
+  altsEl.innerHTML = '';
+  pendingCoverUrl = null;
+  pendingCoverAlts = [];
+
+  const alts = await fetchCover(title, author);
+  if (!alts || !alts.length) {
+    statusEl.textContent = 'Ingen omslag funnet – bruker autogenerert cover.';
+    thumbEl.innerHTML = '<svg width="16" height="16" fill="none" stroke="var(--muted2)" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg>';
+    return;
+  }
+
+  pendingCoverAlts = alts;
+  selectCoverAlt(0);
+}
+
+function selectCoverAlt(idx) {
+  const alt = pendingCoverAlts[idx];
+  if (!alt) return;
+  pendingCoverUrl = alt.url;
+  const thumbEl = document.getElementById('coverThumb');
+  thumbEl.innerHTML = `<img src="${alt.url}" style="width:100%;height:100%;object-fit:cover;border-radius:5px;" onerror="this.style.display='none'">`;
+  document.getElementById('coverStatus').textContent = 'Omslag funnet ✓';
+  document.getElementById('coverStatus').style.color = 'var(--green)';
+
+  // Alt buttons
+  const altsEl = document.getElementById('coverAltBtns');
+  altsEl.innerHTML = pendingCoverAlts.map((a,i) =>
+    `<button onclick="selectCoverAlt(${i})" style="width:28px;height:42px;border-radius:4px;overflow:hidden;border:2px solid ${i===idx?'var(--gold)':'var(--border)'};padding:0;cursor:pointer;background:var(--surface2)">
+      <img src="${a.url}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">
+    </button>`
+  ).join('');
+}
+
+// ── ISBN EXTRACTION ──
+function extractISBN(filename) {
+  // Strip extension and clean up
+  const base = filename.replace(/\.[^/.]+$/, '').replace(/[_\-\s]/g, '');
+  // Match ISBN-13 (978/979 prefix) or ISBN-10
+  const m13 = base.match(/(?:isbn[:\-]?)?(97[89]\d{10})/i);
+  if (m13) return m13[1];
+  const m10 = base.match(/(?:isbn[:\-]?)?(\d{9}[\dXx])/i);
+  if (m10) return m10[1].toUpperCase();
+  // Also try raw digits of length 13 or 10 anywhere in the name
+  const digits = filename.replace(/[^0-9Xx]/gi,'');
+  if (/^97[89]\d{10}$/.test(digits)) return digits;
+  if (/^\d{9}[\dXx]$/i.test(digits)) return digits.toUpperCase();
+  return null;
+}
+
+// ── OPEN LIBRARY LOOKUP BY ISBN ──
+// ── GENRE MAPPING (shared) ──
+const GENRE_MAP = {
+  'roman':'Roman','skjønnlitteratur':'Roman','novelle':'Roman','fortelling':'Roman',
+  'krim':'Krim','detektiv':'Krim','kriminallitteratur':'Krim',
+  'spenning':'Thriller','thriller':'Thriller',
+  'science fiction':'Sci-Fi','sci-fi':'Sci-Fi','fantasy':'Fantasy',
+  'biografi':'Biografi','selvbiografi':'Biografi','memoar':'Biografi','livshistorie':'Biografi',
+  'humor':'Humor','satire':'Humor',
+  'sakprosa':'Sakprosa','historie':'Sakprosa','vitenskap':'Sakprosa',
+  'filosofi':'Sakprosa','økonomi':'Sakprosa','politikk':'Sakprosa','religion':'Sakprosa',
+  'fiction':'Roman','novel':'Roman','romance':'Roman',
+  'mystery':'Krim','crime':'Krim',
+  'biography':'Biografi','nonfiction':'Sakprosa','history':'Sakprosa',
+};
+function mapGenre(texts) {
+  for (const txt of texts.map(s => (s||'').toLowerCase())) {
+    for (const [k,v] of Object.entries(GENRE_MAP)) {
+      if (txt.includes(k)) return v;
+    }
+  }
+  return 'Annet';
+}
+
+// ── CORS-SAFE FETCH: tries direct first, then corsproxy.io ──
+async function fetchJSON(url) {
+  // Try direct first (works if API has CORS headers)
+  try {
+    const r = await fetch(url, { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(6000) });
+    if (r.ok) return await r.json();
+  } catch(_) {}
+  // Fallback: corsproxy.io (free public CORS proxy)
+  try {
+    const proxy = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+    const r = await fetch(proxy, { signal: AbortSignal.timeout(8000) });
+    if (r.ok) return await r.json();
+  } catch(_) {}
+  return null;
+}
+
+// ── NASJONALBIBLIOTEKET (nb.no) ──
+async function fetchBookByISBN_NB(isbn) {
+  try {
+    const url = `https://api.nb.no/catalog/v1/items?q=isbn:${isbn}&size=3`;
+    const json = await fetchJSON(url);
+    if (!json) return null;
+
+    const hits = json?._embedded?.items;
+    if (!hits?.length) return null;
+
+    // Prefer hit that contains the exact ISBN
+    let item = hits[0];
+    for (const h of hits) {
+      if (JSON.stringify(h.metadata||'').includes(isbn)) { item = h; break; }
+    }
+    const md = item.metadata || {};
+
+    const title = md.title || md.titleInfo?.title || '';
+    if (!title) return null;
+
+    let authors = '';
+    if (Array.isArray(md.creators))
+      authors = md.creators.map(c => (typeof c === 'object' ? c.name||c.value : c)||'').filter(Boolean).join(', ');
+    else if (md.creator)
+      authors = Array.isArray(md.creator) ? md.creator.join(', ') : String(md.creator);
+
+    const yearRaw = md.originYear || md.year || md.date || md.dateIssued || '';
+    const year = yearRaw ? parseInt(String(yearRaw).match(/[12][0-9]{3}/)?.[0]) : null;
+
+    const desc      = md.abstract || md.description || md.note || '';
+    const subjects  = Array.isArray(md.subject) ? md.subject : (md.subject ? [md.subject] : []);
+    const pages     = md.extent ? (parseInt(String(md.extent).replace(/[^0-9]/g,''))||null) : null;
+    const lang      = Array.isArray(md.language) ? md.language[0] : (md.language||'');
+
+    let publisher = '';
+    if (Array.isArray(md.publishers))      publisher = md.publishers.join(', ');
+    else if (Array.isArray(md.publisher))  publisher = md.publisher.join(', ');
+    else if (md.publisher)                 publisher = String(md.publisher);
+    else if (md.originPlace)               publisher = String(md.originPlace);
+
+    const sesamid = item.id || '';
+    // NB cover: use Open Library as primary since NB image resolver is also CORS-blocked
+    const coverUrl = `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg`;
+
+    return {
+      title, authors, year, desc, publisher, pages, coverUrl, isbn, lang,
+      mappedGenre: mapGenre([...subjects, md.genre||'', desc, title]),
+      source: 'Nasjonalbiblioteket', nbId: sesamid
+    };
+  } catch(e) {
+    console.warn('NB lookup failed:', e);
+    return null;
+  }
+}
+
+// ── OPEN LIBRARY LOOKUP (fallback) ──
+async function fetchBookByISBN_OL(isbn) {
+  try {
+    const url = `https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`;
+    const json = await fetchJSON(url);
+    if (!json) return null;
+    const d = json[`ISBN:${isbn}`];
+    if (!d) return null;
+
+    const title     = d.title || '';
+    const authors   = (d.authors||[]).map(a=>a.name).filter(Boolean).join(', ');
+    const yearStr   = d.publish_date || '';
+    const year      = yearStr ? parseInt(yearStr.match(/[12][0-9]{3}/)?.[0]) : null;
+    const subjects  = (d.subjects||[]).map(s=>s.name||s);
+    const desc      = (typeof d.notes === 'object' ? d.notes?.value : d.notes) || '';
+    const pages     = d.number_of_pages || null;
+    const publisher = (d.publishers||[]).map(p=>p.name).filter(Boolean).join(', ');
+    const coverUrl  = d.cover?.large || d.cover?.medium
+      || `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg`;
+
+    return {
+      title, authors, year, desc, pages, publisher, coverUrl, isbn,
+      mappedGenre: mapGenre(subjects),
+      source: 'Open Library'
+    };
+  } catch(e) { return null; }
+}
+
+// ── MAIN LOOKUP: NB → Open Library → cover-only ──
+async function fetchBookByISBN(isbn) {
+  // 1. Nasjonalbiblioteket (beste kilde for norske bøker)
+  setIsbnStatus(`Søker ISBN ${isbn} i Nasjonalbiblioteket…`, 'var(--gold)', true);
+  const nb = await fetchBookByISBN_NB(isbn);
+  if (nb?.title) { nb._sourcePriority = 1; return nb; }
+
+  // 2. Open Library
+  setIsbnStatus(`Prøver Open Library…`, 'var(--gold)', true);
+  const ol = await fetchBookByISBN_OL(isbn);
+  if (ol?.title) { ol._sourcePriority = 2; return ol; }
+
+  // 3. Kun omslag som siste utvei
+  return {
+    title:'', authors:'', year:null, desc:'', publisher:'', pages:null,
+    coverUrl: `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg`,
+    isbn, mappedGenre:'Annet', source:'Open Library Covers', _sourcePriority:3
+  };
+}
+
+// ── SHOW ISBN LOOKUP STATUS ──
+function setIsbnStatus(msg, color='var(--muted)', spin=false) {
+  const el = document.getElementById('isbnStatus');
+  if (!el) return;
+  el.innerHTML = spin
+    ? `<div class="spin" style="width:14px;height:14px;margin-right:6px;flex-shrink:0"></div>${msg}`
+    : msg;
+  el.style.color = color;
+  el.style.display = 'flex';
+  el.style.alignItems = 'center';
+}
+
+// ── ZIP READER: reads central directory for correct sizes ──
+function u16(b, o) { return b[o] | b[o+1]<<8; }
+function u32(b, o) { return (b[o] | b[o+1]<<8 | b[o+2]<<16 | b[o+3]<<24) >>> 0; }
+
+function parseCentralDirectory(bytes) {
+  // Scan for central directory signatures (PK\x01\x02)
+  const entries = {};
+  for (let i = 0; i < bytes.length - 46; i++) {
+    if (bytes[i]!==0x50||bytes[i+1]!==0x4B||bytes[i+2]!==0x01||bytes[i+3]!==0x02) continue;
+    const compression = u16(bytes, i+10);
+    const compSize    = u32(bytes, i+20);
+    const uncompSize  = u32(bytes, i+24);
+    const fnLen       = u16(bytes, i+28);
+    const extraLen    = u16(bytes, i+30);
+    const commentLen  = u16(bytes, i+32);
+    const localOffset = u32(bytes, i+42);
+    const fn = new TextDecoder().decode(bytes.slice(i+46, i+46+fnLen));
+    entries[fn] = { compression, compSize, uncompSize, localOffset };
+    i += 46 + fnLen + extraLen + commentLen - 1;
+  }
+  return entries;
+}
+
+async function readZipEntry(bytes, entry) {
+  // Skip local file header (sizes there may be 0 with data descriptor flag)
+  const lo = entry.localOffset;
+  const fnLen    = u16(bytes, lo+26);
+  const extraLen = u16(bytes, lo+28);
+  const dataStart = lo + 30 + fnLen + extraLen;
+  const compData  = bytes.slice(dataStart, dataStart + entry.compSize);
+
+  if (entry.compression === 0) return compData; // stored, no compression
+
+  // Deflate (compression=8) — use browser's DecompressionStream
+  const ds = new DecompressionStream('deflate-raw');
+  const w  = ds.writable.getWriter();
+  w.write(compData); w.close();
+  const chunks = [];
+  const r = ds.readable.getReader();
+  while (true) {
+    const { done, value } = await r.read();
+    if (done) break;
+    chunks.push(value);
+  }
+  const total = chunks.reduce((n, c) => n + c.length, 0);
+  const out = new Uint8Array(total);
+  let off = 0;
+  for (const ch of chunks) { out.set(ch, off); off += ch.length; }
+  return out;
+}
+
+function uint8ToBase64(bytes) {
+  let binary = '';
+  const chunk = 8192;
+  for (let i = 0; i < bytes.length; i += chunk)
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  return btoa(binary);
+}
+
+// ── EPUB PARSER ──
+async function parseEpub(file) {
+  const arrayBuf = await new Promise((res, rej) => {
+    const fr = new FileReader();
+    fr.onload  = e => res(e.target.result);
+    fr.onerror = () => rej(new Error('Kunne ikke lese fil'));
+    fr.readAsArrayBuffer(file);
+  });
+
+  const bytes = new Uint8Array(arrayBuf);
+  const dec   = new TextDecoder('utf-8');
+
+  // 1. Parse central directory (has correct compressed sizes)
+  const entries = parseCentralDirectory(bytes);
+  const allNames = Object.keys(entries);
+  console.log('Epub filer:', allNames.slice(0, 8).join(', '));
+
+  // 2. Read container.xml
+  const containerKey = allNames.find(n => n.toLowerCase().endsWith('container.xml'));
+  if (!containerKey) throw new Error('Mangler container.xml');
+  const containerXml = dec.decode(await readZipEntry(bytes, entries[containerKey]));
+
+  // 3. Find OPF path
+  const opfPath = containerXml.match(/full-path="([^"]+)"/i)?.[1];
+  if (!opfPath) throw new Error('Fant ikke OPF-sti');
+
+  const opfKey = allNames.find(n => n === opfPath || n.toLowerCase() === opfPath.toLowerCase());
+  if (!opfKey) throw new Error('Fant ikke OPF-fil: ' + opfPath);
+
+  const opfText = dec.decode(await readZipEntry(bytes, entries[opfKey]));
+  const opfDir  = opfPath.includes('/') ? opfPath.slice(0, opfPath.lastIndexOf('/') + 1) : '';
+  console.log('OPF lest OK, dir:', opfDir);
+
+  // 4. DC metadata
+  const dc = (tag) => {
+    const m = opfText.match(new RegExp('<dc:' + tag + '[^>]*>([^<]+)<\\/dc:' + tag + '>', 'i'));
+    return m ? m[1].trim() : '';
+  };
+  const title     = dc('title');
+  const author    = dc('creator');
+  const publisher = dc('publisher');
+  const desc      = dc('description');
+  const lang      = dc('language');
+  const dateStr   = dc('date');
+  const year      = dateStr ? (parseInt(dateStr.match(/[12][0-9]{3}/)?.[0]) || null) : null;
+
+  // 5. ISBN
+  const isbnMatch =
+    opfText.match(/opf:scheme="ISBN"[^>]*>([0-9]{10,13})<\/dc:identifier>/i) ||
+    opfText.match(/<dc:identifier[^>]*scheme="ISBN"[^>]*>([0-9]{10,13})<\/dc:identifier>/i) ||
+    opfText.match(/<dc:identifier[^>]*>([0-9]{13})<\/dc:identifier>/i);
+  const epubIsbn = isbnMatch?.[1] || null;
+
+  console.log('Metadata:', { title, author, publisher, year, epubIsbn });
+
+  // 6. Cover image
+  const hrefById = (id) => {
+    const r1 = opfText.match(new RegExp('<item[^>]+id="' + id + '"[^>]+href="([^"]+)"', 'i'));
+    if (r1) return r1[1];
+    const r2 = opfText.match(new RegExp('<item[^>]+href="([^"]+)"[^>]+id="' + id + '"', 'i'));
+    return r2 ? r2[1] : null;
+  };
+
+  let coverHref = null;
+  const metaCoverId = opfText.match(/<meta[^>]+name="cover"[^>]+content="([^"]+)"/i)?.[1]
+                   || opfText.match(/<meta[^>]+content="([^"]+)"[^>]+name="cover"/i)?.[1];
+  if (metaCoverId) coverHref = hrefById(metaCoverId);
+
+  if (!coverHref) {
+    // Scan manifest items for image with "cover" in id or href
+    for (const m of opfText.matchAll(/<item\s[^>]+>/gi)) {
+      const tag = m[0];
+      if (!/image\//i.test(tag)) continue;
+      const h  = tag.match(/href="([^"]+)"/i)?.[1] || '';
+      const id = tag.match(/\sid="([^"]+)"/i)?.[1] || '';
+      if (/cover/i.test(h) || /cover/i.test(id)) { coverHref = h; break; }
+    }
+  }
+  if (!coverHref) {
+    // First image in manifest
+    const m = opfText.match(/<item[^>]+media-type="image\/[^"]*"[^>]+href="([^"]+)"/i)
+           || opfText.match(/<item[^>]+href="([^"]+)"[^>]+media-type="image\/[^"]*"/i);
+    if (m) coverHref = m[1];
+  }
+
+  console.log('Cover href:', coverHref);
+
+  let coverDataUrl = null;
+  if (coverHref) {
+    const fullPath = opfDir + coverHref.replace(/^\//, '');
+    const imgKey   = allNames.find(n => n === fullPath || n.toLowerCase() === fullPath.toLowerCase());
+    if (imgKey) {
+      const imgBytes = await readZipEntry(bytes, entries[imgKey]);
+      const mime     = /\.png$/i.test(imgKey) ? 'image/png' : 'image/jpeg';
+      coverDataUrl   = 'data:' + mime + ';base64,' + uint8ToBase64(imgBytes);
+      console.log('Cover lastet, bytes:', imgBytes.length);
+    }
+  }
+
+  return { title, author, publisher, desc, lang, year, epubIsbn, coverDataUrl };
+}
+
+// ── FILE HANDLING ──
+
+function readFileAsDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload  = e => resolve(e.target.result);
+    reader.onerror = () => reject(new Error('Kunne ikke lese filen: ' + file.name));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function processFile(file) {
+  if (!file) return;
+
+  const allowed = ['.epub','.mobi','.pdf','.azw3','.azw'];
+  const ext = file.name.toLowerCase().slice(file.name.lastIndexOf('.'));
+  if (!allowed.includes(ext)) {
+    setIsbnStatus(`⚠️ Filtype «${ext}» støttes ikke. Bruk epub, mobi, pdf eller azw3.`, 'var(--red)');
+    showToast('⚠️ Ugyldig filtype'); return;
+  }
+
+  const mb = (file.size / 1024 / 1024).toFixed(1);
+  document.getElementById('fileLabel').textContent = `${file.name} (${mb} MB)`;
+  setIsbnStatus('Leser fil…', 'var(--muted)', true);
+
+  try {
+    const dataUrl = await readFileAsDataURL(file);
+    pendingFileData = { name: file.name, type: file.type || 'application/octet-stream', dataUrl, size: file.size };
+
+    // ── EPUB: parse metadata + cover directly from file ──
+    if (ext === '.epub') {
+      setIsbnStatus('Leser epub-metadata…', 'var(--gold)', true);
+      let epubMeta = null;
+      try {
+        epubMeta = await parseEpub(file);
+      } catch(e) {
+        console.warn('epub parse failed:', e);
+        setIsbnStatus('⚠️ Epub-lesing feilet: ' + e.message, 'var(--red)');
+      }
+
+      if (epubMeta?.title) {
+        // Fill fields from epub
+        document.getElementById('fTitle').value  = epubMeta.title;
+        document.getElementById('fAuthor').value = epubMeta.author || '';
+        if (epubMeta.year)      document.getElementById('fYear').value  = epubMeta.year;
+        if (epubMeta.publisher) {
+          pendingFileData.publisher = epubMeta.publisher;
+        }
+        if (epubMeta.desc)      pendingFileData.desc = epubMeta.desc;
+        if (epubMeta.epubIsbn)  pendingFileData.isbn = epubMeta.epubIsbn;
+
+        // Cover from epub
+        if (epubMeta.coverDataUrl) {
+          pendingCoverUrl = epubMeta.coverDataUrl; // use for display this session
+          document.getElementById('coverThumb').innerHTML =
+            '<img src="' + epubMeta.coverDataUrl + '" style="width:100%;height:100%;object-fit:cover;border-radius:5px;">';
+          document.getElementById('coverStatus').textContent = 'Omslag hentet fra epub-fil ✓';
+          document.getElementById('coverStatus').style.color = 'var(--green)';
+          // Also fetch a persistent remote cover URL in the background (epub base64 not stored)
+          if (epubMeta.title) {
+            fetchCover(epubMeta.title, epubMeta.author).then(alts => {
+              if (alts?.[0]?.url && pendingCoverUrl?.startsWith('data:')) {
+                // Keep showing epub cover in UI but store remote URL for persistence
+                pendingFileData = pendingFileData || {};
+                pendingFileData._remoteCoverUrl = alts[0].url;
+              }
+            }).catch(()=>{});
+          }
+        }
+
+        // Genre from description
+        if (epubMeta.desc) {
+          const g = mapGenre([epubMeta.desc, epubMeta.title]);
+          if (g !== 'Annet') document.getElementById('fGenre').value = g;
+        }
+
+        const isbn = epubMeta.epubIsbn || extractISBN(file.name);
+        const extras = [
+          epubMeta.publisher || null,
+          epubMeta.year ? String(epubMeta.year) : null,
+        ].filter(Boolean).join(' · ');
+
+        // Also try NB/OL for extra info if we have ISBN
+        if (isbn && !epubMeta.coverDataUrl) {
+          setIsbnStatus(`Henter omslag for ISBN ${isbn}…`, 'var(--gold)', true);
+          const info = await fetchBookByISBN(isbn);
+          if (info?.coverUrl) {
+            pendingCoverUrl = info.coverUrl;
+            document.getElementById('coverThumb').innerHTML =
+              `<img src="${info.coverUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:5px;" onerror="this.style.display='none'">`;
+            document.getElementById('coverStatus').textContent = 'Omslag hentet ✓';
+            document.getElementById('coverStatus').style.color = 'var(--green)';
+          }
+        }
+
+        // Fetch OL alternative covers
+        try {
+          const alts = await fetchCover(epubMeta.title, epubMeta.author);
+          if (alts?.length) {
+            pendingCoverAlts = alts;
+            if (!pendingCoverUrl) { pendingCoverUrl = alts[0].url; selectCoverAlt(0); }
+            else {
+              document.getElementById('coverAltBtns').innerHTML = alts.map((a,i) =>
+                `<button onclick="selectCoverAlt(${i})" style="width:28px;height:42px;border-radius:4px;overflow:hidden;border:2px solid ${i===0&&pendingCoverUrl===alts[0].url?'var(--gold)':'var(--border)'};padding:0;cursor:pointer;background:var(--surface2)" title="${a.title||''}">
+                  <img src="${a.url}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">
+                </button>`
+              ).join('');
+            }
+          }
+        } catch(_) {}
+
+        setIsbnStatus(
+          `<span style="color:var(--green)">✓ Hentet direkte fra epub${extras?' — '+extras:''}</span>` +
+          (epubMeta.epubIsbn ? ` <a href="https://www.nb.no/search?q=isbn%3A${epubMeta.epubIsbn}" target="_blank" style="color:var(--gold);text-decoration:underline;margin-left:6px;font-size:11.5px;">nb.no ↗</a>` : ''),
+          'var(--green)'
+        );
+        return;
+      }
+      // epub parse failed or no title — fall through to ISBN lookup
+    }
+
+    // ── Non-epub or epub parse failed: use ISBN from filename ──
+    const isbn = extractISBN(file.name);
+    if (!isbn) {
+      setIsbnStatus('⚠️ Ingen metadata funnet i filen, og ingen ISBN i filnavnet — fyll inn manuelt.', 'var(--muted)');
+      return;
+    }
+
+    setIsbnStatus(`ISBN ${isbn} – søker i Nasjonalbiblioteket…`, 'var(--gold)', true);
+    const info = await fetchBookByISBN(isbn);
+
+    if (!info?.title) {
+      setIsbnStatus(
+        `ISBN ${isbn} ikke funnet. <a href="https://www.e-bok.no/search?q=${isbn}" target="_blank" style="color:var(--gold);text-decoration:underline;margin-left:6px;">Søk på e-bok.no ↗</a>`,
+        'var(--muted)'
+      );
+      return;
+    }
+
+    if (info.title)       document.getElementById('fTitle').value  = info.title;
+    if (info.authors)     document.getElementById('fAuthor').value = info.authors;
+    if (info.year)        document.getElementById('fYear').value   = info.year;
+    if (info.mappedGenre) document.getElementById('fGenre').value  = info.mappedGenre;
+
+    if (info.coverUrl) {
+      pendingCoverUrl = info.coverUrl;
+      document.getElementById('coverThumb').innerHTML =
+        `<img src="${info.coverUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:5px;" onerror="this.style.display='none'">`;
+      document.getElementById('coverStatus').textContent = 'Omslag hentet ✓';
+      document.getElementById('coverStatus').style.color = 'var(--green)';
+    }
+
+    try {
+      const alts = await fetchCover(info.title, info.authors);
+      if (alts?.length) {
+        pendingCoverAlts = alts;
+        if (!pendingCoverUrl) { pendingCoverUrl = alts[0].url; selectCoverAlt(0); }
+        else {
+          document.getElementById('coverAltBtns').innerHTML = alts.map((a,i) =>
+            `<button onclick="selectCoverAlt(${i})" style="width:28px;height:42px;border-radius:4px;overflow:hidden;border:2px solid var(--border);padding:0;cursor:pointer;background:var(--surface2)">
+              <img src="${a.url}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">
+            </button>`
+          ).join('');
+        }
+      }
+    } catch(_) {}
+
+    pendingFileData.isbn      = isbn;
+    pendingFileData.pages     = info.pages;
+    pendingFileData.publisher = info.publisher;
+    pendingFileData.desc      = info.desc;
+
+    const extras = [info.pages ? `${info.pages} sider` : null, info.publisher||null].filter(Boolean).join(' · ');
+    const sourceLabel = info.source || '';
+    const nbLink = info.source === 'Nasjonalbiblioteket'
+      ? `<a href="https://www.nb.no/search?q=isbn%3A${isbn}" target="_blank" style="color:var(--gold);text-decoration:underline;margin-left:6px;font-size:11.5px;">nb.no ↗</a>` : '';
+    setIsbnStatus(
+      `<span style="color:var(--green)">✓ Hentet fra ${sourceLabel}${extras?' — '+extras:''}</span>${nbLink}`,
+      'var(--green)'
+    );
+
+  } catch(err) {
+    console.error('processFile error:', err);
+    setIsbnStatus(`❌ Feil: ${err.message}`, 'var(--red)');
+    showToast('❌ Kunne ikke lese filen');
+    pendingFileData = null;
+  }
+}
+
+function handleFile(input) {
+  const file = input.files?.[0];
+  if (file) processFile(file);
+}
+
+// Drag over styling
+document.addEventListener('DOMContentLoaded', () => {
+  const drop = document.getElementById('fileDrop');
+  if (drop) {
+    drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('drag'); });
+    drop.addEventListener('dragleave', () => drop.classList.remove('drag'));
+    drop.addEventListener('drop', e => {
+      e.preventDefault(); drop.classList.remove('drag');
+      const file = e.dataTransfer.files[0];
+      if (file) processFile(file);
+    });
+  }
+});
+
+// ── MODAL ──
+function openAddModal() {
+  editingId = null;
+  pendingCoverUrl = null;
+  pendingCoverAlts = [];
+  pendingFileData = null;
+  document.getElementById('modalTitle').textContent = 'Legg til bok';
+  document.getElementById('deleteBtn').style.display = 'none';
+  ['fTitle','fAuthor','fYear','fProgress','fRating','fSeries','fSeriesNum','fFinishedDate'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  toggleFinishedDate();
+  document.getElementById('fGenre').value = 'Roman';
+  document.getElementById('fStatus').value = 'unread';
+  document.getElementById('fileLabel').textContent = '';
+  document.getElementById('fileInput').value = '';
+  document.getElementById('coverStatus').textContent = 'Skriv inn tittel for å søke etter omslag…';
+  document.getElementById('coverStatus').style.color = 'var(--muted)';
+  document.getElementById('coverThumb').innerHTML = '<svg width="16" height="16" fill="none" stroke="var(--muted2)" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg>';
+  document.getElementById('coverAltBtns').innerHTML = '';
+  const isnS = document.getElementById('isbnStatus'); isnS.style.display='none'; isnS.innerHTML='';
+  document.getElementById('bookModal').classList.add('open');
+}
+
+function openEditModal(id) {
+  const b = books.find(x => x.id === id);
+  if (!b) return;
+  editingId = id;
+  pendingCoverUrl = b.coverUrl || null;
+  pendingCoverAlts = [];
+  pendingFileData = null;
+  document.getElementById('modalTitle').textContent = 'Rediger bok';
+  document.getElementById('deleteBtn').style.display = 'block';
+  document.getElementById('fTitle').value = b.title;
+  document.getElementById('fAuthor').value = b.author;
+  document.getElementById('fGenre').value = b.genre || 'Roman';
+  document.getElementById('fYear').value = b.year || '';
+  document.getElementById('fStatus').value = b.status;
+  document.getElementById('fProgress').value = b.progress || 0;
+  document.getElementById('fRating').value = b.rating || 0;
+  const sfEl = document.getElementById('fSeries'); if(sfEl) sfEl.value = b.series||'';
+  const snEl = document.getElementById('fSeriesNum'); if(snEl) snEl.value = b.seriesNum||'';
+  const fdEl = document.getElementById('fFinishedDate'); if(fdEl) fdEl.value = b.finishedDate||'';
+  toggleFinishedDate();
+  document.getElementById('fileLabel').textContent = b.fileName || '';
+  document.getElementById('fileInput').value = '';
+  if (b.coverUrl) {
+    document.getElementById('coverThumb').innerHTML = `<img src="${b.coverUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:5px;">`;
+    document.getElementById('coverStatus').textContent = 'Lagret omslag';
+    document.getElementById('coverStatus').style.color = 'var(--green)';
+  } else {
+    document.getElementById('coverThumb').innerHTML = '<svg width="16" height="16" fill="none" stroke="var(--muted2)" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg>';
+    document.getElementById('coverStatus').textContent = 'Ingen omslag – søk på nytt ved å redigere tittel.';
+    document.getElementById('coverStatus').style.color = 'var(--muted)';
+  }
+  document.getElementById('coverAltBtns').innerHTML = '';
+  document.getElementById('bookModal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('bookModal').classList.remove('open');
+  editingId = null;
+  pendingFileData = null;
+  pendingCoverUrl = null;
+}
+
+function toggleFinishedDate() {
+  const status = document.getElementById('fStatus')?.value;
+  const row    = document.getElementById('finishedDateRow');
+  if (!row) return;
+  row.style.display = status === 'done' ? '' : 'none';
+  if (status === 'done') {
+    const fd = document.getElementById('fFinishedDate');
+    if (fd && !fd.value) fd.value = new Date().toISOString().slice(0,10);
+  }
+}
+
+async function saveBook() {
+  const title = document.getElementById('fTitle').value.trim();
+  const author = document.getElementById('fAuthor').value.trim();
+  if (!title || !author) { showToast('⚠️ Tittel og forfatter er påkrevd.'); return; }
+
+  const data = {
+    title, author,
+    genre: document.getElementById('fGenre').value,
+    year: parseInt(document.getElementById('fYear').value) || null,
+    status: document.getElementById('fStatus').value,
+    progress: Math.min(100, Math.max(0, parseInt(document.getElementById('fProgress').value) || 0)),
+    rating: Math.min(5, Math.max(0, parseInt(document.getElementById('fRating').value) || 0)),
+    coverUrl: (pendingCoverUrl?.startsWith('data:')
+      ? (pendingFileData?._remoteCoverUrl || `https://covers.openlibrary.org/b/isbn/${(pendingFileData?.isbn||'')}-L.jpg` || null)
+      : pendingCoverUrl) || null,
+    added: Date.now(),
+    isbn: pendingFileData?.isbn || null,
+    pages: pendingFileData?.pages || null,
+    publisher: pendingFileData?.publisher || null,
+    description: pendingFileData?.desc || null,
+    series: document.getElementById('fSeries')?.value.trim() || null,
+    seriesNum: parseInt(document.getElementById('fSeriesNum')?.value)||null,
+    finishedDate: document.getElementById('fFinishedDate')?.value || null,
+  };
+
+  // Keep existing file data if not replacing
+  if (pendingFileData) {
+    data.fileName = pendingFileData.name;
+    data.fileType = pendingFileData.type;
+    data.fileData = pendingFileData.dataUrl;
+  }
+
+  if (editingId !== null) {
+    const idx = books.findIndex(b => b.id === editingId);
+    if (idx !== -1) {
+      const existing = books[idx];
+      books[idx] = {
+        ...existing,
+        ...data,
+        id: existing.id,
+        added: existing.added,
+        fileData: pendingFileData ? data.fileData : existing.fileData,
+        fileName: pendingFileData ? data.fileName : existing.fileName,
+        fileType: pendingFileData ? data.fileType : existing.fileType,
+      };
+    }
+  } else {
+    data.id = Date.now();
+    books.push(data);
+  }
+
+  try {
+    await saveBooks();
+    closeModal();
+    render();
+    showToast(editingId !== null ? '✓ Bok oppdatert' : '✓ Bok lagt til');
+  } catch(err) {
+    console.error('saveBook error:', err);
+    const msg = err?.message || String(err);
+    if (msg.toLowerCase().includes('quota') || msg.toLowerCase().includes('storage')) {
+      showToast('❌ Lagringsplass full – prøv å slette andre bøker med store filer');
+    } else {
+      showToast('❌ Kunne ikke lagre: ' + msg.slice(0, 60));
+    }
+  }
+}
+
+async function deleteBook() {
+  if (!editingId) return;
+  if (!confirm('Slett denne boken fra biblioteket?')) return;
+  books = books.filter(b => b.id !== editingId);
+  await saveBooks();
+  closeModal();
+  render();
+  showToast('🗑 Bok slettet');
+}
+
+// ── KINDLE ──
+function openKindleModal(id) {
+  kindleBookId = id;
+  const b = books.find(x => x.id === id);
+  if (!b) return;
+  document.getElementById('kmTitle').textContent = b.title;
+  document.getElementById('kmAuthor').textContent = b.author;
+
+  const kmCover = document.getElementById('kmCover');
+  kmCover.innerHTML = b.coverUrl
+    ? `<img src="${b.coverUrl}" style="width:52px;height:78px;object-fit:cover;border-radius:6px;">`
+    : `<div style="width:52px;height:78px;background:var(--surface3);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:22px;">📖</div>`;
+
+  const hasFile = !!b.fileData;
+
+  // Build device dropdown
+  const sel  = document.getElementById('kmDeviceSelect');
+  const wrap = document.getElementById('kmDeviceWrap');
+  sel.innerHTML = '';
+  if (kindleDevices.length) {
+    kindleDevices.forEach((d, i) => {
+      const o = document.createElement('option');
+      o.value = i;
+      o.textContent = d.name + ' — ' + d.email;
+      sel.appendChild(o);
+    });
+    wrap.style.display = 'block';
+  } else {
+    wrap.style.display = 'none';
+  }
+
+  let info = '';
+  if (!hasFile) {
+    info = '<div class="km-no-email">📂 Last opp epub-filen på nytt for å sende til Kindle. Filer lagres ikke mellom sesjoner pga. størrelsesgrenser.</div>';
+  } else if (!kindleDevices.length) {
+    info = '<div class="km-no-email">⚠️ Legg til en Kindle-enhet i sidemenyen først.</div>';
+  } else {
+    info = '<div class="km-info" style="font-size:12px;color:var(--muted);margin-bottom:12px;">Filen lastes ned og e-postklienten åpnes. Sørg for at Amazon-kontoen din tillater e-postadressen din som avsender.</div>';
+  }
+  document.getElementById('kmInfo').innerHTML = info;
+
+  updateKindleSteps();
+  document.getElementById('kindleModal').classList.add('open');
+}
+
+function closeKindleModal() {
+  document.getElementById('kindleModal').classList.remove('open');
+  kindleBookId = null;
+}
+
+function updateKindleSteps() {
+  const b       = books.find(x => x.id === kindleBookId);
+  const hasFile = !!b?.fileData;
+  const hasDev  = kindleDevices.length > 0;
+  const sel     = document.getElementById('kmDeviceSelect');
+  const device  = kindleDevices[parseInt(sel?.value)] || null;
+  const hasServer = !!getServerUrl();
+
+  document.getElementById('kmNoFile').style.display   = !hasFile ? 'block' : 'none';
+  document.getElementById('kmNoDevice').style.display = hasFile && !hasDev ? 'block' : 'none';
+  document.getElementById('kmSteps').style.display    = hasFile && hasDev ? 'block' : 'none';
+  document.getElementById('kmDeviceWrap').style.display = hasDev ? 'block' : 'none';
+
+  if (device) document.getElementById('kmTargetEmail').textContent = device.email;
+
+  const canAct   = hasFile && hasDev;
+  const directBtn = document.getElementById('kindleDirectBtn');
+  const directLbl = document.getElementById('kindleDirectLabel');
+  if (directBtn) {
+    directBtn.disabled     = !canAct;
+    directBtn.style.opacity = canAct ? '1' : '0.4';
+    if (directLbl) {
+      directLbl.textContent = hasServer
+        ? 'Send direkte til Kindle'
+        : 'Send direkte (mangler server-URL)';
+    }
+  }
+  ['kindleDownloadBtn','kindleMailBtn'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) { btn.disabled = !canAct; btn.style.opacity = canAct ? '1' : '0.5'; }
+  });
+}
+
+async function sendDirectToKindle() {
+  const b      = books.find(x => x.id === kindleBookId);
+  const sel    = document.getElementById('kmDeviceSelect');
+  const device = kindleDevices[parseInt(sel?.value)];
+  const server = getServerUrl();
+
+  if (!b?.fileData) { showToast('⚠️ Ingen fil lastet opp'); return; }
+  if (!device)       { showToast('⚠️ Velg en Kindle-enhet'); return; }
+  if (!server)       {
+    showToast('⚠️ Lim inn server-URL i sidemenyen først');
+    return;
+  }
+
+  const btn = document.getElementById('kindleDirectBtn');
+  const lbl = document.getElementById('kindleDirectLabel');
+  btn.disabled = true;
+  lbl.textContent = 'Sender…';
+
+  try {
+    // Convert base64 dataUrl back to a Blob
+    const dataUrl  = b.fileData;
+    const arr      = dataUrl.split(',');
+    const mime     = arr[0].match(/:(.*?);/)[1];
+    const bstr     = atob(arr[1]);
+    const u8       = new Uint8Array(bstr.length);
+    for (let i = 0; i < bstr.length; i++) u8[i] = bstr.charCodeAt(i);
+    const blob     = new Blob([u8], { type: mime });
+
+    const form = new FormData();
+    form.append('file',       blob, b.fileName || 'bok.epub');
+    form.append('toEmail',    device.email);
+    form.append('bookTitle',  b.title || '');
+    form.append('bookAuthor', b.author || '');
+
+    const res  = await fetch(server + '/send-to-kindle', { method: 'POST', body: form });
+    const json = await res.json();
+
+    if (json.ok) {
+      showToast('✅ Sendt til ' + device.name + '!');
+      closeKindleModal();
+    } else {
+      showToast('❌ ' + (json.error || 'Sending feilet'));
+      lbl.textContent = 'Send direkte til Kindle';
+      btn.disabled = false;
+    }
+  } catch(err) {
+    showToast('❌ Kunne ikke nå serveren — sjekk URL');
+    lbl.textContent = 'Send direkte til Kindle';
+    btn.disabled = false;
+  }
+}
+
+function downloadForKindle() {
+  const b = books.find(x => x.id === kindleBookId);
+  if (!b?.fileData) return;
+  const a = document.createElement('a');
+  a.href = b.fileData; a.download = b.fileName;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  showToast('📥 ' + b.fileName + ' lastet ned');
+}
+
+function openMailForKindle() {
+  const b = books.find(x => x.id === kindleBookId);
+  if (!b) return;
+  const sel    = document.getElementById('kmDeviceSelect');
+  const device = kindleDevices[parseInt(sel.value)];
+  if (!device) return;
+  const subject = encodeURIComponent('Convert: ' + b.title);
+  const body    = encodeURIComponent('Vedlagt: ' + (b.fileName || b.title + '.epub'));
+  window.open('mailto:' + device.email + '?subject=' + subject + '&body=' + body);
+  showToast('📬 Mail-appen åpnet — husk å legge ved filen!');
+}
+
+// ── RENDER ──
+function getFiltered() {
+  let f = [...books];
+  const q = document.getElementById('searchInput')?.value.toLowerCase() || '';
+  if (view === 'reading') f = f.filter(b => b.status === 'reading');
+  else if (view === 'done') f = f.filter(b => b.status === 'done');
+  else if (view === 'wishlist') f = f.filter(b => b.status === 'wishlist');
+  else if (view === 'unread') f = f.filter(b => b.status === 'unread');
+  if (genreFilter) f = f.filter(b => b.genre === genreFilter);
+  if (q) f = f.filter(b =>
+    b.title.toLowerCase().includes(q) ||
+    b.author.toLowerCase().includes(q) ||
+    (b.genre||'').toLowerCase().includes(q)
+  );
+  const sel = document.querySelector('.sort-sel')?.value || 'title';
+  if (sel === 'title')  f.sort((a,b) => a.title.localeCompare(b.title,'no'));
+  else if (sel === 'author')   f.sort((a,b) => (a.author||'').localeCompare(b.author||'','no'));
+  else if (sel === 'year')     f.sort((a,b) => (b.year||0)-(a.year||0));
+  else if (sel === 'rating')   f.sort((a,b) => (b.rating||0)-(a.rating||0));
+  else if (sel === 'added')    f.sort((a,b) => (b.added||0)-(a.added||0));
+  else if (sel === 'finished') f.sort((a,b) => (b.finishedDate||'').localeCompare(a.finishedDate||''));
+  else if (sel === 'series')   f.sort((a,b) => {
+    const sa = a.series||''; const sb = b.series||'';
+    if (sa && !sb) return -1; if (!sa && sb) return 1;
+    const sc = sa.localeCompare(sb,'no');
+    return sc !== 0 ? sc : ((a.seriesNum||0)-(b.seriesNum||0));
+  });
+  return f;
+}
+
+function genreColor(genre) {
+  const m = {
+    'Roman':['#2d3a5a','#1a2235'],'Thriller':['#3a1a1a','#200d0d'],
+    'Sci-Fi':['#1a2a3a','#0d1520'],'Sakprosa':['#2a3a1a','#172010'],
+    'Fantasy':['#2a1a3a','#170d20'],'Biografi':['#3a2a1a','#1f1510'],
+    'Krim':['#1a2a2a','#0d1515'],'Humor':['#3a3a1a','#1f1f0d'],
+    'Annet':['#2a2a2a','#141414']
+  };
+  return m[genre] || ['#252530','#141418'];
+}
+
+function renderStars(r) {
+  if (!r) return '';
+  return `<div class="stars">${Array.from({length:5},(_,i)=>`<span class="star ${i<r?'s-on':'s-off'}">★</span>`).join('')}</div>`;
+}
+
+function coverHtml(b, w, h) {
+  if (b.coverUrl) {
+    return `<img src="${b.coverUrl}" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.style.display='none';this.nextSibling.style.display='flex'">
+    <div class="cover-fallback" style="display:none;${genreBg(b)}"><div class="cover-fallback-t">${b.title}</div><div class="cover-fallback-a">${b.author}</div></div>`;
+  }
+  return `<div class="cover-fallback" style="${genreBg(b)}"><div class="cover-fallback-t">${b.title}</div><div class="cover-fallback-a">${b.author}</div></div>`;
+}
+
+function genreBg(b) {
+  const [c1,c2] = genreColor(b.genre);
+  return `background:linear-gradient(145deg,${c1},${c2});width:100%;height:100%;`;
+}
+
+function render() {
+  const filtered = getFiltered();
+
+  // Counts
+  document.getElementById('cnt-all').textContent = books.length;
+  document.getElementById('cnt-reading').textContent = books.filter(b=>b.status==='reading').length;
+  document.getElementById('cnt-done').textContent = books.filter(b=>b.status==='done').length;
+  document.getElementById('cnt-wishlist').textContent = books.filter(b=>b.status==='wishlist').length;
+  document.getElementById('cnt-unread').textContent = books.filter(b=>b.status==='unread').length;
+
+  // Stats
+  const reading = books.filter(b=>b.status==='reading').length;
+  const done = books.filter(b=>b.status==='done').length;
+  const wish = books.filter(b=>b.status==='wishlist').length;
+  const withFile = books.filter(b=>b.fileData).length;
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat"><div class="stat-v">${books.length}</div><div class="stat-l">Bøker totalt</div></div>
+    <div class="stat"><div class="stat-v">${reading}</div><div class="stat-l">Leser nå</div></div>
+    <div class="stat"><div class="stat-v">${done}</div><div class="stat-l">Fullført</div></div>
+    <div class="stat"><div class="stat-v">${withFile}</div><div class="stat-l">Filer lastet opp</div></div>
+  `;
+
+  // Hero
+  const hero = document.getElementById('heroWrap');
+  const readingBooks = books.filter(b=>b.status==='reading');
+  if (readingBooks.length && view==='all' && !genreFilter && !document.getElementById('searchInput').value) {
+    const b = readingBooks[0];
+    hero.innerHTML = `
+      <div class="sec-hdr"><span class="sec-title">Fortsett å lese</span></div>
+      <div class="hero-card" onclick="openEditModal(${b.id})">
+        <div class="hero-cover" style="${genreBg(b)}">${b.coverUrl?`<img src="${b.coverUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:7px;position:absolute;inset:0;" onerror="this.style.display='none'">`:''}</div>
+        <div class="hero-info">
+          <div class="hero-tag">📖 Leser nå</div>
+          <div class="hero-t">${b.title}</div>
+          <div class="hero-a">${b.author}${b.genre?' · '+b.genre:''}${b.year?' · '+b.year:''}</div>
+          <div class="prog-label"><span>Fremgang</span><span>${b.progress||0}%</span></div>
+          <div class="prog-bar"><div class="prog-fill" style="width:${b.progress||0}%"></div></div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <button class="btn-read" onclick="event.stopPropagation()">▶ Fortsett</button>
+            ${b.fileData?`<button style="padding:9px 16px;background:transparent;border:1px solid var(--border2);color:var(--text);font-family:'Outfit',sans-serif;font-size:13px;border-radius:var(--r2);cursor:pointer;" onclick="event.stopPropagation();openKindleModal(${b.id})">📤 Send til Kindle</button>`:''}
+          </div>
+        </div>
+      </div>
+    `;
+  } else { hero.innerHTML = ''; }
+
+  // Pills
+  const genres = [...new Set(books.map(b=>b.genre).filter(Boolean))].sort();
+  document.getElementById('pillsWrap').innerHTML =
+    `<button class="pill ${!genreFilter?'active':''}" onclick="setGenre(null)">Alle</button>` +
+    genres.map(g=>`<button class="pill ${genreFilter===g?'active':''}" onclick="setGenre('${g}')">${g}</button>`).join('');
+
+  // Titles
+  const viewNames = {all:'Alle bøker',reading:'Leser nå',done:'Lest',wishlist:'Ønskeliste',unread:'Ikke lest'};
+  document.getElementById('secTitle').textContent = genreFilter || viewNames[view] || 'Alle bøker';
+  document.getElementById('secCnt').textContent = `${filtered.length} bøker`;
+  document.getElementById('topbarTitle').textContent = genreFilter || viewNames[view] || 'Alle bøker';
+
+  const grid = document.getElementById('booksGrid');
+  grid.className = viewMode==='list' ? 'grid lv' : 'grid';
+
+  if (!filtered.length) {
+    grid.innerHTML = `<div class="empty"><h3>Ingen bøker funnet</h3><p>Prøv et annet søk eller legg til en ny bok.</p><button class="btn-save" onclick="openAddModal()">Legg til bok</button></div>`;
+    return;
+  }
+
+  if (viewMode === 'list') {
+    grid.innerHTML = filtered.map((b,i) => `
+      <div class="bk lv-item" style="animation-delay:${i*0.03}s">
+        <div class="bk-cover-wrap" onclick="openEditModal(${b.id})">${coverHtml(b)}</div>
+        <div class="lv-info" onclick="openEditModal(${b.id})">
+          <div class="lv-t">${b.title}</div>
+          <div class="lv-a">${b.author}</div>
+          ${b.series?`<div class="serie-badge" style="margin-top:3px;">📚 ${b.series}${b.seriesNum?' #'+b.seriesNum:''}</div>`:''}
+          ${renderStars(b.rating)}
+        </div>
+        <div class="lv-meta">
+          ${b.genre?`<span class="lv-tag">${b.genre}</span>`:''}
+          ${b.year?`<span style="font-size:12px;color:var(--muted)">${b.year}</span>`:''}
+          ${b.status==='reading'?`<span class="lv-prog">${b.progress||0}%</span>`:''}
+          <div class="lv-btns">
+            <button class="lv-ic-btn" onclick="openEditModal(${b.id})">✏️ Rediger</button>
+            ${b.fileData?`<button class="lv-ic-btn" onclick="openKindleModal(${b.id})">📤 Kindle</button>`:''}
+          </div>
+        </div>
+      </div>
+    `).join('');
+  } else {
+    const bmap = {reading:'b-reading',done:'b-done',wishlist:'b-wish',unread:''};
+    const blbl = {reading:'Leser nå',done:'Lest',wishlist:'Ønskeliste',unread:''};
+    grid.innerHTML = filtered.map((b,i) => `
+      <div class="bk" style="animation-delay:${i*0.04}s" onclick="openEditModal(${b.id})">
+        <div class="bk-cover-wrap">
+          ${coverHtml(b)}
+          ${blbl[b.status]?`<span class="bk-badge ${bmap[b.status]}">${blbl[b.status]}</span>`:''}
+          <div class="bk-overlay">
+            <button class="ov-btn ov-kindle" onclick="event.stopPropagation();openKindleModal(${b.id})" ${!b.fileData?'style="opacity:0.5;cursor:default"':''}>📤 Send til Kindle</button>
+            <button class="ov-btn ov-edit" onclick="event.stopPropagation();openEditModal(${b.id})">✏️ Rediger</button>
+          </div>
+          ${b.status==='reading'?`<div class="prog-mini"><div class="prog-mini-fill" style="width:${b.progress||0}%"></div></div>`:''}
+        </div>
+        <div class="bk-t">${b.title}</div>
+        <div class="bk-a">${b.author}</div>
+        ${b.series?`<div class="serie-badge">📚 ${b.series}${b.seriesNum?' #'+b.seriesNum:''}</div>`:''}
+        ${renderStars(b.rating)}
+      </div>
+    `).join('');
+  }
+}
+
+// ── SIDEBAR TOGGLE ──
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('open');
+}
+function setViewMobile(el, v) {
+  document.querySelectorAll('.mobile-nav-btn[data-view]').forEach(b => b.classList.remove('active'));
+  if (el) el.classList.add('active');
+  const sideNav = document.querySelector('.nav-item[data-view="'+v+'"]');
+  if (sideNav) setView(sideNav, v);
+  else { view = v; genreFilter = null; render(); }
+  closeSidebar();
+}
+
+function setView(el, v) {
+  view = v;
+  genreFilter = null;
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  if (el) el.classList.add('active');
+  if (v === 'stats') {
+    updateCounts();
+    renderStatsView();
+  } else if (v === 'recommendations') {
+    updateCounts();
+    renderRecommendationsView();
+  } else {
+    render();
+  }
+  closeSidebar();
+}
+
+function updateCounts() {
+  document.getElementById('cnt-all').textContent = books.length;
+  document.getElementById('cnt-reading').textContent = books.filter(b=>b.status==='reading').length;
+  document.getElementById('cnt-done').textContent = books.filter(b=>b.status==='done').length;
+  document.getElementById('cnt-wishlist').textContent = books.filter(b=>b.status==='wishlist').length;
+  document.getElementById('cnt-unread').textContent = books.filter(b=>b.status==='unread').length;
+}
+
+function setGenre(g) {
+  genreFilter = g;
+  render();
+}
+
+function setViewMode(m) {
+  viewMode = m;
+  document.getElementById('vbtnGrid').classList.toggle('active', m==='grid');
+  document.getElementById('vbtnList').classList.toggle('active', m==='list');
+  render();
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// Close modals on backdrop click
+document.getElementById('bookModal').addEventListener('click', e => { if(e.target===document.getElementById('bookModal')) closeModal(); });
+document.getElementById('kindleModal').addEventListener('click', e => { if(e.target===document.getElementById('kindleModal')) closeKindleModal(); });
+document.getElementById('kindleDeviceModal').addEventListener('click', e => { if(e.target===document.getElementById('kindleDeviceModal')) closeKindleDeviceModal(); });
+document.getElementById('batchModal').addEventListener('click', e => { if(e.target===document.getElementById('batchModal')) closeBatchModal(); });
+
+// ── BATCH UPLOAD ──
+let batchItems = []; // [{file, id, meta, status, error}]
+let batchProcessing = false;
+
+function openBatchModal() {
+  batchItems = [];
+  renderBatchQueue();
+  document.getElementById('batchModal').classList.add('open');
+  setupBatchDrop();
+}
+
+function closeBatchModal() {
+  if (batchProcessing) return; // prevent close while processing
+  document.getElementById('batchModal').classList.remove('open');
+  batchItems = [];
+}
+
+function setupBatchDrop() {
+  const drop  = document.getElementById('batchDrop');
+  const input = document.getElementById('batchInput');
+  if (!drop || drop._batchSetup) return;
+  drop._batchSetup = true;
+
+  drop.addEventListener('dragover',  e => { e.preventDefault(); drop.classList.add('drag'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('drag'));
+  drop.addEventListener('drop', e => {
+    e.preventDefault(); drop.classList.remove('drag');
+    addBatchFiles(Array.from(e.dataTransfer.files));
+  });
+  input.addEventListener('change', () => {
+    addBatchFiles(Array.from(input.files));
+    input.value = '';
+  });
+}
+
+function addBatchFiles(files) {
+  const allowed = ['.epub','.mobi','.pdf','.azw3','.azw'];
+  for (const file of files) {
+    const ext = file.name.toLowerCase().slice(file.name.lastIndexOf('.'));
+    if (!allowed.includes(ext)) continue;
+    // Skip duplicates
+    if (batchItems.some(i => i.file.name === file.name && i.file.size === file.size)) continue;
+    batchItems.push({ file, id: Date.now() + Math.random(), meta: null, status: 'pending', error: null });
+  }
+  renderBatchQueue();
+  processBatchMetadata();
+}
+
+function removeBatchItem(id) {
+  batchItems = batchItems.filter(i => i.id !== id);
+  renderBatchQueue();
+}
+
+function renderBatchQueue() {
+  const el  = document.getElementById('batchQueue');
+  const btn = document.getElementById('batchSaveBtn');
+  const sum = document.getElementById('batchSummary');
+  if (!el) return;
+
+  const ready = batchItems.filter(i => i.status === 'ready').length;
+  const total = batchItems.length;
+
+  if (!total) {
+    el.innerHTML = '';
+    sum.textContent = '';
+    if (btn) btn.disabled = true;
+    return;
+  }
+
+  sum.textContent = ready + ' av ' + total + ' klar' + (ready !== 1 ? 'e' : '');
+  if (btn) btn.disabled = ready === 0;
+
+  el.innerHTML = batchItems.map(item => {
+    const statusClass = { ready:'ok', error:'err', pending:'pending', loading:'pending' }[item.status] || '';
+    const statusText  = {
+      loading: '⏳ Leser metadata…',
+      pending: '⏳ Venter…',
+      ready:   '✓ Klar til lagring',
+      error:   '⚠️ ' + (item.error || 'Ukjent feil'),
+    }[item.status] || '';
+
+    const m    = item.meta;
+    const title  = m?.title  || item.file.name.replace(/\.[^.]+$/, '');
+    const author = m?.author || '';
+    const year   = m?.year   ? ' · ' + m.year : '';
+    const pub    = m?.publisher ? ' · ' + m.publisher : '';
+
+    const coverHtml = m?.coverDataUrl
+      ? '<img src="' + m.coverDataUrl + '" style="width:100%;height:100%;object-fit:cover;">'
+      : '📖';
+
+    return '<div class="batch-item ' + item.status + '" id="bi-' + item.id + '">' +
+      '<div class="batch-cover">' + coverHtml + '</div>' +
+      '<div class="batch-info">' +
+        '<div class="batch-title">' + escHtml(title) + '</div>' +
+        '<div class="batch-sub">' + escHtml(author + year + pub) + '</div>' +
+        '<div class="batch-status ' + statusClass + '">' + statusText + '</div>' +
+      '</div>' +
+      '<div class="batch-actions">' +
+        (item.status !== 'loading'
+          ? '<button class="batch-remove" onclick="removeBatchItem(' + item.id + ')" title="Fjern">✕</button>'
+          : '') +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function processBatchMetadata() {
+  // Process pending items one by one (avoid overwhelming memory)
+  for (const item of batchItems) {
+    if (item.status !== 'pending') continue;
+    item.status = 'loading';
+    renderBatchQueue();
+
+    try {
+      const ext = item.file.name.toLowerCase().slice(item.file.name.lastIndexOf('.'));
+      let meta = null;
+
+      if (ext === '.epub') {
+        meta = await parseEpub(item.file);
+      }
+
+      // Fallback: ISBN from filename
+      if (!meta?.title) {
+        const isbn = extractISBN(item.file.name);
+        if (isbn) {
+          const info = await fetchBookByISBN(isbn);
+          if (info?.title) {
+            meta = {
+              title:        info.title,
+              author:       info.authors,
+              year:         info.year,
+              publisher:    info.publisher,
+              coverDataUrl: null,
+              coverUrl:     info.coverUrl,
+              epubIsbn:     isbn,
+              desc:         info.desc,
+              mappedGenre:  info.mappedGenre,
+            };
+          }
+        }
+      }
+
+      if (meta?.title) {
+        item.meta   = meta;
+        item.status = 'ready';
+      } else {
+        // Use filename as title if nothing found
+        item.meta   = { title: item.file.name.replace(/\.[^.]+$/, ''), author: '', year: null };
+        item.status = 'ready';
+        item.error  = 'Ingen metadata funnet — fylles inn manuelt';
+      }
+    } catch(e) {
+      item.status = 'ready'; // still saveable
+      item.meta   = { title: item.file.name.replace(/\.[^.]+$/, ''), author: '' };
+      item.error  = e.message;
+    }
+    renderBatchQueue();
+  }
+}
+
+async function saveBatchBooks() {
+  const toSave = batchItems.filter(i => i.status === 'ready');
+  if (!toSave.length) return;
+
+  batchProcessing = true;
+  const btn = document.getElementById('batchSaveBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Lagrer…'; }
+
+  for (const item of toSave) {
+    try {
+      // Read file as dataUrl
+      const dataUrl = await new Promise((res, rej) => {
+        const fr = new FileReader();
+        fr.onload  = e => res(e.target.result);
+        fr.onerror = () => rej(new Error('Lesefeil'));
+        fr.readAsDataURL(item.file);
+      });
+
+      const m = item.meta || {};
+      // Prefer remote URL for persistence; base64 covers can't be stored
+      const coverUrl = (m.coverDataUrl && !m.coverDataUrl.startsWith('data:'))
+        ? m.coverDataUrl
+        : (m.coverUrl || (m.epubIsbn
+            ? 'https://covers.openlibrary.org/b/isbn/' + m.epubIsbn + '-L.jpg'
+            : null));
+
+      const book = {
+        id:          Date.now() + Math.random(),
+        title:       m.title || item.file.name.replace(/\.[^.]+$/, ''),
+        author:      m.author || '',
+        genre:       m.mappedGenre || 'Annet',
+        year:        m.year || null,
+        status:      'unread',
+        progress:    0,
+        rating:      0,
+        coverUrl,
+        isbn:        m.epubIsbn || extractISBN(item.file.name) || null,
+        publisher:   m.publisher || null,
+        description: m.desc || null,
+        fileName:    item.file.name,
+        fileType:    item.file.type || 'application/octet-stream',
+        fileData:    dataUrl,
+        added:       Date.now(),
+      };
+
+      books.push(book);
+    } catch(e) {
+      console.error('Failed to save', item.file.name, e);
+    }
+  }
+
+  try { await saveBooks(); } catch(e) { showToast('⚠️ Lagringsfeil: ' + e.message); }
+
+  batchProcessing = false;
+  closeBatchModal();
+  render();
+  showToast('✓ ' + toSave.length + ' bok' + (toSave.length !== 1 ? 'er' : '') + ' lagt til!');
+}
+
+// ── READING TIMELINE ──
+function renderReadingTimeline() {
+  const finished = books
+    .filter(b => b.status === 'done' && b.finishedDate)
+    .sort((a,b) => a.finishedDate.localeCompare(b.finishedDate));
+
+  if (finished.length < 2) return '';
+
+  // Group by year-month
+  const byMonth = {};
+  finished.forEach(b => {
+    const ym = b.finishedDate.slice(0,7); // YYYY-MM
+    if (!byMonth[ym]) byMonth[ym] = [];
+    byMonth[ym].push(b);
+  });
+
+  const months = Object.keys(byMonth).sort();
+  const maxN   = Math.max(...months.map(m => byMonth[m].length));
+
+  const monthNames = ['Jan','Feb','Mar','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Des'];
+  const rows = months.map(ym => {
+    const [y,m] = ym.split('-');
+    const label = monthNames[parseInt(m)-1] + ' ' + y;
+    const books  = byMonth[ym];
+    const pct    = Math.round(books.length / maxN * 100);
+    const titles = books.map(b => b.title).join(', ');
+    return '<div class="bar-row" title="' + titles + '">' +
+      '<div class="bar-label" style="width:65px;font-size:11px;">' + label + '</div>' +
+      '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%"></div></div>' +
+      '<div class="bar-val">' + books.length + '</div>' +
+    '</div>';
+  });
+
+  return '<div class="chart-section">' +
+    '<div class="chart-title">Leselogg — bøker per måned</div>' +
+    rows.join('') +
+  '</div>';
+}
+
+// ── STATISTICS VIEW ──
+function renderStatsView() {
+  const done    = books.filter(b => b.status === 'done');
+  const reading = books.filter(b => b.status === 'reading');
+  const rated   = books.filter(b => b.rating > 0);
+  const avgRating = rated.length ? (rated.reduce((s,b)=>s+b.rating,0)/rated.length).toFixed(1) : '—';
+
+  // Genre breakdown
+  const genreCounts = {};
+  books.forEach(b => { if(b.genre) genreCounts[b.genre] = (genreCounts[b.genre]||0)+1; });
+  const genres = Object.entries(genreCounts).sort((a,b)=>b[1]-a[1]);
+  const maxG = genres[0]?.[1] || 1;
+
+  // Author breakdown
+  const authorCounts = {};
+  books.forEach(b => { if(b.author) authorCounts[b.author] = (authorCounts[b.author]||0)+1; });
+  const topAuthors = Object.entries(authorCounts).sort((a,b)=>b[1]-a[1]).slice(0,6);
+
+  // Year breakdown
+  const booksWithYear = books.filter(b=>b.year).sort((a,b)=>a.year-b.year);
+  const decadeCounts = {};
+  booksWithYear.forEach(b => {
+    const d = Math.floor(b.year/10)*10;
+    decadeCounts[d] = (decadeCounts[d]||0)+1;
+  });
+  const decades = Object.entries(decadeCounts).sort((a,b)=>a[0]-b[0]);
+  const maxD = decades[0] ? Math.max(...decades.map(d=>d[1])) : 1;
+
+  const grid = document.getElementById('booksGrid');
+  const sec  = document.getElementById('secTitle');
+  const cnt  = document.getElementById('secCnt');
+  sec.textContent = 'Statistikk';
+  cnt.textContent = '';
+  document.getElementById('pillsWrap').innerHTML = '';
+  document.getElementById('heroWrap').innerHTML  = '';
+
+  grid.className = '';
+  grid.style.display = 'block';
+  grid.innerHTML = `
+    <div class="stats-big-grid">
+      <div class="stat-big"><div class="sv">${books.length}</div><div class="sl">Bøker totalt</div></div>
+      <div class="stat-big"><div class="sv">${done.length}</div><div class="sl">Lest</div></div>
+      <div class="stat-big"><div class="sv">${reading.length}</div><div class="sl">Leser nå</div></div>
+      <div class="stat-big"><div class="sv">${avgRating}</div><div class="sl">Snittkarakter</div></div>
+      <div class="stat-big"><div class="sv">${Object.keys(genreCounts).length}</div><div class="sl">Sjangre</div></div>
+      <div class="stat-big"><div class="sv">${Object.keys(authorCounts).length}</div><div class="sl">Forfattere</div></div>
+    </div>
+
+    ${genres.length ? `
+    <div class="chart-section">
+      <div class="chart-title">Fordeling per sjanger</div>
+      ${genres.map(([g,n]) => `
+        <div class="bar-row">
+          <div class="bar-label">${g}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${Math.round(n/maxG*100)}%"></div></div>
+          <div class="bar-val">${n}</div>
+        </div>`).join('')}
+    </div>` : ''}
+
+    ${topAuthors.length > 1 ? `
+    <div class="chart-section">
+      <div class="chart-title">Mest leste forfattere</div>
+      ${topAuthors.map(([a,n]) => `
+        <div class="bar-row">
+          <div class="bar-label">${a.split(',')[0].split(' ').pop()}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${Math.round(n/topAuthors[0][1]*100)}%"></div></div>
+          <div class="bar-val">${n}</div>
+        </div>`).join('')}
+    </div>` : ''}
+
+    ${decades.length ? `
+    <div class="chart-section">
+      <div class="chart-title">Bøker per tiår</div>
+      ${decades.map(([d,n]) => `
+        <div class="bar-row">
+          <div class="bar-label">${d}-tallet</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${Math.round(n/maxD*100)}%"></div></div>
+          <div class="bar-val">${n}</div>
+        </div>`).join('')}
+    </div>` : ''}
+
+    ${renderReadingTimeline()}
+  `;
+  grid.style.display = 'block';
+}
+
+// ── EXPORT ──
+function exportLibrary() {
+  const rows = [['Tittel','Forfatter','Sjanger','År','Status','Fremgang','Karakter','Forlag','ISBN']];
+  books.forEach(b => rows.push([
+    b.title, b.author, b.genre||'', b.year||'',
+    {reading:'Leser nå',done:'Lest',wishlist:'Ønskeliste',unread:'Ikke lest'}[b.status]||b.status,
+    b.progress||0, b.rating||0, b.publisher||'', b.isbn||''
+  ]));
+  const csv = rows.map(r => r.map(v => '"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,﻿' + encodeURIComponent(csv);
+  a.download = 'bibliothek.csv';
+  a.click();
+  showToast('📊 Bibliotek eksportert');
+}
+
+// ── AI RECOMMENDATIONS ──
+let recMessages = [];
+let recTyping   = false;
+
+// ── LOCAL FALLBACK RECOMMENDATIONS ──
+function nl(s) { return s; } // identity, just for clarity
+
+function generateLocalReply(question) {
+  const q = (question || '').toLowerCase();
+  const done    = books.filter(b => b.status === 'done');
+  const reading = books.filter(b => b.status === 'reading');
+  const unread  = books.filter(b => b.status === 'unread');
+  const wish    = books.filter(b => b.status === 'wishlist');
+  const rated5  = books.filter(b => b.rating === 5);
+  const rated4p = books.filter(b => b.rating >= 4);
+
+  if (books.length === 0)
+    return 'Biblioteket ditt er tomt! Last opp noen epub-filer for \xe5 komme i gang. \ud83d\udcda';
+
+  // Series next-book
+  const seriesMap = {};
+  books.forEach(b => {
+    if (b.series && b.seriesNum) {
+      if (!seriesMap[b.series]) seriesMap[b.series] = [];
+      seriesMap[b.series].push(b);
+    }
+  });
+
+  for (const [series, sb] of Object.entries(seriesMap)) {
+    if (q.includes(series.toLowerCase()) || (q.includes('serie') && Object.keys(seriesMap).length === 1)) {
+      const sorted   = sb.sort((a,b) => (a.seriesNum||0)-(b.seriesNum||0));
+      const lastRead = sorted.filter(b => b.status === 'done').pop();
+      const nextNum  = (lastRead?.seriesNum || 0) + 1;
+      const nextOwned = sb.find(b => b.seriesNum === nextNum);
+      const lines = ['\ud83d\udcda **' + series + '-serien:**', ''];
+      sorted.forEach(b => {
+        const icon = b.status==='done' ? '\u2705' : b.status==='reading' ? '\ud83d\udcd6' : '\u2b1c';
+        lines.push(icon + ' Del ' + b.seriesNum + ': ' + b.title);
+      });
+      lines.push('');
+      if (nextOwned)
+        lines.push('\ud83d\udc49 Neste: **' + nextOwned.title + '** \u2014 du eier den allerede! \ud83d\udcda');
+      else if (lastRead)
+        lines.push('\ud83d\udc49 Del ' + nextNum + ' mangler i biblioteket. \ud83d\uded2 Søk: https://www.bokus.com/cgi-bin/product_search.cgi?search_word=' + encodeURIComponent(series));
+      return lines.join('\n');
+    }
+  }
+
+  // What I already own
+  if (q.includes('allerede') || q.includes('eier') || q.includes('har jeg')) {
+    const lines = [];
+    if (reading.length > 0) {
+      lines.push('**Holder p\xe5 med:**');
+      reading.forEach(b => lines.push('- ' + b.title + ' av ' + b.author + ' (' + (b.progress||0) + '%)'));
+      lines.push('');
+    }
+    if (unread.length > 0) {
+      lines.push('**Ikke startet:**');
+      unread.slice(0,6).forEach(b => lines.push('- ' + b.title + ' av ' + b.author));
+      if (unread.length > 6) lines.push('...og ' + (unread.length-6) + ' til');
+    }
+    if (lines.length === 0) return 'Du har lest alle bøkene dine! \ud83c\udf89';
+    return lines.join('\n');
+  }
+
+  // Wishlist
+  if (q.includes('\xf8nskeliste') || q.includes('kj\xf8pe')) {
+    if (!wish.length) return '\xd8nskelisten er tom. Sett status «\xd8nskeliste» p\xe5 bøker du vil lese!';
+    return '\ud83d\uded2 **\xd8nskelisten:**\n' + wish.map(b => '- ' + b.title + ' av ' + b.author).join('\n');
+  }
+
+  // Generic / reading now
+  const nextUp = unread[0] || reading[0];
+  const lines = ['Hei! Du har ' + books.length + ' bøker i biblioteket.'];
+  if (reading.length > 0) lines.push('Du leser n\xe5: **' + reading[0].title + '** (' + (reading[0].progress||0) + '%)');
+  if (nextUp && nextUp.status !== 'reading') lines.push('Neste: **' + nextUp.title + '** av ' + nextUp.author);
+  lines.push('');
+  lines.push('_AI-anbefalinger er midlertidig utilgjengelig fra Claude-appen. Prøv spørsmål om serier, ønskeliste eller hva du eier!_');
+  return lines.join('\n');
+}
+
+function buildLibraryContext() {
+  // Build book list
+  const seriesInLib = {};
+  books.forEach(b => {
+    if (b.series) {
+      if (!seriesInLib[b.series]) seriesInLib[b.series] = [];
+      seriesInLib[b.series].push({ num: b.seriesNum||0, title: b.title, status: b.status });
+    }
+  });
+
+  const seriesLines = Object.entries(seriesInLib).map(([s, entries]) => {
+    const nums    = entries.map(e=>e.num).filter(Boolean).sort((a,b)=>a-b);
+    const maxRead = Math.max(...entries.filter(e=>e.status==="done").map(e=>e.num||0), 0);
+    return s + " (har del " + (nums.join(",") || "?") + (maxRead ? ", lest opp til #"+maxRead : "") + ")";
+  });
+
+  const bookLines = books.slice(0,40).map(b => {
+    const statusLabel = {done:"Lest",reading:"Leser nå",unread:"Ikke lest",wishlist:"Ønskeliste"}[b.status]||b.status;
+    return "- " + b.title + " av " + (b.author||"ukjent") +
+      (b.rating ? " (★"+b.rating+")" : "") +
+      (b.series ? " [Serie: "+b.series+(b.seriesNum?" #"+b.seriesNum:"")+"]" : "") +
+      " ["+statusLabel+"]";
+  });
+
+  const parts = [
+    "Du er en personlig bokanbefalingsassistent for en norsk bruker. Svar alltid på norsk.",
+    "",
+    "BRUKERENS BIBLIOTEK (" + books.length + " bøker):",
+    bookLines.join("\n"),
+    "",
+  ];
+
+  if (seriesLines.length) {
+    parts.push("SERIER I BIBLIOTEKET:");
+    parts.push(seriesLines.join("\n"));
+    parts.push("");
+  }
+
+  parts.push(
+    "INSTRUKSJONER:",
+    "- Gi anbefalinger for bøker brukeren ALLEREDE EIER (les disse neste!) OG nye kjøp",
+    "- Marker alltid: 📚 Allerede i biblioteket | 🛒 Ny bok å kjøpe",
+    "- For serier: finn neste del og sjekk om den er i biblioteket eller må kjøpes",
+    "- Forklar HVORFOR du anbefaler — knytt det til bøker de har likt",
+    "- Foreslå kjøpslenker slik: https://www.bokus.com/bok/ eller https://www.ark.no/search?q=TITTEL",
+    "- Anbefal gjerne norske forfattere",
+    "- Maks 3-4 anbefalinger om gangen",
+    "- Spør om smaken hvis biblioteket er lite eller du trenger mer info"
+  );
+
+  return parts.join("\n");
+}
+
+function renderRecommendationsView() {
+  const grid = document.getElementById('booksGrid');
+  document.getElementById('secTitle').textContent = 'Bokanbefalinger';
+  document.getElementById('secCnt').textContent   = 'AI-drevet';
+  document.getElementById('pillsWrap').innerHTML  = '';
+  document.getElementById('heroWrap').innerHTML   = '';
+  // statsRow lives inside render() output, not a permanent element - skip
+  grid.className = '';
+  grid.style.display = 'block';
+
+  const seriesNames = [...new Set(books.filter(b=>b.series).map(b=>b.series))].slice(0,2);
+  const seriesChips = seriesNames.map(s => 'Neste i ' + s + '-serien');
+  const chips = ['Hva bør jeg lese nå?', ...seriesChips, 'Norske anbefalinger', 'Lik mine favoritter', 'Noe jeg allerede eier', 'Utfordre meg litt'].slice(0,6);
+
+  grid.innerHTML = `
+    <div class="rec-chat">
+      <div class="rec-messages" id="recMessages"></div>
+      <div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;" id="recChips">
+          ${chips.map(ch => `<button class="chip" onclick="sendRecMessage('${ch}')">${ch}</button>`).join('')}
+        </div>
+        <div class="rec-input-wrap">
+          <input class="rec-input" id="recInput" placeholder="Spør om bokanbefalinger…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendRecMessage()}">
+          <button class="rec-send" id="recSendBtn" onclick="sendRecMessage()" title="Send">➤</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Render messages AFTER grid.innerHTML is set so #recMessages exists in DOM
+  if (recMessages.length === 0) {
+    const total = books.length;
+    const done  = books.filter(b => b.status === 'done').length;
+    const reading = books.filter(b => b.status === 'reading').length;
+
+    let greeting;
+    if (total === 0) {
+      greeting = 'Hei! Biblioteket ditt er tomt ennå. Legg til noen bøker du har lest, så gir jeg deg skreddersydde anbefalinger!';
+    } else if (done === 0 && reading === 0) {
+      const titles = books.slice(0,3).map(b => '«' + b.title + '»').join(', ');
+      greeting = 'Hei! Jeg ser du har ' + total + ' bok' + (total>1?'er':'') + ' i biblioteket (' + titles + (total>3?'…':') ') + '). Merk dem som «Lest» så kan jeg gi deg personlige anbefalinger basert på hva du har likt!';
+    } else {
+      const favs = books.filter(b=>b.rating>=4).slice(0,2).map(b=>'«'+b.title+'»').join(' og ');
+      greeting = 'Hei! Jeg har sett gjennom biblioteket ditt — ' + done + ' leste bøker' +
+        (favs ? ', og jeg merker at du liker ' + favs : '') +
+        '. Hva slags bok er du i humør for nå?';
+    }
+    addRecMessage('ai', greeting);
+  } else {
+    renderRecMessages();
+  }
+}
+
+function addRecMessage(role, text) {
+  recMessages.push({ role, text });
+  renderRecMessages();
+}
+
+function renderRecMessages() {
+  const el = document.getElementById('recMessages');
+  if (!el) return;
+  el.innerHTML = recMessages.map(m => {
+    const html = m.text
+      .split('\n').join('<br>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*([^*]+?)\*/g, '<em>$1</em>')
+      .replace(/(https?:\/\/[\w./?=&%+#-]+)/g, '<a href="$1" target="_blank" style="color:var(--gold);text-decoration:underline;">$1</a>');
+    const isUser = m.role === 'user';
+    return '<div class="msg ' + (isUser?'user':'ai') + '">' +
+      '<div class="msg-avatar">' + (isUser?'👤':'📚') + '</div>' +
+      '<div class="msg-bubble">' + html + '</div></div>';
+  }).join('');
+  // Scroll to bottom
+  el.scrollTop = el.scrollHeight;
+}
+
+function showTyping() {
+  const el = document.getElementById('recMessages');
+  if (!el) return;
+  const div = document.createElement('div');
+  div.className = 'msg ai'; div.id = 'typingIndicator';
+  div.innerHTML = '<div class="msg-avatar">📚</div><div class="msg-bubble"><div class="typing"><span></span><span></span><span></span></div></div>';
+  el.appendChild(div);
+  el.scrollTop = el.scrollHeight;
+}
+
+function hideTyping() {
+  document.getElementById('typingIndicator')?.remove();
+}
+
+async function sendRecMessage(preset) {
+  const input = document.getElementById('recInput');
+  const text  = preset || input?.value.trim();
+  if (!text || recTyping) return;
+  if (input) input.value = '';
+
+  document.getElementById('recChips')?.remove();
+
+  addRecMessage('user', text);
+  recTyping = true;
+  const btn = document.getElementById('recSendBtn');
+  if (btn) btn.disabled = true;
+  showTyping();
+
+  // Run API call in isolation — storage errors must NOT bleed in here
+  (async () => {
+    try {
+      const systemPrompt = buildLibraryContext();
+      const apiMessages = [
+        ...recMessages.slice(0,-1).map(m => ({
+          role: m.role === 'ai' ? 'assistant' : 'user',
+          content: m.text
+        })),
+        { role: 'user', content: text }
+      ];
+
+      const server = getServerUrl();
+      if (!server) throw new Error('no_server');
+
+      const res = await fetch(server + '/ai-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ systemPrompt, messages: apiMessages })
+      });
+
+      let data;
+      try { data = await res.json(); } catch(e) { throw new Error('Ugyldig svar fra server'); }
+
+      hideTyping();
+
+      if (!res.ok || !data.ok)
+        throw new Error(data?.error || 'Serverfeil ' + res.status);
+
+      if (!data.text) throw new Error('empty_response');
+      addRecMessage('ai', data.text);
+
+    } catch(e) {
+      hideTyping();
+      const msg = e.message || String(e);
+      if (msg === 'no_server') {
+        addRecMessage('ai', '⚙️ Lim inn server-URL i sidemenyen for å aktivere AI-anbefalinger.' + generateLocalReply(text));
+      } else if (msg === 'empty_response' || msg.includes('fetch') || msg.includes('Failed')) {
+        addRecMessage('ai', generateLocalReply(text));
+      } else {
+        addRecMessage('ai', '❌ ' + msg.slice(0, 150) + ' ' + generateLocalReply(text));
+      }
+    }
+
+    recTyping = false;
+    const btn2 = document.getElementById('recSendBtn');
+    if (btn2) btn2.disabled = false;
+    document.getElementById('recInput')?.focus();
+  })();
+  return; // early return — cleanup handled inside IIFE above
+}
+
+// ══════════════════════════════════════════════════════
+// GOOGLE DRIVE SYNC
+// ══════════════════════════════════════════════════════
+const GDRIVE_CLIENT_ID  = '103120965146-0ln9it5tqo5tir7nhpr4mcpaako3oi2u.apps.googleusercontent.com';
+const GDRIVE_SCOPES     = 'https://www.googleapis.com/auth/drive.appdata';
+const GDRIVE_FILE_NAME  = 'bibliothek-library.json';
+
+let gdriveToken     = null;  // OAuth access token
+let gdriveFileId    = null;  // Drive file ID once found/created
+let gdriveSyncing   = false;
+let gdriveLastSync  = null;
+
+// ── UI helpers ──
+function gdriveSetState(state, label) {
+  const dot = document.getElementById('gdriveDot');
+  const lbl = document.getElementById('gdriveLabel');
+  const btn = document.getElementById('gdriveBtn');
+  if (!dot) return;
+  dot.className = 'gdrive-dot ' + (state || '');
+  if (lbl) lbl.textContent = label;
+  if (btn) {
+    if (state === 'connected') {
+      btn.textContent = 'Synk nå';
+      btn.className = 'gdrive-btn';
+      btn.onclick = gdriveSync;
+    } else if (state === 'syncing') {
+      btn.textContent = '…';
+      btn.className = 'gdrive-btn';
+      btn.disabled = true;
+    } else {
+      btn.textContent = 'Koble til';
+      btn.className = 'gdrive-btn primary';
+      btn.disabled = false;
+      btn.onclick = gdriveAuth;
+    }
+  }
+}
+
+// ── OAuth — bruker Google sin OOB/manual copy flow ──
+// Siden appen kjører lokalt (file://) kan vi ikke bruke redirect_uri.
+// Vi bruker i stedet en side som viser token direkte (OOB-flow via
+// urn:ietf:wg:oauth:2.0:oob er deprecated, så vi bruker en Google-side
+// som poster meldingen tilbake til oss).
+function gdriveAuth() {
+  // Åpne Google OAuth med redirect til spesiell postmessage-URI
+  const params = new URLSearchParams({
+    client_id:     GDRIVE_CLIENT_ID,
+    redirect_uri:  'storagerelay://http/localhost?id=auth',
+    response_type: 'token',
+    scope:         GDRIVE_SCOPES,
+    include_granted_scopes: 'true',
+  });
+
+  // Vis en manuell token-dialog i stedet
+  showTokenInputDialog();
+}
+
+function showTokenInputDialog() {
+  const overlay = document.createElement('div');
+  overlay.id = 'tokenDialog';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+
+  const SCOPE_ENC = encodeURIComponent(GDRIVE_SCOPES);
+  // Use postmessage redirect — works without redirect_uri registration
+  const oauthUrl = 'https://accounts.google.com/o/oauth2/v2/auth' +
+    '?client_id=' + GDRIVE_CLIENT_ID +
+    '&redirect_uri=' + encodeURIComponent('urn:ietf:wg:oauth:2.0:oob') +
+    '&response_type=token' +
+    '&scope=' + SCOPE_ENC;
+
+  // Use Google's token info endpoint approach instead:
+  // Open a popup to Google, user logs in, token appears in URL
+  const popupUrl = 'https://accounts.google.com/o/oauth2/v2/auth' +
+    '?client_id=' + GDRIVE_CLIENT_ID +
+    '&redirect_uri=https%3A%2F%2Fdevelopers.google.com%2Foauthplayground' +
+    '&response_type=token' +
+    '&scope=' + SCOPE_ENC +
+    '&include_granted_scopes=true';
+
+  overlay.innerHTML =
+    '<div style="background:#1a1a20;border:1px solid #3d3b38;border-radius:12px;padding:28px;max-width:500px;width:100%;font-family:Outfit,sans-serif;">' +
+      '<h3 style="color:#e4cc9e;margin-bottom:6px;font-size:18px;">Koble til Google Drive</h3>' +
+      '<p style="color:#6e6b65;font-size:13px;margin-bottom:18px;line-height:1.5;">Følg stegene under for å hente tilgangstokenet ditt.</p>' +
+
+      '<div style="background:#111114;border-radius:8px;padding:14px;margin-bottom:12px;display:flex;gap:12px;align-items:flex-start;">' +
+        '<div style="background:#c8a96e;color:#0a0a0c;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px;">1</div>' +
+        '<div>' +
+          '<p style="color:#edeae4;font-size:13px;margin:0 0 8px;">Gå til Google OAuth Playground og logg inn:</p>' +
+          '<a href="https://developers.google.com/oauthplayground/" target="_blank" style="display:inline-block;padding:8px 16px;background:#c8a96e;color:#0a0a0c;border-radius:7px;font-size:13px;font-weight:600;text-decoration:none;">Åpne OAuth Playground ↗</a>' +
+        '</div>' +
+      '</div>' +
+
+      '<div style="background:#111114;border-radius:8px;padding:14px;margin-bottom:12px;display:flex;gap:12px;align-items:flex-start;">' +
+        '<div style="background:#c8a96e;color:#0a0a0c;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px;">2</div>' +
+        '<div>' +
+          '<p style="color:#edeae4;font-size:13px;margin:0 0 4px;">Velg <strong style="color:#e4cc9e;">Drive API v3</strong> og huk av:</p>' +
+          '<code style="background:#0a0a0c;color:#5bb578;padding:4px 8px;border-radius:4px;font-size:11px;display:block;margin-top:4px;">https://www.googleapis.com/auth/drive.appdata</code>' +
+          '<p style="color:#6e6b65;font-size:12px;margin:6px 0 0;">Klikk deretter <strong style="color:#edeae4;">Authorize APIs</strong>, logg inn med Google-kontoen din og godta tilgang.</p>' +
+        '</div>' +
+      '</div>' +
+
+      '<div style="background:#111114;border-radius:8px;padding:14px;margin-bottom:12px;display:flex;gap:12px;align-items:flex-start;">' +
+        '<div style="background:#c8a96e;color:#0a0a0c;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px;">3</div>' +
+        '<div style="width:100%;">' +
+          '<p style="color:#edeae4;font-size:13px;margin:0 0 6px;">Klikk <strong style="color:#e4cc9e;">Exchange authorization code for tokens</strong>, kopier <strong style="color:#e4cc9e;">Access token</strong> og lim inn her:</p>' +
+          '<input id="manualTokenInput" type="text" placeholder="ya29.a0AfH..." ' +
+            'style="width:100%;padding:10px 12px;background:#0a0a0c;border:1px solid #3d3b38;border-radius:6px;color:#edeae4;font-size:12px;font-family:monospace;outline:none;box-sizing:border-box;">' +
+        '</div>' +
+      '</div>' +
+
+      '<div style="display:flex;gap:10px;margin-top:4px;">' +
+        '<button onclick="closeTokenDialog()" style="flex:1;padding:11px;background:transparent;border:1px solid #3d3b38;color:#6e6b65;border-radius:7px;cursor:pointer;font-family:Outfit,sans-serif;font-size:13px;">Avbryt</button>' +
+        '<button onclick="submitManualToken()" style="flex:2;padding:11px;background:#c8a96e;border:none;color:#0a0a0c;border-radius:7px;cursor:pointer;font-family:Outfit,sans-serif;font-size:13px;font-weight:600;">Koble til Drive</button>' +
+      '</div>' +
+    '</div>';
+
+  document.body.appendChild(overlay);
+  setTimeout(() => document.getElementById('manualTokenInput')?.focus(), 100);
+}
+
+function closeTokenDialog() {
+  document.getElementById('tokenDialog')?.remove();
+  gdriveSetState('', 'Google Drive');
+}
+
+async function submitManualToken() {
+  const input = document.getElementById('manualTokenInput');
+  let token = input?.value.trim();
+
+  // Auto-extract if user pasted full URL
+  if (token.includes('access_token=')) {
+    const m = token.match(/access_token=([^&]+)/);
+    if (m) token = m[1];
+  }
+
+  if (!token || token.length < 20) {
+    input.style.borderColor = '#e05555';
+    input.placeholder = 'Tokenet ser ikke riktig ut…';
+    return;
+  }
+
+  document.getElementById('tokenDialog')?.remove();
+  await handleGdriveToken(token);
+}
+
+async function handleGdriveToken(token) {
+  gdriveToken = token;
+  await storageSet('gdrive_token', token);
+  gdriveSetState('syncing', 'Kobler til…');
+  await gdriveSync();
+}
+
+// No redirect to handle — manual flow only
+
+
+// ── Find or create the app file in Drive ──
+async function gdriveFindOrCreateFile() {
+  // Search in appDataFolder (hidden, app-specific)
+  const searchRes = await fetch(
+    "https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name='" + GDRIVE_FILE_NAME + "'&fields=files(id,name,modifiedTime)",
+    { headers: { Authorization: 'Bearer ' + gdriveToken } }
+  );
+  const searchData = await searchRes.json();
+  if (searchData.files?.length) {
+    gdriveFileId = searchData.files[0].id;
+    return { fileId: gdriveFileId, exists: true, modified: searchData.files[0].modifiedTime };
+  }
+  // Create new file
+  const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + gdriveToken, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: GDRIVE_FILE_NAME, parents: ['appDataFolder'] }),
+  });
+  const created = await createRes.json();
+  gdriveFileId = created.id;
+  return { fileId: gdriveFileId, exists: false, modified: null };
+}
+
+// ── Download books from Drive ──
+async function gdriveDownload() {
+  if (!gdriveFileId) return null;
+  const res = await fetch(
+    'https://www.googleapis.com/drive/v3/files/' + gdriveFileId + '?alt=media',
+    { headers: { Authorization: 'Bearer ' + gdriveToken } }
+  );
+  if (!res.ok) return null;
+  const text = await res.text();
+  if (!text.trim()) return null;
+  return JSON.parse(text);
+}
+
+// ── Upload books to Drive ──
+async function gdriveUpload(data) {
+  const body = JSON.stringify(data);
+  const url = gdriveFileId
+    ? 'https://www.googleapis.com/upload/drive/v3/files/' + gdriveFileId + '?uploadType=media'
+    : 'https://www.googleapis.com/upload/drive/v3/files?uploadType=media';
+  const method = gdriveFileId ? 'PATCH' : 'POST';
+  const res = await fetch(url, {
+    method,
+    headers: { Authorization: 'Bearer ' + gdriveToken, 'Content-Type': 'application/json' },
+    body,
+  });
+  return res.ok;
+}
+
+// ── Main sync: merge local + Drive, keep newest ──
+async function gdriveSync() {
+  if (!gdriveToken || gdriveSyncing) return;
+  gdriveSyncing = true;
+  gdriveSetState('syncing', 'Synkroniserer…');
+
+  try {
+    const { exists, modified } = await gdriveFindOrCreateFile();
+
+    if (exists) {
+      const remote = await gdriveDownload();
+      if (remote?.books?.length) {
+        // Merge: for each book, keep the version with latest 'added' or 'finishedDate'
+        const localMap  = new Map(books.map(b => [String(b.id), b]));
+        const remoteMap = new Map((remote.books || []).map(b => [String(b.id), b]));
+        const allIds    = new Set([...localMap.keys(), ...remoteMap.keys()]);
+
+        const merged = [];
+        for (const id of allIds) {
+          const local  = localMap.get(id);
+          const remote = remoteMap.get(id);
+          if (!local)   { merged.push(remote); continue; }
+          if (!remote)  { merged.push(local);  continue; }
+          // Keep whichever was modified more recently
+          const lt = local.added  || 0;
+          const rt = remote.added || 0;
+          merged.push(lt >= rt ? local : remote);
+        }
+        books = merged;
+        await saveBooks();
+        render();
+      }
+    }
+
+    // Upload current state
+    const slim = books.map(b => { const o={...b}; delete o.fileData; return o; });
+    await gdriveUpload({ books: slim, syncedAt: new Date().toISOString(), version: 1 });
+
+    gdriveLastSync = new Date();
+    const timeStr = gdriveLastSync.toLocaleTimeString('no', { hour:'2-digit', minute:'2-digit' });
+    gdriveSetState('connected', 'Drive synket ' + timeStr);
+    showToast('☁️ Google Drive synket!');
+
+  } catch(e) {
+    console.error('Drive sync error:', e);
+    gdriveSetState('error', 'Synk feilet');
+    showToast('❌ Drive synk feilet: ' + e.message);
+  }
+
+  gdriveSyncing = false;
+}
+
+// ── Auto-sync after every save ──
+const _origSaveBooks = saveBooks;
+saveBooks = async function() {
+  await _origSaveBooks();
+  if (gdriveToken && !gdriveSyncing) {
+    setTimeout(gdriveSync, 1500); // debounce 1.5s
+  }
+};
+
+// ── Restore token and init Drive on load ──
+async function gdriveInit() {
+  try {
+    const saved = await storageGet('gdrive_token');
+    if (saved) {
+      gdriveToken = saved;
+      gdriveSetState('syncing', 'Gjenkobler…');
+      await gdriveSync();
+    } else {
+      gdriveSetState('', 'Google Drive');
+    }
+  } catch(e) {
+    gdriveSetState('', 'Google Drive');
+  }
+}
+
+// ── INIT ──
+async function init() {
+  await loadBooks();
+  await loadKindleDevices();
+  await loadServerUrl();
+  render();
+
+  // Hide server URL field when self-hosted (auto-detected)
+  if (AUTO_SERVER_URL) {
+    const sec = document.getElementById('serverUrlSection');
+    if (sec) sec.style.display = 'none';
+  }
+
+  // Show IS_WEB status in console
+  console.log(IS_WEB
+    ? 'Bibliothek kjorer som nettside — localStorage og server aktivert'
+    : 'Bibliothek kjorer i sandkasse — begrenset funksjonalitet'
+  );
+
+  // Init Google Drive after UI is ready
+  setTimeout(gdriveInit, 800);
+}
+init();
+</script>
+</body>
+</html>
