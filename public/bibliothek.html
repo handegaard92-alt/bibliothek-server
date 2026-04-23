@@ -32555,8 +32555,9 @@ async function saveBook() {
     year: parseInt(document.getElementById('fYear').value) || null,
     status: document.getElementById('fStatus').value,
     progress: Math.min(100, Math.max(0, parseInt(document.getElementById('fProgress').value) || 0)),
-    rating: Math.min(coverUrl: pendingCoverUrl || null,
-    added: Date.now(),|'')}-L.jpg` || null)
+    rating: Math.min(5, Math.max(0, parseInt(document.getElementById('fRating').value) || 0)),
+    coverUrl: (pendingCoverUrl?.startsWith('data:')
+      ? (pendingFileData?._remoteCoverUrl || `https://covers.openlibrary.org/b/isbn/${(pendingFileData?.isbn||'')}-L.jpg` || null)
       : pendingCoverUrl) || null,
     added: Date.now(),
     isbn: pendingFileData?.isbn || null,
