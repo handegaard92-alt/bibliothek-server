@@ -843,6 +843,10 @@ body {
         + Legg til enhet
       </button>
     </div>
+    
+    <div style="padding-top:8px;border-top:1px solid var(--border);">
+      <button id="pinSyncBtn" onclick="openPinModal()" style="width:100%;padding:9px;background:transparent;border:1px solid var(--border2);color:var(--muted);font-family:'Outfit',sans-serif;font-size:12px;border-radius:8px;cursor:pointer;transition:all 0.15s;">🔒 Koble til med PIN</button>
+    </div>
     <button class="btn-add" onclick="openAddModal()">
       <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
       Legg til bok
@@ -1047,7 +1051,7 @@ body {
       </div>
     </div>
 
-    <div id="kmNoFile" style="display:none;" class="km-no-email">⚠️ Ingen fil er lastet opp for denne boken. Last opp en epub/mobi-fil først.</div>
+    <div id="kmNoFile" style="display:none;" class="km-no-email">⚠️ Filen er ikke tilgjengelig i denne sesjonen. Rediger boken og last opp epub-filen på nytt for å sende til Kindle.</div>
     <div id="kmNoDevice" style="display:none;" class="km-no-email">⚠️ Legg til en Kindle-enhet i sidemenyen først.</div>
 
     <div class="mfooter" style="margin-top:0;padding-top:12px;border-top:1px solid var(--border);flex-direction:column;gap:8px;">
@@ -1224,6 +1228,17 @@ async function saveBooks() {
     return out;
   });
   await storageSet(STORAGE_KEY, JSON.stringify(slim));
+  if (window._pinKey) {
+    clearTimeout(window._pinTimer);
+    window._pinTimer = setTimeout(async () => {
+      try {
+        await fetch(getServerUrl() + '/library/' + encodeURIComponent(window._pinKey), {
+          method: 'PUT', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ books: slim })
+        });
+      } catch(e) {}
+    }, 2000);
+  }
 }
 
 async function loadServerUrl() {
@@ -2026,9 +2041,9 @@ async function saveBook() {
     status: document.getElementById('fStatus').value,
     progress: Math.min(100, Math.max(0, parseInt(document.getElementById('fProgress').value) || 0)),
     rating: Math.min(5, Math.max(0, parseInt(document.getElementById('fRating').value) || 0)),
-    coverUrl: (pendingCoverUrl?.startsWith('data:')
-      ? (pendingFileData?._remoteCoverUrl || `https://covers.openlibrary.org/b/isbn/${(pendingFileData?.isbn||'')}-L.jpg` || null)
-      : pendingCoverUrl) || null,
+    coverUrl: pendingCoverUrl?.startsWith('data:')
+      ? (pendingFileData?._remoteCoverUrl || (pendingFileData?.isbn ? `https://covers.openlibrary.org/b/isbn/${pendingFileData.isbn}-L.jpg` : null))
+      : (pendingCoverUrl || null),
     added: Date.now(),
     isbn: pendingFileData?.isbn || null,
     pages: pendingFileData?.pages || null,
@@ -3423,8 +3438,91 @@ async function gdriveInit() {
 }
 
 // ── INIT ──
+
+// ═══ PIN SYNC ═══
+window._pinKey = null;
+window._pinTimer = null;
+
+async function pinLoad(pin) {
+  try {
+    const r = await fetch(getServerUrl() + '/library/' + encodeURIComponent(pin));
+    const d = await r.json();
+    if (d.ok && d.books && d.books.length > 0) {
+      const lm = new Map(books.map(b=>[String(b.id),b]));
+      const rm = new Map(d.books.map(b=>[String(b.id),b]));
+      const ids = new Set([...lm.keys(),...rm.keys()]);
+      const merged = [];
+      for (const id of ids) {
+        const lo=lm.get(id), re=rm.get(id);
+        if (!lo) { merged.push(re); continue; }
+        if (!re) { merged.push(lo); continue; }
+        merged.push((lo.added||0)>=(re.added||0)?lo:re);
+      }
+      books = merged;
+      await storageSet(STORAGE_KEY, JSON.stringify(merged));
+      render();
+      return merged.length;
+    }
+  } catch(e) {}
+  return 0;
+}
+
+function pinUpdateBtn() {
+  const btn = document.getElementById('pinSyncBtn');
+  if (!btn) return;
+  if (window._pinKey) { btn.textContent='🔄 PIN aktiv'; btn.style.color='#5bb578'; btn.style.borderColor='#5bb578'; }
+  else { btn.textContent='🔒 Koble til med PIN'; btn.style.color=''; btn.style.borderColor=''; }
+}
+
+function openPinModal() {
+  if (document.getElementById('pinOverlay')) return;
+  const saved = (() => { try { return localStorage.getItem('bib_pin'); } catch(e){return null;} })();
+  const ov = document.createElement('div');
+  ov.id = 'pinOverlay';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(8px);';
+  ov.innerHTML = `<div style="background:#1a1a20;border:1px solid #3d3b38;border-radius:16px;padding:28px;max-width:340px;width:100%;font-family:Outfit,sans-serif;">
+    <h3 style="color:#c8a96e;margin-bottom:6px;font-size:20px;font-family:'Cormorant Garamond',serif;font-weight:700;">📚 Bibliothek Sync</h3>
+    <p style="color:#6e6b65;font-size:13px;margin-bottom:20px;line-height:1.5;">Bruk samme PIN på alle enheter for å synke biblioteket automatisk.</p>
+    <label style="font-size:11px;color:#6e6b65;text-transform:uppercase;letter-spacing:0.1em;display:block;margin-bottom:6px;">PIN-kode (4+ tegn)</label>
+    <input id="pinInput" type="password" inputmode="numeric" placeholder="f.eks. 1234"
+      style="width:100%;padding:12px;background:#0a0a0c;border:1px solid #3d3b38;border-radius:8px;color:#edeae4;font-size:20px;letter-spacing:0.4em;text-align:center;outline:none;box-sizing:border-box;margin-bottom:16px;"
+      onkeydown="if(event.key==='Enter')submitPin()">
+    ${saved?'<p style="font-size:11px;color:#5bb578;margin-bottom:12px;">✓ Lagret PIN funnet</p>':''}
+    <div style="display:flex;gap:10px;margin-bottom:8px;">
+      <button onclick="document.getElementById('pinOverlay').remove()" style="flex:1;padding:11px;background:transparent;border:1px solid #3d3b38;color:#6e6b65;border-radius:8px;cursor:pointer;font-size:13px;">Avbryt</button>
+      <button onclick="submitPin()" style="flex:2;padding:11px;background:#c8a96e;border:none;color:#0a0a0c;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">Koble til</button>
+    </div>
+    ${saved?'<button onclick="document.getElementById(\'pinInput\').value=\''+saved+'\';submitPin()" style="width:100%;padding:9px;background:transparent;border:1px solid #5bb578;color:#5bb578;border-radius:8px;cursor:pointer;font-size:12px;">Bruk lagret PIN</button>':''}
+  </div>`;
+  document.body.appendChild(ov);
+  setTimeout(()=>{ const i=document.getElementById('pinInput'); if(i){if(saved)i.value=saved; i.focus();} }, 100);
+}
+
+async function submitPin() {
+  const inp = document.getElementById('pinInput');
+  const pin = (inp?.value||'').trim();
+  if (!pin || pin.length < 4) { if(inp){inp.style.borderColor='#e05555';} return; }
+  window._pinKey = pin;
+  try { localStorage.setItem('bib_pin', pin); } catch(e) {}
+  document.getElementById('pinOverlay')?.remove();
+  const n = await pinLoad(pin);
+  showToast(n>0 ? '✓ '+n+' bøker hentet fra server!' : '✓ PIN aktivert – synker automatisk');
+  pinUpdateBtn();
+}
+
 async function init() {
   await loadBooks();
+  // PIN auto-connect
+  try {
+    const savedPin = localStorage.getItem('bib_pin');
+    if (savedPin) {
+      window._pinKey = savedPin;
+      pinLoad(savedPin).then(n => {
+        if (n > 0) showToast('✓ '+n+' bøker synket fra server');
+        pinUpdateBtn();
+      });
+    }
+  } catch(e) {}
   await loadKindleDevices();
   await loadServerUrl();
   render();
@@ -3446,6 +3544,5 @@ async function init() {
 }
 init();
 </script>
-<script src="/pin-sync.js"></script>
 </body>
 </html>
