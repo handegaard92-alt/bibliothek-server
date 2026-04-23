@@ -739,34 +739,7 @@ body {
   max-width:100%;
 }
 
-  /* ── GOOGLE DRIVE SYNC ── */
-  .gdrive-bar {
-    display:flex; align-items:center; gap:8px;
-    padding:10px 12px;
-    background:var(--surface2);
-    border:1px solid var(--border);
-    border-radius:var(--r2);
-    font-size:12px;
-  }
-  .gdrive-dot {
-    width:8px; height:8px; border-radius:50%; flex-shrink:0;
-    background:var(--muted2);
-    transition:background 0.3s;
-  }
-  .gdrive-dot.connected { background:var(--green); box-shadow:0 0 6px rgba(91,181,120,0.5); }
-  .gdrive-dot.syncing   { background:var(--gold); animation:pulse 1s infinite; }
-  .gdrive-dot.error     { background:var(--red); }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-  .gdrive-label { flex:1; color:var(--muted); }
-  .gdrive-btn {
-    padding:4px 10px; border-radius:5px; font-size:11px;
-    font-family:'Outfit',sans-serif; cursor:pointer;
-    border:1px solid var(--border); background:transparent;
-    color:var(--muted); transition:all 0.15s;
-  }
-  .gdrive-btn:hover { border-color:var(--gold); color:var(--gold); }
-  .gdrive-btn.primary { background:var(--gold); color:#0a0a0c; border-color:var(--gold); font-weight:600; }
-</style>
+  </style>
 </head>
 <body>
 
@@ -825,35 +798,16 @@ body {
     </div>
   </nav>
   <div class="sidebar-bottom">
-    <!-- Google Drive Sync -->
-    <div class="gdrive-bar" id="gdriveBar">
-      <div class="gdrive-dot connected" id="gdriveDot"></div>
-      <span class="gdrive-label" id="gdriveLabel">Drive synket 08:19</span>
-      <button class="gdrive-btn" id="gdriveBtn" onclick="gdriveAuth()" disabled="">Synk nå</button>
+    <div class="kindle-email-area">
+      <div class="kindle-label">&#128274; Synk mellom enheter</div>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <input class="kindle-input" id="pinInput" placeholder="PIN-kode" maxlength="20" style="font-size:12px;flex:1;" onkeydown="if(event.key==='Enter')connectPin()">
+        <button onclick="connectPin()" style="padding:4px 10px;border-radius:5px;font-size:11px;font-family:'Outfit',sans-serif;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);white-space:nowrap;">Koble til</button>
+      </div>
+      <div id="pinStatus" style="font-size:10px;color:var(--muted);margin-top:5px;min-height:14px;"></div>
     </div>
     <div class="kindle-email-area">
-      <div class="kindle-label">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-        Kindle-enheter
-      </div>
-      <div id="kindleDeviceList" style="margin-top:4px;display:flex;flex-direction:column;gap:4px;"><div style="font-size:11px;color:var(--muted2);padding:2px 0;">Ingen enheter lagt til</div></div>
-      <button onclick="openKindleDeviceModal()" style="margin-top: 6px; width: 100%; padding: 6px; background: transparent; border-color: var(--muted2); border-top-style: ; border-top-width: ; border-right-style: ; border-right-width: ; border-bottom-style: ; border-bottom-width: ; border-left-style: ; border-left-width: ; border-image-source: ; border-image-slice: ; border-image-width: ; border-image-outset: ; border-image-repeat: ; border-radius: 6px; color: var(--muted); font-family: Outfit, sans-serif; font-size: 12px; cursor: pointer; transition: 0.15s;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--muted2)';this.style.color='var(--muted)'">
-        + Legg til enhet
-      </button>
-    </div>
-    <button class="btn-add" onclick="openAddModal()">
-      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg>
-      Legg til bok
-    </button>
-    <button class="btn-add" onclick="openBatchModal()" style="border-style:dashed;">
-      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path><rect x="3" y="3" width="7" height="7" rx="1" opacity=".5"></rect><rect x="14" y="3" width="7" height="7" rx="1" opacity=".5"></rect></svg>
-      Last opp flere bøker
-    </button>
-    <div style="padding-top:8px;border-top:1px solid var(--border);">
-      <div class="kindle-label" style="margin-bottom:5px;">
-        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"></path></svg>
-        Server-URL
-      </div>
+      <div class="kindle-label">&#8594; Server-URL</div>
       <input class="kindle-input" id="serverUrl" placeholder="https://din-server.onrender.com" oninput="saveServerUrl(this.value)" style="font-size:11px;">
     </div>
   </div>
@@ -900,7 +854,9 @@ body {
     <div class="rec-chat">
       <div class="rec-messages" id="recMessages"><div class="msg ai"><div class="msg-avatar">📚</div><div class="msg-bubble">Hei! Jeg ser du har 1 bok i biblioteket («Vi løser mord») ). Merk dem som «Lest» så kan jeg gi deg personlige anbefalinger basert på hva du har likt!</div></div><div class="msg user"><div class="msg-avatar">👤</div><div class="msg-bubble">Norske anbefalinger</div></div><div class="msg ai"><div class="msg-avatar">📚</div><div class="msg-bubble">Hei! Du har 1 bøker i biblioteket.<br>Neste: <strong>Vi løser mord</strong> av Richard Osman<br><br>_AI-anbefalinger er midlertidig utilgjengelig fra Claude-appen. Prøv spørsmål om serier, ønskeliste eller hva du eier!_</div></div></div>
       <div>
-        
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;" id="recChips">
+          <button class="chip" onclick="sendRecMessage('Hva bør jeg lese nå?')">Hva bør jeg lese nå?</button><button class="chip" onclick="sendRecMessage('Norske anbefalinger')">Norske anbefalinger</button><button class="chip" onclick="sendRecMessage('Lik mine favoritter')">Lik mine favoritter</button><button class="chip" onclick="sendRecMessage('Noe jeg allerede eier')">Noe jeg allerede eier</button><button class="chip" onclick="sendRecMessage('Utfordre meg litt')">Utfordre meg litt</button>
+        </div>
         <div class="rec-input-wrap">
           <input class="rec-input" id="recInput" placeholder="Spør om bokanbefalinger…" onkeydown="if(event.key==='Enter'&amp;&amp;!event.shiftKey){event.preventDefault();sendRecMessage()}">
           <button class="rec-send" id="recSendBtn" onclick="sendRecMessage()" title="Send">➤</button>
@@ -2041,7 +1997,7 @@ async function saveBook() {
     progress: Math.min(100, Math.max(0, parseInt(document.getElementById('fProgress').value) || 0)),
     rating: Math.min(5, Math.max(0, parseInt(document.getElementById('fRating').value) || 0)),
     coverUrl: (pendingCoverUrl?.startsWith('data:')
-      ? (pendingFileData?._remoteCoverUrl || (pendingFileData?.isbn ? `https://covers.openlibrary.org/b/isbn/${pendingFileData.isbn}-L.jpg` : null) || pendingCoverUrl)
+      ? (pendingFileData?._remoteCoverUrl || `https://covers.openlibrary.org/b/isbn/${(pendingFileData?.isbn||'')}-L.jpg` || null)
       : pendingCoverUrl) || null,
     added: Date.now(),
     isbn: pendingFileData?.isbn || null,
@@ -3156,289 +3112,78 @@ async function sendRecMessage(preset) {
 // ══════════════════════════════════════════════════════
 // GOOGLE DRIVE SYNC
 // ══════════════════════════════════════════════════════
-const GDRIVE_CLIENT_ID  = '103120965146-0ln9it5tqo5tir7nhpr4mcpaako3oi2u.apps.googleusercontent.com';
-const GDRIVE_SCOPES     = 'https://www.googleapis.com/auth/drive.appdata';
-const GDRIVE_FILE_NAME  = 'bibliothek-library.json';
 
-let gdriveToken     = null;  // OAuth access token
-let gdriveFileId    = null;  // Drive file ID once found/created
-let gdriveSyncing   = false;
-let gdriveLastSync  = null;
-
-// ── UI helpers ──
-function gdriveSetState(state, label) {
-  const dot = document.getElementById('gdriveDot');
-  const lbl = document.getElementById('gdriveLabel');
-  const btn = document.getElementById('gdriveBtn');
-  if (!dot) return;
-  dot.className = 'gdrive-dot ' + (state || '');
-  if (lbl) lbl.textContent = label;
-  if (btn) {
-    if (state === 'connected') {
-      btn.textContent = 'Synk nå';
-      btn.className = 'gdrive-btn';
-      btn.onclick = gdriveSync;
-    } else if (state === 'syncing') {
-      btn.textContent = '…';
-      btn.className = 'gdrive-btn';
-      btn.disabled = true;
-    } else {
-      btn.textContent = 'Koble til';
-      btn.className = 'gdrive-btn primary';
-      btn.disabled = false;
-      btn.onclick = gdriveAuth;
-    }
-  }
+async function pinHash(pin) {
+  var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pin.trim().toLowerCase()));
+  return Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0')}).join('');
 }
 
-// ── OAuth — bruker Google sin OOB/manual copy flow ──
-// Siden appen kjører lokalt (file://) kan vi ikke bruke redirect_uri.
-// Vi bruker i stedet en side som viser token direkte (OOB-flow via
-// urn:ietf:wg:oauth:2.0:oob er deprecated, så vi bruker en Google-side
-// som poster meldingen tilbake til oss).
-function gdriveAuth() {
-  // Åpne Google OAuth med redirect til spesiell postmessage-URI
-  const params = new URLSearchParams({
-    client_id:     GDRIVE_CLIENT_ID,
-    redirect_uri:  'storagerelay://http/localhost?id=auth',
-    response_type: 'token',
-    scope:         GDRIVE_SCOPES,
-    include_granted_scopes: 'true',
+function setPinStatus(msg, color) {
+  var el = document.getElementById('pinStatus');
+  if (el) { el.textContent = msg; el.style.color = color || 'var(--muted)'; }
+}
+
+async function pushToPin() {
+  var server = getServerUrl();
+  var key = window._pinKey;
+  if (!server || !key) return;
+  var slim = books.map(function(b) {
+    var o = Object.assign({}, b);
+    delete o.fileData;
+    if (o.coverUrl && o.coverUrl.startsWith('data:')) o.coverUrl = o._remoteCoverUrl || null;
+    delete o._remoteCoverUrl;
+    return o;
   });
-
-  // Vis en manuell token-dialog i stedet
-  showTokenInputDialog();
-}
-
-function showTokenInputDialog() {
-  const overlay = document.createElement('div');
-  overlay.id = 'tokenDialog';
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
-
-  const SCOPE_ENC = encodeURIComponent(GDRIVE_SCOPES);
-  // Use postmessage redirect — works without redirect_uri registration
-  const oauthUrl = 'https://accounts.google.com/o/oauth2/v2/auth' +
-    '?client_id=' + GDRIVE_CLIENT_ID +
-    '&redirect_uri=' + encodeURIComponent('urn:ietf:wg:oauth:2.0:oob') +
-    '&response_type=token' +
-    '&scope=' + SCOPE_ENC;
-
-  // Use Google's token info endpoint approach instead:
-  // Open a popup to Google, user logs in, token appears in URL
-  const popupUrl = 'https://accounts.google.com/o/oauth2/v2/auth' +
-    '?client_id=' + GDRIVE_CLIENT_ID +
-    '&redirect_uri=https%3A%2F%2Fdevelopers.google.com%2Foauthplayground' +
-    '&response_type=token' +
-    '&scope=' + SCOPE_ENC +
-    '&include_granted_scopes=true';
-
-  overlay.innerHTML =
-    '<div style="background:#1a1a20;border:1px solid #3d3b38;border-radius:12px;padding:28px;max-width:500px;width:100%;font-family:Outfit,sans-serif;">' +
-      '<h3 style="color:#e4cc9e;margin-bottom:6px;font-size:18px;">Koble til Google Drive</h3>' +
-      '<p style="color:#6e6b65;font-size:13px;margin-bottom:18px;line-height:1.5;">Følg stegene under for å hente tilgangstokenet ditt.</p>' +
-
-      '<div style="background:#111114;border-radius:8px;padding:14px;margin-bottom:12px;display:flex;gap:12px;align-items:flex-start;">' +
-        '<div style="background:#c8a96e;color:#0a0a0c;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px;">1</div>' +
-        '<div>' +
-          '<p style="color:#edeae4;font-size:13px;margin:0 0 8px;">Gå til Google OAuth Playground og logg inn:</p>' +
-          '<a href="https://developers.google.com/oauthplayground/" target="_blank" style="display:inline-block;padding:8px 16px;background:#c8a96e;color:#0a0a0c;border-radius:7px;font-size:13px;font-weight:600;text-decoration:none;">Åpne OAuth Playground ↗</a>' +
-        '</div>' +
-      '</div>' +
-
-      '<div style="background:#111114;border-radius:8px;padding:14px;margin-bottom:12px;display:flex;gap:12px;align-items:flex-start;">' +
-        '<div style="background:#c8a96e;color:#0a0a0c;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px;">2</div>' +
-        '<div>' +
-          '<p style="color:#edeae4;font-size:13px;margin:0 0 4px;">Velg <strong style="color:#e4cc9e;">Drive API v3</strong> og huk av:</p>' +
-          '<code style="background:#0a0a0c;color:#5bb578;padding:4px 8px;border-radius:4px;font-size:11px;display:block;margin-top:4px;">https://www.googleapis.com/auth/drive.appdata</code>' +
-          '<p style="color:#6e6b65;font-size:12px;margin:6px 0 0;">Klikk deretter <strong style="color:#edeae4;">Authorize APIs</strong>, logg inn med Google-kontoen din og godta tilgang.</p>' +
-        '</div>' +
-      '</div>' +
-
-      '<div style="background:#111114;border-radius:8px;padding:14px;margin-bottom:12px;display:flex;gap:12px;align-items:flex-start;">' +
-        '<div style="background:#c8a96e;color:#0a0a0c;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px;">3</div>' +
-        '<div style="width:100%;">' +
-          '<p style="color:#edeae4;font-size:13px;margin:0 0 6px;">Klikk <strong style="color:#e4cc9e;">Exchange authorization code for tokens</strong>, kopier <strong style="color:#e4cc9e;">Access token</strong> og lim inn her:</p>' +
-          '<input id="manualTokenInput" type="text" placeholder="ya29.a0AfH..." ' +
-            'style="width:100%;padding:10px 12px;background:#0a0a0c;border:1px solid #3d3b38;border-radius:6px;color:#edeae4;font-size:12px;font-family:monospace;outline:none;box-sizing:border-box;">' +
-        '</div>' +
-      '</div>' +
-
-      '<div style="display:flex;gap:10px;margin-top:4px;">' +
-        '<button onclick="closeTokenDialog()" style="flex:1;padding:11px;background:transparent;border:1px solid #3d3b38;color:#6e6b65;border-radius:7px;cursor:pointer;font-family:Outfit,sans-serif;font-size:13px;">Avbryt</button>' +
-        '<button onclick="submitManualToken()" style="flex:2;padding:11px;background:#c8a96e;border:none;color:#0a0a0c;border-radius:7px;cursor:pointer;font-family:Outfit,sans-serif;font-size:13px;font-weight:600;">Koble til Drive</button>' +
-      '</div>' +
-    '</div>';
-
-  document.body.appendChild(overlay);
-  setTimeout(() => document.getElementById('manualTokenInput')?.focus(), 100);
-}
-
-function closeTokenDialog() {
-  document.getElementById('tokenDialog')?.remove();
-  gdriveSetState('', 'Google Drive');
-}
-
-async function submitManualToken() {
-  const input = document.getElementById('manualTokenInput');
-  let token = input?.value.trim();
-
-  // Auto-extract if user pasted full URL
-  if (token.includes('access_token=')) {
-    const m = token.match(/access_token=([^&]+)/);
-    if (m) token = m[1];
-  }
-
-  if (!token || token.length < 20) {
-    input.style.borderColor = '#e05555';
-    input.placeholder = 'Tokenet ser ikke riktig ut…';
-    return;
-  }
-
-  document.getElementById('tokenDialog')?.remove();
-  await handleGdriveToken(token);
-}
-
-async function handleGdriveToken(token) {
-  gdriveToken = token;
-  await storageSet('gdrive_token', token);
-  gdriveSetState('syncing', 'Kobler til…');
-  await gdriveSync();
-}
-
-// No redirect to handle — manual flow only
-
-
-// ── Find or create the app file in Drive ──
-async function gdriveFindOrCreateFile() {
-  // Search in appDataFolder (hidden, app-specific)
-  const searchRes = await fetch(
-    "https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name='" + GDRIVE_FILE_NAME + "'&fields=files(id,name,modifiedTime)",
-    { headers: { Authorization: 'Bearer ' + gdriveToken } }
-  );
-  const searchData = await searchRes.json();
-  if (searchData.files?.length) {
-    gdriveFileId = searchData.files[0].id;
-    return { fileId: gdriveFileId, exists: true, modified: searchData.files[0].modifiedTime };
-  }
-  // Create new file
-  const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
-    method: 'POST',
-    headers: { Authorization: 'Bearer ' + gdriveToken, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: GDRIVE_FILE_NAME, parents: ['appDataFolder'] }),
-  });
-  const created = await createRes.json();
-  gdriveFileId = created.id;
-  return { fileId: gdriveFileId, exists: false, modified: null };
-}
-
-// ── Download books from Drive ──
-async function gdriveDownload() {
-  if (!gdriveFileId) return null;
-  const res = await fetch(
-    'https://www.googleapis.com/drive/v3/files/' + gdriveFileId + '?alt=media',
-    { headers: { Authorization: 'Bearer ' + gdriveToken } }
-  );
-  if (!res.ok) return null;
-  const text = await res.text();
-  if (!text.trim()) return null;
-  return JSON.parse(text);
-}
-
-// ── Upload books to Drive ──
-async function gdriveUpload(data) {
-  const body = JSON.stringify(data);
-  const url = gdriveFileId
-    ? 'https://www.googleapis.com/upload/drive/v3/files/' + gdriveFileId + '?uploadType=media'
-    : 'https://www.googleapis.com/upload/drive/v3/files?uploadType=media';
-  const method = gdriveFileId ? 'PATCH' : 'POST';
-  const res = await fetch(url, {
-    method,
-    headers: { Authorization: 'Bearer ' + gdriveToken, 'Content-Type': 'application/json' },
-    body,
-  });
-  return res.ok;
-}
-
-// ── Main sync: merge local + Drive, keep newest ──
-async function gdriveSync() {
-  if (!gdriveToken || gdriveSyncing) return;
-  gdriveSyncing = true;
-  gdriveSetState('syncing', 'Synkroniserer…');
-
   try {
-    const { exists, modified } = await gdriveFindOrCreateFile();
+    await fetch(server + '/library/' + encodeURIComponent(key), {
+      method: 'PUT', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ books: slim })
+    });
+  } catch(e) { console.warn('pushToPin failed:', e); }
+}
 
-    if (exists) {
-      const remote = await gdriveDownload();
-      if (remote?.books?.length) {
-        // Merge: for each book, keep the version with latest 'added' or 'finishedDate'
-        const localMap  = new Map(books.map(b => [String(b.id), b]));
-        const remoteMap = new Map((remote.books || []).map(b => [String(b.id), b]));
-        const allIds    = new Set([...localMap.keys(), ...remoteMap.keys()]);
-
-        const merged = [];
-        for (const id of allIds) {
-          const local  = localMap.get(id);
-          const remote = remoteMap.get(id);
-          if (!local)   { merged.push(remote); continue; }
-          if (!remote)  { merged.push(local);  continue; }
-          // Keep whichever was modified more recently
-          const lt = local.added  || 0;
-          const rt = remote.added || 0;
-          merged.push(lt >= rt ? local : remote);
-        }
-        books = merged;
+async function connectPin() {
+  var raw = (document.getElementById('pinInput')?.value || '').trim();
+  if (!raw) { setPinStatus('Skriv inn en PIN-kode', 'var(--muted)'); return; }
+  var server = getServerUrl();
+  if (!server) { setPinStatus('Server-URL mangler', 'var(--red)'); return; }
+  setPinStatus('Kobler til…', 'var(--gold)');
+  try {
+    var key = await pinHash(raw);
+    window._pinKey = key;
+    localStorage.setItem('bibliothek_pin', raw);
+    var resp = await fetch(server + '/library/' + encodeURIComponent(key));
+    if (resp.ok) {
+      var json = await resp.json();
+      if (Array.isArray(json.books) && json.books.length > 0) {
+        var serverIds = new Set(json.books.map(function(b){return b.id;}));
+        var onlyLocal = books.filter(function(b){return !serverIds.has(b.id);});
+        books = json.books.concat(onlyLocal);
         await saveBooks();
         render();
+        setPinStatus('✓ Synkronisert – ' + json.books.length + ' bøker hentet', 'var(--green)');
+      } else {
+        await pushToPin();
+        setPinStatus('✓ Tilkoblet – lokale bøker lastet opp', 'var(--green)');
       }
-    }
-
-    // Upload current state
-    const slim = books.map(b => { const o={...b}; delete o.fileData; return o; });
-    await gdriveUpload({ books: slim, syncedAt: new Date().toISOString(), version: 1 });
-
-    gdriveLastSync = new Date();
-    const timeStr = gdriveLastSync.toLocaleTimeString('no', { hour:'2-digit', minute:'2-digit' });
-    gdriveSetState('connected', 'Drive synket ' + timeStr);
-    showToast('☁️ Google Drive synket!');
-
-  } catch(e) {
-    console.error('Drive sync error:', e);
-    gdriveSetState('error', 'Synk feilet');
-    showToast('❌ Drive synk feilet: ' + e.message);
-  }
-
-  gdriveSyncing = false;
-}
-
-// ── Auto-sync after every save ──
-const _origSaveBooks = saveBooks;
-saveBooks = async function() {
-  await _origSaveBooks();
-  if (gdriveToken && !gdriveSyncing) {
-    setTimeout(gdriveSync, 1500); // debounce 1.5s
-  }
-};
-
-// ── Restore token and init Drive on load ──
-async function gdriveInit() {
-  try {
-    const saved = await storageGet('gdrive_token');
-    if (saved) {
-      gdriveToken = saved;
-      gdriveSetState('syncing', 'Gjenkobler…');
-      await gdriveSync();
     } else {
-      gdriveSetState('', 'Google Drive');
+      setPinStatus('✗ Feil: ' + resp.status, 'var(--red)');
+      window._pinKey = null;
     }
   } catch(e) {
-    gdriveSetState('', 'Google Drive');
+    setPinStatus('✗ Kunne ikke nå server', 'var(--red)');
+    window._pinKey = null;
   }
 }
 
-// ── INIT ──
 async function init() {
   await loadBooks();
+  var savedPin = localStorage.getItem('bibliothek_pin');
+  if (savedPin && getServerUrl()) {
+    var pinEl = document.getElementById('pinInput');
+    if (pinEl) pinEl.value = savedPin;
+    pinHash(savedPin).then(function(k){ window._pinKey = k; setPinStatus('✓ Tilkoblet med PIN', 'var(--green)'); });
+  }
   await loadKindleDevices();
   await loadServerUrl();
   render();
