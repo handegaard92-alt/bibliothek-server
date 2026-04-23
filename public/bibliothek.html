@@ -36,7 +36,7 @@ body {
   height:100vh;
 }
 
-/* ── SIDEBAR ── */
+/* ââ SIDEBAR ââ */
 .sidebar {
   width:230px;
   min-width:230px;
@@ -153,7 +153,7 @@ body {
 }
 .btn-add:hover { border-color:var(--gold); color:var(--gold); background:var(--gold-dim); }
 
-/* ── MAIN ── */
+/* ââ MAIN ââ */
 .main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
 .topbar {
   display:flex;
@@ -204,7 +204,7 @@ body {
   cursor:pointer;
 }
 
-/* ── CONTENT ── */
+/* ââ CONTENT ââ */
 .content {
   flex:1;
   overflow-y:auto;
@@ -308,7 +308,7 @@ body {
 .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(145px,1fr)); gap:20px; }
 .grid.lv { grid-template-columns:1fr; gap:8px; }
 
-/* Book card – grid */
+/* Book card â grid */
 .bk {
   cursor:pointer;
   animation:fadeUp 0.3s ease both;
@@ -423,7 +423,7 @@ body {
 .empty h3 { font-family:'Cormorant Garamond',serif; font-size:22px; margin-bottom:8px; }
 .empty p { font-size:13.5px; color:var(--muted); margin-bottom:20px; }
 
-/* ── MODAL ── */
+/* ââ MODAL ââ */
 .backdrop {
   display:none; position:fixed; inset:0;
   background:rgba(0,0,0,0.72); backdrop-filter:blur(10px);
@@ -554,7 +554,7 @@ body {
   width:7px; height:7px; border-radius:50%; flex-shrink:0;
 }
 
-  /* ── STATS VIEW ── */
+  /* ââ STATS VIEW ââ */
   .stats-big-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:12px; margin-bottom:28px; }
   .stat-big { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:18px; transition:border-color 0.15s; }
   .stat-big:hover { border-color:rgba(200,169,110,0.2); }
@@ -568,7 +568,7 @@ body {
   .chart-section { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:20px; margin-bottom:20px; }
   .chart-title { font-family:'Cormorant Garamond',serif; font-size:16px; font-weight:700; margin-bottom:16px; color:var(--text); }
 
-  /* ── RECOMMENDATIONS VIEW ── */
+  /* ââ RECOMMENDATIONS VIEW ââ */
   .rec-chat { display:flex; flex-direction:column; height:calc(100vh - 130px); }
   .rec-messages { flex:1; overflow-y:auto; padding-bottom:16px; display:flex; flex-direction:column; gap:14px; }
   .rec-messages::-webkit-scrollbar { width:4px; }
@@ -597,7 +597,7 @@ body {
   .chip:hover { border-color:var(--gold); color:var(--gold); }
 
 
-  /* ── BATCH UPLOAD ── */
+  /* ââ BATCH UPLOAD ââ */
   #batchDrop.drag { border-color:var(--gold); background:var(--gold-dim); }
   .batch-item {
     background:var(--surface2);
@@ -635,7 +635,7 @@ body {
   .batch-remove:hover { color:var(--red); }
 
 
-/* ── SIDEBAR TOGGLE ── */
+/* ââ SIDEBAR TOGGLE ââ */
 .sidebar-toggle {
   display:none;
   position:fixed;
@@ -661,7 +661,7 @@ body {
 }
 .sidebar-overlay.open { display:block; }
 
-/* ── MOBILE RESPONSIVE ── */
+/* ââ MOBILE RESPONSIVE ââ */
 @media (max-width: 700px) {
   body { overflow:hidden; }
 
@@ -728,7 +728,7 @@ body {
   .sidebar-overlay { display:none !important; }
 }
 
-/* ── SERIE BADGE ── */
+/* ââ SERIE BADGE ââ */
 .serie-badge {
   display:inline-flex; align-items:center; gap:4px;
   font-size:10px; color:var(--gold);
@@ -741,7 +741,7 @@ body {
   max-width:100%;
 }
 
-  /* ── GOOGLE DRIVE SYNC ── */
+  /* ââ GOOGLE DRIVE SYNC ââ */
   .gdrive-bar {
     display:flex; align-items:center; gap:8px;
     padding:10px 12px;
@@ -772,10 +772,10 @@ body {
 </head>
 <body>
 
-<button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()" title="Meny">☰</button>
+<button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()" title="Meny">â°</button>
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
-<!-- ── SIDEBAR ── -->
+<!-- ââ SIDEBAR ââ -->
 <aside class="sidebar" id="sidebar">
   <div class="logo-area">
     <h1>Bibliothek</h1>
@@ -786,12 +786,12 @@ body {
       <div class="nav-label">Bibliotek</div>
       <div class="nav-item active" data-view="all" onclick="setView(this,'all')">
         <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-        Alle bøker
+        Alle bÃ¸ker
         <span class="cnt" id="cnt-all">0</span>
       </div>
       <div class="nav-item" data-view="reading" onclick="setView(this,'reading')">
         <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 6.25v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.25v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.25m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.25v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.25"/></svg>
-        Leser nå
+        Leser nÃ¥
         <span class="cnt" id="cnt-reading">0</span>
       </div>
       <div class="nav-item" data-view="done" onclick="setView(this,'done')">
@@ -801,7 +801,7 @@ body {
       </div>
       <div class="nav-item" data-view="wishlist" onclick="setView(this,'wishlist')">
         <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
-        Ønskeliste
+        Ãnskeliste
         <span class="cnt" id="cnt-wishlist">0</span>
       </div>
       <div class="nav-item" data-view="unread" onclick="setView(this,'unread')">
@@ -811,14 +811,14 @@ body {
       </div>
     </div>
     <div class="nav-group">
-      <div class="nav-label">Verktøy</div>
+      <div class="nav-label">VerktÃ¸y</div>
       <div class="nav-item" data-view="stats" onclick="setView(this,'stats')">
         <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
         Statistikk
       </div>
       <div class="nav-item" data-view="recommendations" onclick="setView(this,'recommendations')">
         <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
-        Anbefalinger ✨
+        Anbefalinger â¨
       </div>
       <div class="nav-item" onclick="exportLibrary()">
         <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -845,7 +845,7 @@ body {
     </div>
     
     <div style="padding-top:8px;border-top:1px solid var(--border);">
-      <button id="pinSyncBtn" onclick="openPinModal()" style="width:100%;padding:9px;background:transparent;border:1px solid var(--border2);color:var(--muted);font-family:'Outfit',sans-serif;font-size:12px;border-radius:8px;cursor:pointer;transition:all 0.15s;">🔒 Koble til med PIN</button>
+      <button id="pinSyncBtn" onclick="openPinModal()" style="width:100%;padding:9px;background:transparent;border:1px solid var(--border2);color:var(--muted);font-family:'Outfit',sans-serif;font-size:12px;border-radius:8px;cursor:pointer;transition:all 0.15s;">ð Koble til med PIN</button>
     </div>
     <button class="btn-add" onclick="openAddModal()">
       <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
@@ -853,7 +853,7 @@ body {
     </button>
     <button class="btn-add" onclick="openBatchModal()" style="border-style:dashed;">
       <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/><rect x="3" y="3" width="7" height="7" rx="1" opacity=".5"/><rect x="14" y="3" width="7" height="7" rx="1" opacity=".5"/></svg>
-      Last opp flere bøker
+      Last opp flere bÃ¸ker
     </button>
     <div style="padding-top:8px;border-top:1px solid var(--border);">
       <div class="kindle-label" style="margin-bottom:5px;">
@@ -865,13 +865,13 @@ body {
   </div>
 </aside>
 
-<!-- ── MAIN ── -->
+<!-- ââ MAIN ââ -->
 <div class="main">
   <div class="topbar">
-    <span class="topbar-title" id="topbarTitle">Alle bøker</span>
+    <span class="topbar-title" id="topbarTitle">Alle bÃ¸ker</span>
     <div class="search-wrap">
       <svg class="search-icon" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-      <input class="search" id="searchInput" placeholder="Søk på tittel, forfatter, sjanger…" oninput="render()">
+      <input class="search" id="searchInput" placeholder="SÃ¸k pÃ¥ tittel, forfatter, sjangerâ¦" oninput="render()">
     </div>
     <div class="view-btns">
       <button class="vbtn active" id="vbtnGrid" onclick="setViewMode('grid')" title="Rutenett">
@@ -882,7 +882,7 @@ body {
       </button>
     </div>
     <select class="sort-sel" onchange="render()">
-      <option value="title">Tittel A–Å</option>
+      <option value="title">Tittel AâÃ</option>
       <option value="author">Forfatter</option>
       <option value="series">Serie</option>
       <option value="year">Nyeste</option>
@@ -896,17 +896,17 @@ body {
     <div class="stats-row" id="statsRow"></div>
     <div class="hero-wrap" id="heroWrap"></div>
     <div class="pills" id="pillsWrap"></div>
-    <div class="sec-hdr"><span class="sec-title" id="secTitle">Alle bøker</span><span class="sec-cnt" id="secCnt"></span></div>
+    <div class="sec-hdr"><span class="sec-title" id="secTitle">Alle bÃ¸ker</span><span class="sec-cnt" id="secCnt"></span></div>
     <div class="grid" id="booksGrid"></div>
   </div>
 </div>
 
-<!-- ── ADD/EDIT MODAL ── -->
+<!-- ââ ADD/EDIT MODAL ââ -->
 <div class="backdrop" id="bookModal">
   <div class="modal">
     <div class="modal-hdr">
       <h2 id="modalTitle">Legg til bok</h2>
-      <button class="modal-close" onclick="closeModal()">✕</button>
+      <button class="modal-close" onclick="closeModal()">â</button>
     </div>
     <div class="fr">
       <div class="fg">
@@ -926,7 +926,7 @@ body {
           <svg width="16" height="16" fill="none" stroke="var(--muted2)" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg>
         </div>
         <div>
-          <div id="coverStatus" style="font-size:12px;color:var(--muted);">Skriv inn tittel for å søke etter omslag…</div>
+          <div id="coverStatus" style="font-size:12px;color:var(--muted);">Skriv inn tittel for Ã¥ sÃ¸ke etter omslagâ¦</div>
           <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;" id="coverAltBtns"></div>
         </div>
       </div>
@@ -941,7 +941,7 @@ body {
         </select>
       </div>
       <div class="fg">
-        <label class="fl">Utgivelsesår</label>
+        <label class="fl">UtgivelsesÃ¥r</label>
         <input class="fi" id="fYear" type="number" placeholder="2024">
       </div>
     </div>
@@ -950,9 +950,9 @@ body {
         <label class="fl">Status</label>
         <select class="fs" id="fStatus" onchange="toggleFinishedDate()">
           <option value="unread">Ikke lest</option>
-          <option value="reading">Leser nå</option>
+          <option value="reading">Leser nÃ¥</option>
           <option value="done">Lest</option>
-          <option value="wishlist">Ønskeliste</option>
+          <option value="wishlist">Ãnskeliste</option>
         </select>
       </div>
       <div class="fg">
@@ -980,15 +980,15 @@ body {
       </div>
     </div>
     <div class="fg">
-      <label class="fl">Vurdering (0–5)</label>
+      <label class="fl">Vurdering (0â5)</label>
       <input class="fi" id="fRating" type="number" min="0" max="5" placeholder="0">
     </div>
     <div class="fg">
       <label class="fl">Last opp fil (epub, mobi, pdf, azw3)</label>
       <div class="file-drop" id="fileDrop">
         <input type="file" accept=".epub,.mobi,.pdf,.azw3,.azw" id="fileInput" onchange="handleFile(this)">
-        <div class="file-drop-icon">📂</div>
-        <p>Slipp fil her eller klikk for å velge</p>
+        <div class="file-drop-icon">ð</div>
+        <p>Slipp fil her eller klikk for Ã¥ velge</p>
         <div class="filename" id="fileLabel"></div>
       </div>
     </div>
@@ -1001,12 +1001,12 @@ body {
   </div>
 </div>
 
-<!-- ── KINDLE SEND MODAL ── -->
+<!-- ââ KINDLE SEND MODAL ââ -->
 <div class="backdrop" id="kindleModal">
   <div class="kindle-modal">
     <div class="modal-hdr">
       <h2>Send til Kindle</h2>
-      <button class="modal-close" onclick="closeKindleModal()">✕</button>
+      <button class="modal-close" onclick="closeKindleModal()">â</button>
     </div>
     <div class="km-book">
       <div id="kmCover" class="km-cover"></div>
@@ -1031,28 +1031,28 @@ body {
           <div style="width:22px;height:22px;border-radius:50%;background:var(--gold);color:#0a0a0c;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">1</div>
           <div>
             <div style="font-size:13px;font-weight:500;color:var(--text);">Last ned filen</div>
-            <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">Trykk knappen under for å lagre epub-filen til enheten</div>
+            <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">Trykk knappen under for Ã¥ lagre epub-filen til enheten</div>
           </div>
         </div>
         <div style="display:flex;gap:10px;align-items:flex-start;">
           <div style="width:22px;height:22px;border-radius:50%;background:var(--gold);color:#0a0a0c;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">2</div>
           <div>
             <div style="font-size:13px;font-weight:500;color:var(--text);">Send som e-postvedlegg</div>
-            <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">Åpne Mail-appen, lag ny e-post til <span id="kmTargetEmail" style="color:var(--gold);font-weight:500;"></span>, legg ved filen og send</div>
+            <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">Ãpne Mail-appen, lag ny e-post til <span id="kmTargetEmail" style="color:var(--gold);font-weight:500;"></span>, legg ved filen og send</div>
           </div>
         </div>
         <div style="display:flex;gap:10px;align-items:flex-start;">
           <div style="width:22px;height:22px;border-radius:50%;background:var(--gold);color:#0a0a0c;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">3</div>
           <div>
-            <div style="font-size:13px;font-weight:500;color:var(--text);">Boken dukker opp på Kindle</div>
-            <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">Husk at avsender-e-posten din må være godkjent i <a href="https://www.amazon.com/hz/mycd/myx#/home/settings/payment" target="_blank" style="color:var(--gold);">Amazon-innstillingene</a></div>
+            <div style="font-size:13px;font-weight:500;color:var(--text);">Boken dukker opp pÃ¥ Kindle</div>
+            <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">Husk at avsender-e-posten din mÃ¥ vÃ¦re godkjent i <a href="https://www.amazon.com/hz/mycd/myx#/home/settings/payment" target="_blank" style="color:var(--gold);">Amazon-innstillingene</a></div>
           </div>
         </div>
       </div>
     </div>
 
-    <div id="kmNoFile" style="display:none;" class="km-no-email">⚠️ Filen er ikke tilgjengelig i denne sesjonen. Rediger boken og last opp epub-filen på nytt for å sende til Kindle.</div>
-    <div id="kmNoDevice" style="display:none;" class="km-no-email">⚠️ Legg til en Kindle-enhet i sidemenyen først.</div>
+    <div id="kmNoFile" style="display:none;" class="km-no-email">â ï¸ Filen er ikke tilgjengelig i denne sesjonen. Rediger boken og last opp epub-filen pÃ¥ nytt for Ã¥ sende til Kindle.</div>
+    <div id="kmNoDevice" style="display:none;" class="km-no-email">â ï¸ Legg til en Kindle-enhet i sidemenyen fÃ¸rst.</div>
 
     <div class="mfooter" style="margin-top:0;padding-top:12px;border-top:1px solid var(--border);flex-direction:column;gap:8px;">
       <!-- Primary: direct send via server -->
@@ -1080,12 +1080,12 @@ body {
   </div>
 </div>
 
-<!-- ── KINDLE DEVICE MANAGER MODAL ── -->
+<!-- ââ KINDLE DEVICE MANAGER MODAL ââ -->
 <div class="backdrop" id="kindleDeviceModal">
   <div class="modal" style="max-width:420px;">
     <div class="modal-hdr">
       <h2>Kindle-enheter</h2>
-      <button class="modal-close" onclick="closeKindleDeviceModal()">✕</button>
+      <button class="modal-close" onclick="closeKindleDeviceModal()">â</button>
     </div>
     <div id="deviceListEdit" style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px;"></div>
     <div style="border-top:1px solid var(--border);padding-top:16px;">
@@ -1108,7 +1108,7 @@ body {
 
 <div class="toast" id="toast"></div>
 
-<!-- ── MOBILE BOTTOM NAV ── -->
+<!-- ââ MOBILE BOTTOM NAV ââ -->
 <nav class="mobile-nav" id="mobileNav">
   <button class="mobile-nav-btn active" data-view="all" onclick="setViewMobile(this,'all')">
     <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
@@ -1116,7 +1116,7 @@ body {
   </button>
   <button class="mobile-nav-btn" data-view="reading" onclick="setViewMobile(this,'reading')">
     <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24"><path d="M12 6.25v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.25v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.25m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.25v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.25"/></svg>
-    Leser nå
+    Leser nÃ¥
   </button>
   <button class="mobile-nav-btn" onclick="openBatchModal()">
     <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
@@ -1128,24 +1128,24 @@ body {
   </button>
   <button class="mobile-nav-btn" data-view="recommendations" onclick="setViewMobile(this,'recommendations')">
     <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
-    Tips ✨
+    Tips â¨
   </button>
 </nav>
 
-<!-- ── BATCH UPLOAD MODAL ── -->
+<!-- ââ BATCH UPLOAD MODAL ââ -->
 <div class="backdrop" id="batchModal">
   <div class="modal" style="max-width:640px;max-height:90vh;display:flex;flex-direction:column;">
     <div class="modal-hdr" style="flex-shrink:0;">
-      <h2>Last opp flere bøker</h2>
-      <button class="modal-close" onclick="closeBatchModal()">✕</button>
+      <h2>Last opp flere bÃ¸ker</h2>
+      <button class="modal-close" onclick="closeBatchModal()">â</button>
     </div>
 
     <!-- Drop zone -->
     <div id="batchDrop" style="border:2px dashed var(--muted2);border-radius:var(--r2);padding:28px;text-align:center;cursor:pointer;transition:all 0.15s;margin-bottom:16px;flex-shrink:0;position:relative;">
       <input type="file" id="batchInput" accept=".epub,.mobi,.pdf,.azw3,.azw" multiple style="position:absolute;inset:0;opacity:0;cursor:pointer;">
-      <div style="font-size:32px;margin-bottom:8px;">📚</div>
+      <div style="font-size:32px;margin-bottom:8px;">ð</div>
       <div style="font-size:14px;color:var(--text);font-weight:500;margin-bottom:4px;">Slipp epub-filer her</div>
-      <div style="font-size:12px;color:var(--muted);">eller klikk for å velge — epub, mobi, pdf, azw3</div>
+      <div style="font-size:12px;color:var(--muted);">eller klikk for Ã¥ velge â epub, mobi, pdf, azw3</div>
     </div>
 
     <!-- File queue -->
@@ -1161,7 +1161,7 @@ body {
 </div>
 
 <script>
-// ── STATE ──
+// ââ STATE ââ
 let books = [];
 let view = 'all';
 let genreFilter = null;
@@ -1177,7 +1177,7 @@ const STORAGE_KEY  = 'bibliothek_books';
 const DEVICES_KEY  = 'bibliothek_kindle_devices';
 const SERVER_KEY   = 'bibliothek_server_url';
 
-// ── STORAGE & SERVER AUTO-DETECT ──
+// ââ STORAGE & SERVER AUTO-DETECT ââ
 const _memStore = new Map();
 
 // Detect if we're running as a hosted web app (on Render or localhost)
@@ -1211,7 +1211,7 @@ async function storageSet(key, value) {
 
 let kindleDevices = []; // [{name, email}]
 
-// ── STORAGE ──
+// ââ STORAGE ââ
 async function loadBooks() {
   try {
     const raw = await storageGet(STORAGE_KEY);
@@ -1299,7 +1299,7 @@ function renderKindleDeviceList() {
   `).join('');
 }
 
-// ── KINDLE DEVICE MANAGER ──
+// ââ KINDLE DEVICE MANAGER ââ
 function openKindleDeviceModal() {
   renderDeviceListEdit();
   document.getElementById('newDeviceName').value = '';
@@ -1313,7 +1313,7 @@ function closeKindleDeviceModal() {
 function renderDeviceListEdit() {
   const el = document.getElementById('deviceListEdit');
   if (!kindleDevices.length) {
-    el.innerHTML = '<div style="font-size:13px;color:var(--muted);text-align:center;padding:12px;">Ingen enheter ennå</div>';
+    el.innerHTML = '<div style="font-size:13px;color:var(--muted);text-align:center;padding:12px;">Ingen enheter ennÃ¥</div>';
     return;
   }
   el.innerHTML = kindleDevices.map((d,i) => `
@@ -1331,7 +1331,7 @@ async function addKindleDevice() {
   const name  = document.getElementById('newDeviceName').value.trim();
   const email = document.getElementById('newDeviceEmail').value.trim();
   if (!name || !email || !email.includes('@')) {
-    showToast('⚠️ Fyll inn navn og gyldig e-post'); return;
+    showToast('â ï¸ Fyll inn navn og gyldig e-post'); return;
   }
   kindleDevices.push({ name, email });
   await saveKindleDevices();
@@ -1339,7 +1339,7 @@ async function addKindleDevice() {
   renderDeviceListEdit();
   document.getElementById('newDeviceName').value = '';
   document.getElementById('newDeviceEmail').value = '';
-  showToast('✓ Enhet lagt til');
+  showToast('â Enhet lagt til');
 }
 
 async function removeKindleDevice(idx) {
@@ -1347,10 +1347,10 @@ async function removeKindleDevice(idx) {
   await saveKindleDevices();
   renderKindleDeviceList();
   renderDeviceListEdit();
-  showToast('🗑 Enhet fjernet');
+  showToast('ð Enhet fjernet');
 }
 
-// ── COVER SEARCH (Open Library) ──
+// ââ COVER SEARCH (Open Library) ââ
 async function fetchCover(title, author) {
   try {
     const q = encodeURIComponent(`${title} ${author||''}`.trim());
@@ -1378,7 +1378,7 @@ async function searchCover(title, author) {
   const statusEl = document.getElementById('coverStatus');
   const thumbEl = document.getElementById('coverThumb');
   const altsEl = document.getElementById('coverAltBtns');
-  statusEl.textContent = 'Søker etter omslag…';
+  statusEl.textContent = 'SÃ¸ker etter omslagâ¦';
   statusEl.style.color = 'var(--muted)';
   thumbEl.innerHTML = '<div class="spin"></div>';
   altsEl.innerHTML = '';
@@ -1387,7 +1387,7 @@ async function searchCover(title, author) {
 
   const alts = await fetchCover(title, author);
   if (!alts || !alts.length) {
-    statusEl.textContent = 'Ingen omslag funnet – bruker autogenerert cover.';
+    statusEl.textContent = 'Ingen omslag funnet â bruker autogenerert cover.';
     thumbEl.innerHTML = '<svg width="16" height="16" fill="none" stroke="var(--muted2)" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg>';
     return;
   }
@@ -1402,7 +1402,7 @@ function selectCoverAlt(idx) {
   pendingCoverUrl = alt.url;
   const thumbEl = document.getElementById('coverThumb');
   thumbEl.innerHTML = `<img src="${alt.url}" style="width:100%;height:100%;object-fit:cover;border-radius:5px;" onerror="this.style.display='none'">`;
-  document.getElementById('coverStatus').textContent = 'Omslag funnet ✓';
+  document.getElementById('coverStatus').textContent = 'Omslag funnet â';
   document.getElementById('coverStatus').style.color = 'var(--green)';
 
   // Alt buttons
@@ -1414,7 +1414,7 @@ function selectCoverAlt(idx) {
   ).join('');
 }
 
-// ── ISBN EXTRACTION ──
+// ââ ISBN EXTRACTION ââ
 function extractISBN(filename) {
   // Strip extension and clean up
   const base = filename.replace(/\.[^/.]+$/, '').replace(/[_\-\s]/g, '');
@@ -1430,17 +1430,17 @@ function extractISBN(filename) {
   return null;
 }
 
-// ── OPEN LIBRARY LOOKUP BY ISBN ──
-// ── GENRE MAPPING (shared) ──
+// ââ OPEN LIBRARY LOOKUP BY ISBN ââ
+// ââ GENRE MAPPING (shared) ââ
 const GENRE_MAP = {
-  'roman':'Roman','skjønnlitteratur':'Roman','novelle':'Roman','fortelling':'Roman',
+  'roman':'Roman','skjÃ¸nnlitteratur':'Roman','novelle':'Roman','fortelling':'Roman',
   'krim':'Krim','detektiv':'Krim','kriminallitteratur':'Krim',
   'spenning':'Thriller','thriller':'Thriller',
   'science fiction':'Sci-Fi','sci-fi':'Sci-Fi','fantasy':'Fantasy',
   'biografi':'Biografi','selvbiografi':'Biografi','memoar':'Biografi','livshistorie':'Biografi',
   'humor':'Humor','satire':'Humor',
   'sakprosa':'Sakprosa','historie':'Sakprosa','vitenskap':'Sakprosa',
-  'filosofi':'Sakprosa','økonomi':'Sakprosa','politikk':'Sakprosa','religion':'Sakprosa',
+  'filosofi':'Sakprosa','Ã¸konomi':'Sakprosa','politikk':'Sakprosa','religion':'Sakprosa',
   'fiction':'Roman','novel':'Roman','romance':'Roman',
   'mystery':'Krim','crime':'Krim',
   'biography':'Biografi','nonfiction':'Sakprosa','history':'Sakprosa',
@@ -1454,7 +1454,7 @@ function mapGenre(texts) {
   return 'Annet';
 }
 
-// ── CORS-SAFE FETCH: tries direct first, then corsproxy.io ──
+// ââ CORS-SAFE FETCH: tries direct first, then corsproxy.io ââ
 async function fetchJSON(url) {
   // Try direct first (works if API has CORS headers)
   try {
@@ -1470,7 +1470,7 @@ async function fetchJSON(url) {
   return null;
 }
 
-// ── NASJONALBIBLIOTEKET (nb.no) ──
+// ââ NASJONALBIBLIOTEKET (nb.no) ââ
 async function fetchBookByISBN_NB(isbn) {
   try {
     const url = `https://api.nb.no/catalog/v1/items?q=isbn:${isbn}&size=3`;
@@ -1525,7 +1525,7 @@ async function fetchBookByISBN_NB(isbn) {
   }
 }
 
-// ── OPEN LIBRARY LOOKUP (fallback) ──
+// ââ OPEN LIBRARY LOOKUP (fallback) ââ
 async function fetchBookByISBN_OL(isbn) {
   try {
     const url = `https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`;
@@ -1553,15 +1553,15 @@ async function fetchBookByISBN_OL(isbn) {
   } catch(e) { return null; }
 }
 
-// ── MAIN LOOKUP: NB → Open Library → cover-only ──
+// ââ MAIN LOOKUP: NB â Open Library â cover-only ââ
 async function fetchBookByISBN(isbn) {
-  // 1. Nasjonalbiblioteket (beste kilde for norske bøker)
-  setIsbnStatus(`Søker ISBN ${isbn} i Nasjonalbiblioteket…`, 'var(--gold)', true);
+  // 1. Nasjonalbiblioteket (beste kilde for norske bÃ¸ker)
+  setIsbnStatus(`SÃ¸ker ISBN ${isbn} i Nasjonalbiblioteketâ¦`, 'var(--gold)', true);
   const nb = await fetchBookByISBN_NB(isbn);
   if (nb?.title) { nb._sourcePriority = 1; return nb; }
 
   // 2. Open Library
-  setIsbnStatus(`Prøver Open Library…`, 'var(--gold)', true);
+  setIsbnStatus(`PrÃ¸ver Open Libraryâ¦`, 'var(--gold)', true);
   const ol = await fetchBookByISBN_OL(isbn);
   if (ol?.title) { ol._sourcePriority = 2; return ol; }
 
@@ -1573,7 +1573,7 @@ async function fetchBookByISBN(isbn) {
   };
 }
 
-// ── SHOW ISBN LOOKUP STATUS ──
+// ââ SHOW ISBN LOOKUP STATUS ââ
 function setIsbnStatus(msg, color='var(--muted)', spin=false) {
   const el = document.getElementById('isbnStatus');
   if (!el) return;
@@ -1585,7 +1585,7 @@ function setIsbnStatus(msg, color='var(--muted)', spin=false) {
   el.style.alignItems = 'center';
 }
 
-// ── ZIP READER: reads central directory for correct sizes ──
+// ââ ZIP READER: reads central directory for correct sizes ââ
 function u16(b, o) { return b[o] | b[o+1]<<8; }
 function u32(b, o) { return (b[o] | b[o+1]<<8 | b[o+2]<<16 | b[o+3]<<24) >>> 0; }
 
@@ -1618,7 +1618,7 @@ async function readZipEntry(bytes, entry) {
 
   if (entry.compression === 0) return compData; // stored, no compression
 
-  // Deflate (compression=8) — use browser's DecompressionStream
+  // Deflate (compression=8) â use browser's DecompressionStream
   const ds = new DecompressionStream('deflate-raw');
   const w  = ds.writable.getWriter();
   w.write(compData); w.close();
@@ -1644,7 +1644,7 @@ function uint8ToBase64(bytes) {
   return btoa(binary);
 }
 
-// ── EPUB PARSER ──
+// ââ EPUB PARSER ââ
 async function parseEpub(file) {
   const arrayBuf = await new Promise((res, rej) => {
     const fr = new FileReader();
@@ -1746,7 +1746,7 @@ async function parseEpub(file) {
   return { title, author, publisher, desc, lang, year, epubIsbn, coverDataUrl };
 }
 
-// ── FILE HANDLING ──
+// ââ FILE HANDLING ââ
 
 function readFileAsDataURL(file) {
   return new Promise((resolve, reject) => {
@@ -1763,27 +1763,27 @@ async function processFile(file) {
   const allowed = ['.epub','.mobi','.pdf','.azw3','.azw'];
   const ext = file.name.toLowerCase().slice(file.name.lastIndexOf('.'));
   if (!allowed.includes(ext)) {
-    setIsbnStatus(`⚠️ Filtype «${ext}» støttes ikke. Bruk epub, mobi, pdf eller azw3.`, 'var(--red)');
-    showToast('⚠️ Ugyldig filtype'); return;
+    setIsbnStatus(`â ï¸ Filtype Â«${ext}Â» stÃ¸ttes ikke. Bruk epub, mobi, pdf eller azw3.`, 'var(--red)');
+    showToast('â ï¸ Ugyldig filtype'); return;
   }
 
   const mb = (file.size / 1024 / 1024).toFixed(1);
   document.getElementById('fileLabel').textContent = `${file.name} (${mb} MB)`;
-  setIsbnStatus('Leser fil…', 'var(--muted)', true);
+  setIsbnStatus('Leser filâ¦', 'var(--muted)', true);
 
   try {
     const dataUrl = await readFileAsDataURL(file);
     pendingFileData = { name: file.name, type: file.type || 'application/octet-stream', dataUrl, size: file.size };
 
-    // ── EPUB: parse metadata + cover directly from file ──
+    // ââ EPUB: parse metadata + cover directly from file ââ
     if (ext === '.epub') {
-      setIsbnStatus('Leser epub-metadata…', 'var(--gold)', true);
+      setIsbnStatus('Leser epub-metadataâ¦', 'var(--gold)', true);
       let epubMeta = null;
       try {
         epubMeta = await parseEpub(file);
       } catch(e) {
         console.warn('epub parse failed:', e);
-        setIsbnStatus('⚠️ Epub-lesing feilet: ' + e.message, 'var(--red)');
+        setIsbnStatus('â ï¸ Epub-lesing feilet: ' + e.message, 'var(--red)');
       }
 
       if (epubMeta?.title) {
@@ -1802,7 +1802,7 @@ async function processFile(file) {
           pendingCoverUrl = epubMeta.coverDataUrl; // use for display this session
           document.getElementById('coverThumb').innerHTML =
             '<img src="' + epubMeta.coverDataUrl + '" style="width:100%;height:100%;object-fit:cover;border-radius:5px;">';
-          document.getElementById('coverStatus').textContent = 'Omslag hentet fra epub-fil ✓';
+          document.getElementById('coverStatus').textContent = 'Omslag hentet fra epub-fil â';
           document.getElementById('coverStatus').style.color = 'var(--green)';
           // Also fetch a persistent remote cover URL in the background (epub base64 not stored)
           if (epubMeta.title) {
@@ -1826,17 +1826,17 @@ async function processFile(file) {
         const extras = [
           epubMeta.publisher || null,
           epubMeta.year ? String(epubMeta.year) : null,
-        ].filter(Boolean).join(' · ');
+        ].filter(Boolean).join(' Â· ');
 
         // Also try NB/OL for extra info if we have ISBN
         if (isbn && !epubMeta.coverDataUrl) {
-          setIsbnStatus(`Henter omslag for ISBN ${isbn}…`, 'var(--gold)', true);
+          setIsbnStatus(`Henter omslag for ISBN ${isbn}â¦`, 'var(--gold)', true);
           const info = await fetchBookByISBN(isbn);
           if (info?.coverUrl) {
             pendingCoverUrl = info.coverUrl;
             document.getElementById('coverThumb').innerHTML =
               `<img src="${info.coverUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:5px;" onerror="this.style.display='none'">`;
-            document.getElementById('coverStatus').textContent = 'Omslag hentet ✓';
+            document.getElementById('coverStatus').textContent = 'Omslag hentet â';
             document.getElementById('coverStatus').style.color = 'var(--green)';
           }
         }
@@ -1858,28 +1858,28 @@ async function processFile(file) {
         } catch(_) {}
 
         setIsbnStatus(
-          `<span style="color:var(--green)">✓ Hentet direkte fra epub${extras?' — '+extras:''}</span>` +
-          (epubMeta.epubIsbn ? ` <a href="https://www.nb.no/search?q=isbn%3A${epubMeta.epubIsbn}" target="_blank" style="color:var(--gold);text-decoration:underline;margin-left:6px;font-size:11.5px;">nb.no ↗</a>` : ''),
+          `<span style="color:var(--green)">â Hentet direkte fra epub${extras?' â '+extras:''}</span>` +
+          (epubMeta.epubIsbn ? ` <a href="https://www.nb.no/search?q=isbn%3A${epubMeta.epubIsbn}" target="_blank" style="color:var(--gold);text-decoration:underline;margin-left:6px;font-size:11.5px;">nb.no â</a>` : ''),
           'var(--green)'
         );
         return;
       }
-      // epub parse failed or no title — fall through to ISBN lookup
+      // epub parse failed or no title â fall through to ISBN lookup
     }
 
-    // ── Non-epub or epub parse failed: use ISBN from filename ──
+    // ââ Non-epub or epub parse failed: use ISBN from filename ââ
     const isbn = extractISBN(file.name);
     if (!isbn) {
-      setIsbnStatus('⚠️ Ingen metadata funnet i filen, og ingen ISBN i filnavnet — fyll inn manuelt.', 'var(--muted)');
+      setIsbnStatus('â ï¸ Ingen metadata funnet i filen, og ingen ISBN i filnavnet â fyll inn manuelt.', 'var(--muted)');
       return;
     }
 
-    setIsbnStatus(`ISBN ${isbn} – søker i Nasjonalbiblioteket…`, 'var(--gold)', true);
+    setIsbnStatus(`ISBN ${isbn} â sÃ¸ker i Nasjonalbiblioteketâ¦`, 'var(--gold)', true);
     const info = await fetchBookByISBN(isbn);
 
     if (!info?.title) {
       setIsbnStatus(
-        `ISBN ${isbn} ikke funnet. <a href="https://www.e-bok.no/search?q=${isbn}" target="_blank" style="color:var(--gold);text-decoration:underline;margin-left:6px;">Søk på e-bok.no ↗</a>`,
+        `ISBN ${isbn} ikke funnet. <a href="https://www.e-bok.no/search?q=${isbn}" target="_blank" style="color:var(--gold);text-decoration:underline;margin-left:6px;">SÃ¸k pÃ¥ e-bok.no â</a>`,
         'var(--muted)'
       );
       return;
@@ -1894,7 +1894,7 @@ async function processFile(file) {
       pendingCoverUrl = info.coverUrl;
       document.getElementById('coverThumb').innerHTML =
         `<img src="${info.coverUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:5px;" onerror="this.style.display='none'">`;
-      document.getElementById('coverStatus').textContent = 'Omslag hentet ✓';
+      document.getElementById('coverStatus').textContent = 'Omslag hentet â';
       document.getElementById('coverStatus').style.color = 'var(--green)';
     }
 
@@ -1918,19 +1918,19 @@ async function processFile(file) {
     pendingFileData.publisher = info.publisher;
     pendingFileData.desc      = info.desc;
 
-    const extras = [info.pages ? `${info.pages} sider` : null, info.publisher||null].filter(Boolean).join(' · ');
+    const extras = [info.pages ? `${info.pages} sider` : null, info.publisher||null].filter(Boolean).join(' Â· ');
     const sourceLabel = info.source || '';
     const nbLink = info.source === 'Nasjonalbiblioteket'
-      ? `<a href="https://www.nb.no/search?q=isbn%3A${isbn}" target="_blank" style="color:var(--gold);text-decoration:underline;margin-left:6px;font-size:11.5px;">nb.no ↗</a>` : '';
+      ? `<a href="https://www.nb.no/search?q=isbn%3A${isbn}" target="_blank" style="color:var(--gold);text-decoration:underline;margin-left:6px;font-size:11.5px;">nb.no â</a>` : '';
     setIsbnStatus(
-      `<span style="color:var(--green)">✓ Hentet fra ${sourceLabel}${extras?' — '+extras:''}</span>${nbLink}`,
+      `<span style="color:var(--green)">â Hentet fra ${sourceLabel}${extras?' â '+extras:''}</span>${nbLink}`,
       'var(--green)'
     );
 
   } catch(err) {
     console.error('processFile error:', err);
-    setIsbnStatus(`❌ Feil: ${err.message}`, 'var(--red)');
-    showToast('❌ Kunne ikke lese filen');
+    setIsbnStatus(`â Feil: ${err.message}`, 'var(--red)');
+    showToast('â Kunne ikke lese filen');
     pendingFileData = null;
   }
 }
@@ -1954,7 +1954,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// ── MODAL ──
+// ââ MODAL ââ
 function openAddModal() {
   editingId = null;
   pendingCoverUrl = null;
@@ -1968,7 +1968,7 @@ function openAddModal() {
   document.getElementById('fStatus').value = 'unread';
   document.getElementById('fileLabel').textContent = '';
   document.getElementById('fileInput').value = '';
-  document.getElementById('coverStatus').textContent = 'Skriv inn tittel for å søke etter omslag…';
+  document.getElementById('coverStatus').textContent = 'Skriv inn tittel for Ã¥ sÃ¸ke etter omslagâ¦';
   document.getElementById('coverStatus').style.color = 'var(--muted)';
   document.getElementById('coverThumb').innerHTML = '<svg width="16" height="16" fill="none" stroke="var(--muted2)" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg>';
   document.getElementById('coverAltBtns').innerHTML = '';
@@ -2004,7 +2004,7 @@ function openEditModal(id) {
     document.getElementById('coverStatus').style.color = 'var(--green)';
   } else {
     document.getElementById('coverThumb').innerHTML = '<svg width="16" height="16" fill="none" stroke="var(--muted2)" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg>';
-    document.getElementById('coverStatus').textContent = 'Ingen omslag – søk på nytt ved å redigere tittel.';
+    document.getElementById('coverStatus').textContent = 'Ingen omslag â sÃ¸k pÃ¥ nytt ved Ã¥ redigere tittel.';
     document.getElementById('coverStatus').style.color = 'var(--muted)';
   }
   document.getElementById('coverAltBtns').innerHTML = '';
@@ -2029,7 +2029,40 @@ function toggleFinishedDate() {
   }
 }
 
-async function saveBook() {
+async async function uploadToR2(bookId, fileData) {
+  const server = getServerUrl();
+  const pin    = window._pinKey;
+  if (!server || !pin || !fileData?.dataUrl) return;
+
+  // Convert dataUrl → Blob
+  const arr  = fileData.dataUrl.split(',');
+  const mime = arr[0].match(/:(.*?);/)[1];
+  const bstr = atob(arr[1]);
+  const u8   = new Uint8Array(bstr.length);
+  for (let i = 0; i < bstr.length; i++) u8[i] = bstr.charCodeAt(i);
+  const blob = new Blob([u8], { type: mime });
+
+  const form = new FormData();
+  form.append('file',   blob, fileData.name || 'bok.epub');
+  form.append('pin',    pin);
+  form.append('bookId', String(bookId));
+
+  const res  = await fetch(server + '/files/upload', { method: 'POST', body: form });
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'R2 upload failed');
+
+  // Update the book record: store r2Key, remove heavy fileData from memory
+  const idx = books.findIndex(b => b.id === bookId);
+  if (idx !== -1) {
+    books[idx].r2Key    = json.key;
+    books[idx].fileData = null; // free memory – fil er nå i R2
+    await saveBooks();
+    render(); // refresh badges
+    showToast('☁ Fil lagret permanent i skyen');
+  }
+}
+
+function saveBook() {
   const title = document.getElementById('fTitle').value.trim();
   const author = document.getElementById('fAuthor').value.trim();
   if (!title || !author) { showToast('⚠️ Tittel og forfatter er påkrevd.'); return; }
@@ -2061,6 +2094,7 @@ async function saveBook() {
     data.fileData = pendingFileData.dataUrl;
   }
 
+  let bookId;
   if (editingId !== null) {
     const idx = books.findIndex(b => b.id === editingId);
     if (idx !== -1) {
@@ -2070,13 +2104,16 @@ async function saveBook() {
         ...data,
         id: existing.id,
         added: existing.added,
+        r2Key: existing.r2Key || null,
         fileData: pendingFileData ? data.fileData : existing.fileData,
         fileName: pendingFileData ? data.fileName : existing.fileName,
         fileType: pendingFileData ? data.fileType : existing.fileType,
       };
+      bookId = existing.id;
     }
   } else {
     data.id = Date.now();
+    bookId = data.id;
     books.push(data);
   }
 
@@ -2085,28 +2122,33 @@ async function saveBook() {
     closeModal();
     render();
     showToast(editingId !== null ? '✓ Bok oppdatert' : '✓ Bok lagt til');
+
+    // ─── R2 upload: kjøres i bakgrunnen hvis PIN er satt og vi har en fil ───
+    if (window._pinKey && pendingFileData?.dataUrl && bookId && getServerUrl()) {
+      uploadToR2(bookId, pendingFileData).catch(e => console.warn('R2 upload failed:', e));
+    }
   } catch(err) {
     console.error('saveBook error:', err);
     const msg = err?.message || String(err);
     if (msg.toLowerCase().includes('quota') || msg.toLowerCase().includes('storage')) {
-      showToast('❌ Lagringsplass full – prøv å slette andre bøker med store filer');
+      showToast('⚠ Lagringsplass full – prøv å slette andre bøker med store filer');
     } else {
-      showToast('❌ Kunne ikke lagre: ' + msg.slice(0, 60));
+      showToast('✗ Kunne ikke lagre: ' + msg.slice(0, 60));
     }
   }
 }
 
-async function deleteBook() {
+function deleteBook() {
   if (!editingId) return;
   if (!confirm('Slett denne boken fra biblioteket?')) return;
   books = books.filter(b => b.id !== editingId);
   await saveBooks();
   closeModal();
   render();
-  showToast('🗑 Bok slettet');
+  showToast('ð Bok slettet');
 }
 
-// ── KINDLE ──
+// ââ KINDLE ââ
 function openKindleModal(id) {
   kindleBookId = id;
   const b = books.find(x => x.id === id);
@@ -2117,7 +2159,7 @@ function openKindleModal(id) {
   const kmCover = document.getElementById('kmCover');
   kmCover.innerHTML = b.coverUrl
     ? `<img src="${b.coverUrl}" style="width:52px;height:78px;object-fit:cover;border-radius:6px;">`
-    : `<div style="width:52px;height:78px;background:var(--surface3);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:22px;">📖</div>`;
+    : `<div style="width:52px;height:78px;background:var(--surface3);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:22px;">ð</div>`;
 
   const hasFile = !!b.fileData;
 
@@ -2129,7 +2171,7 @@ function openKindleModal(id) {
     kindleDevices.forEach((d, i) => {
       const o = document.createElement('option');
       o.value = i;
-      o.textContent = d.name + ' — ' + d.email;
+      o.textContent = d.name + ' â ' + d.email;
       sel.appendChild(o);
     });
     wrap.style.display = 'block';
@@ -2139,11 +2181,11 @@ function openKindleModal(id) {
 
   let info = '';
   if (!hasFile) {
-    info = '<div class="km-no-email">📂 Last opp epub-filen på nytt for å sende til Kindle. Filer lagres ikke mellom sesjoner pga. størrelsesgrenser.</div>';
+    info = '<div class="km-no-email">ð Last opp epub-filen pÃ¥ nytt for Ã¥ sende til Kindle. Filer lagres ikke mellom sesjoner pga. stÃ¸rrelsesgrenser.</div>';
   } else if (!kindleDevices.length) {
-    info = '<div class="km-no-email">⚠️ Legg til en Kindle-enhet i sidemenyen først.</div>';
+    info = '<div class="km-no-email">â ï¸ Legg til en Kindle-enhet i sidemenyen fÃ¸rst.</div>';
   } else {
-    info = '<div class="km-info" style="font-size:12px;color:var(--muted);margin-bottom:12px;">Filen lastes ned og e-postklienten åpnes. Sørg for at Amazon-kontoen din tillater e-postadressen din som avsender.</div>';
+    info = '<div class="km-info" style="font-size:12px;color:var(--muted);margin-bottom:12px;">Filen lastes ned og e-postklienten Ã¥pnes. SÃ¸rg for at Amazon-kontoen din tillater e-postadressen din som avsender.</div>';
   }
   document.getElementById('kmInfo').innerHTML = info;
 
@@ -2195,7 +2237,7 @@ async function sendDirectToKindle() {
   const device = kindleDevices[parseInt(sel?.value)];
   const server = getServerUrl();
 
-  if (!b?.fileData) { showToast('⚠️ Ingen fil lastet opp'); return; }
+  if (!b?.fileData && !b?.r2Key) { showToast('⚠️ Ingen fil lastet opp'); return; }
   if (!device)       { showToast('⚠️ Velg en Kindle-enhet'); return; }
   if (!server)       {
     showToast('⚠️ Lim inn server-URL i sidemenyen først');
@@ -2208,7 +2250,32 @@ async function sendDirectToKindle() {
   lbl.textContent = 'Sender…';
 
   try {
-    // Convert base64 dataUrl back to a Blob
+    // ── Prioriter R2-nøkkel hvis filen er lagret permanent ──
+    if (b.r2Key && window._pinKey) {
+      const form = new FormData();
+      form.append('toEmail',    device.email);
+      form.append('bookTitle',  b.title || '');
+      form.append('bookAuthor', b.author || '');
+      form.append('r2Pin',     window._pinKey);
+      form.append('r2BookId',  String(b.id));
+      form.append('r2FileName', b.fileName || 'bok.epub');
+
+      const res  = await fetch(server + '/send-to-kindle', { method: 'POST', body: form });
+      const json = await res.json();
+
+      if (json.ok) {
+        showToast('✓ Sendt til ' + device.name + '!');
+        closeKindleModal();
+      } else {
+        showToast('✗ ' + (json.error || 'Sending feilet'));
+        lbl.textContent = 'Send direkte til Kindle';
+        btn.disabled = false;
+      }
+      return;
+    }
+
+    // ── Fallback: send fil direkte fra minnet (kun denne sesjon) ──
+    if (!b.fileData) { showToast('⚠️ Fil ikke tilgjengelig – lagre boken på nytt'); btn.disabled = false; lbl.textContent = 'Send direkte til Kindle'; return; }
     const dataUrl  = b.fileData;
     const arr      = dataUrl.split(',');
     const mime     = arr[0].match(/:(.*?);/)[1];
@@ -2227,15 +2294,15 @@ async function sendDirectToKindle() {
     const json = await res.json();
 
     if (json.ok) {
-      showToast('✅ Sendt til ' + device.name + '!');
+      showToast('✓ Sendt til ' + device.name + '!');
       closeKindleModal();
     } else {
-      showToast('❌ ' + (json.error || 'Sending feilet'));
+      showToast('✗ ' + (json.error || 'Sending feilet'));
       lbl.textContent = 'Send direkte til Kindle';
       btn.disabled = false;
     }
   } catch(err) {
-    showToast('❌ Kunne ikke nå serveren — sjekk URL');
+    showToast('✗ Kunne ikke nå serveren – sjekk URL');
     lbl.textContent = 'Send direkte til Kindle';
     btn.disabled = false;
   }
@@ -2247,7 +2314,7 @@ function downloadForKindle() {
   const a = document.createElement('a');
   a.href = b.fileData; a.download = b.fileName;
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  showToast('📥 ' + b.fileName + ' lastet ned');
+  showToast('ð¥ ' + b.fileName + ' lastet ned');
 }
 
 function openMailForKindle() {
@@ -2259,10 +2326,10 @@ function openMailForKindle() {
   const subject = encodeURIComponent('Convert: ' + b.title);
   const body    = encodeURIComponent('Vedlagt: ' + (b.fileName || b.title + '.epub'));
   window.open('mailto:' + device.email + '?subject=' + subject + '&body=' + body);
-  showToast('📬 Mail-appen åpnet — husk å legge ved filen!');
+  showToast('ð¬ Mail-appen Ã¥pnet â husk Ã¥ legge ved filen!');
 }
 
-// ── RENDER ──
+// ââ RENDER ââ
 function getFiltered() {
   let f = [...books];
   const q = document.getElementById('searchInput')?.value.toLowerCase() || '';
@@ -2305,7 +2372,7 @@ function genreColor(genre) {
 
 function renderStars(r) {
   if (!r) return '';
-  return `<div class="stars">${Array.from({length:5},(_,i)=>`<span class="star ${i<r?'s-on':'s-off'}">★</span>`).join('')}</div>`;
+  return `<div class="stars">${Array.from({length:5},(_,i)=>`<span class="star ${i<r?'s-on':'s-off'}">â</span>`).join('')}</div>`;
 }
 
 function coverHtml(b, w, h) {
@@ -2337,9 +2404,9 @@ function render() {
   const wish = books.filter(b=>b.status==='wishlist').length;
   const withFile = books.filter(b=>b.fileData).length;
   document.getElementById('statsRow').innerHTML = `
-    <div class="stat"><div class="stat-v">${books.length}</div><div class="stat-l">Bøker totalt</div></div>
-    <div class="stat"><div class="stat-v">${reading}</div><div class="stat-l">Leser nå</div></div>
-    <div class="stat"><div class="stat-v">${done}</div><div class="stat-l">Fullført</div></div>
+    <div class="stat"><div class="stat-v">${books.length}</div><div class="stat-l">BÃ¸ker totalt</div></div>
+    <div class="stat"><div class="stat-v">${reading}</div><div class="stat-l">Leser nÃ¥</div></div>
+    <div class="stat"><div class="stat-v">${done}</div><div class="stat-l">FullfÃ¸rt</div></div>
     <div class="stat"><div class="stat-v">${withFile}</div><div class="stat-l">Filer lastet opp</div></div>
   `;
 
@@ -2349,18 +2416,18 @@ function render() {
   if (readingBooks.length && view==='all' && !genreFilter && !document.getElementById('searchInput').value) {
     const b = readingBooks[0];
     hero.innerHTML = `
-      <div class="sec-hdr"><span class="sec-title">Fortsett å lese</span></div>
+      <div class="sec-hdr"><span class="sec-title">Fortsett Ã¥ lese</span></div>
       <div class="hero-card" onclick="openEditModal(${b.id})">
         <div class="hero-cover" style="${genreBg(b)}">${b.coverUrl?`<img src="${b.coverUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:7px;position:absolute;inset:0;" onerror="this.style.display='none'">`:''}</div>
         <div class="hero-info">
-          <div class="hero-tag">📖 Leser nå</div>
+          <div class="hero-tag">ð Leser nÃ¥</div>
           <div class="hero-t">${b.title}</div>
-          <div class="hero-a">${b.author}${b.genre?' · '+b.genre:''}${b.year?' · '+b.year:''}</div>
+          <div class="hero-a">${b.author}${b.genre?' Â· '+b.genre:''}${b.year?' Â· '+b.year:''}</div>
           <div class="prog-label"><span>Fremgang</span><span>${b.progress||0}%</span></div>
           <div class="prog-bar"><div class="prog-fill" style="width:${b.progress||0}%"></div></div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-            <button class="btn-read" onclick="event.stopPropagation()">▶ Fortsett</button>
-            ${b.fileData?`<button style="padding:9px 16px;background:transparent;border:1px solid var(--border2);color:var(--text);font-family:'Outfit',sans-serif;font-size:13px;border-radius:var(--r2);cursor:pointer;" onclick="event.stopPropagation();openKindleModal(${b.id})">📤 Send til Kindle</button>`:''}
+            <button class="btn-read" onclick="event.stopPropagation()">â¶ Fortsett</button>
+            ${b.fileData?`<button style="padding:9px 16px;background:transparent;border:1px solid var(--border2);color:var(--text);font-family:'Outfit',sans-serif;font-size:13px;border-radius:var(--r2);cursor:pointer;" onclick="event.stopPropagation();openKindleModal(${b.id})">ð¤ Send til Kindle</button>`:''}
           </div>
         </div>
       </div>
@@ -2374,16 +2441,16 @@ function render() {
     genres.map(g=>`<button class="pill ${genreFilter===g?'active':''}" onclick="setGenre('${g}')">${g}</button>`).join('');
 
   // Titles
-  const viewNames = {all:'Alle bøker',reading:'Leser nå',done:'Lest',wishlist:'Ønskeliste',unread:'Ikke lest'};
-  document.getElementById('secTitle').textContent = genreFilter || viewNames[view] || 'Alle bøker';
-  document.getElementById('secCnt').textContent = `${filtered.length} bøker`;
-  document.getElementById('topbarTitle').textContent = genreFilter || viewNames[view] || 'Alle bøker';
+  const viewNames = {all:'Alle bÃ¸ker',reading:'Leser nÃ¥',done:'Lest',wishlist:'Ãnskeliste',unread:'Ikke lest'};
+  document.getElementById('secTitle').textContent = genreFilter || viewNames[view] || 'Alle bÃ¸ker';
+  document.getElementById('secCnt').textContent = `${filtered.length} bÃ¸ker`;
+  document.getElementById('topbarTitle').textContent = genreFilter || viewNames[view] || 'Alle bÃ¸ker';
 
   const grid = document.getElementById('booksGrid');
   grid.className = viewMode==='list' ? 'grid lv' : 'grid';
 
   if (!filtered.length) {
-    grid.innerHTML = `<div class="empty"><h3>Ingen bøker funnet</h3><p>Prøv et annet søk eller legg til en ny bok.</p><button class="btn-save" onclick="openAddModal()">Legg til bok</button></div>`;
+    grid.innerHTML = `<div class="empty"><h3>Ingen bÃ¸ker funnet</h3><p>PrÃ¸v et annet sÃ¸k eller legg til en ny bok.</p><button class="btn-save" onclick="openAddModal()">Legg til bok</button></div>`;
     return;
   }
 
@@ -2394,7 +2461,7 @@ function render() {
         <div class="lv-info" onclick="openEditModal(${b.id})">
           <div class="lv-t">${b.title}</div>
           <div class="lv-a">${b.author}</div>
-          ${b.series?`<div class="serie-badge" style="margin-top:3px;">📚 ${b.series}${b.seriesNum?' #'+b.seriesNum:''}</div>`:''}
+          ${b.series?`<div class="serie-badge" style="margin-top:3px;">ð ${b.series}${b.seriesNum?' #'+b.seriesNum:''}</div>`:''}
           ${renderStars(b.rating)}
         </div>
         <div class="lv-meta">
@@ -2402,36 +2469,36 @@ function render() {
           ${b.year?`<span style="font-size:12px;color:var(--muted)">${b.year}</span>`:''}
           ${b.status==='reading'?`<span class="lv-prog">${b.progress||0}%</span>`:''}
           <div class="lv-btns">
-            <button class="lv-ic-btn" onclick="openEditModal(${b.id})">✏️ Rediger</button>
-            ${b.fileData?`<button class="lv-ic-btn" onclick="openKindleModal(${b.id})">📤 Kindle</button>`:''}
+            <button class="lv-ic-btn" onclick="openEditModal(${b.id})">âï¸ Rediger</button>
+            ${b.fileData?`<button class="lv-ic-btn" onclick="openKindleModal(${b.id})">ð¤ Kindle</button>`:''}
           </div>
         </div>
       </div>
     `).join('');
   } else {
     const bmap = {reading:'b-reading',done:'b-done',wishlist:'b-wish',unread:''};
-    const blbl = {reading:'Leser nå',done:'Lest',wishlist:'Ønskeliste',unread:''};
+    const blbl = {reading:'Leser nÃ¥',done:'Lest',wishlist:'Ãnskeliste',unread:''};
     grid.innerHTML = filtered.map((b,i) => `
       <div class="bk" style="animation-delay:${i*0.04}s" onclick="openEditModal(${b.id})">
         <div class="bk-cover-wrap">
           ${coverHtml(b)}
           ${blbl[b.status]?`<span class="bk-badge ${bmap[b.status]}">${blbl[b.status]}</span>`:''}
           <div class="bk-overlay">
-            <button class="ov-btn ov-kindle" onclick="event.stopPropagation();openKindleModal(${b.id})" ${!b.fileData?'style="opacity:0.5;cursor:default"':''}>📤 Send til Kindle</button>
-            <button class="ov-btn ov-edit" onclick="event.stopPropagation();openEditModal(${b.id})">✏️ Rediger</button>
+            <button class="ov-btn ov-kindle" onclick="event.stopPropagation();openKindleModal(${b.id})" ${!b.fileData?'style="opacity:0.5;cursor:default"':''}>ð¤ Send til Kindle</button>
+            <button class="ov-btn ov-edit" onclick="event.stopPropagation();openEditModal(${b.id})">âï¸ Rediger</button>
           </div>
           ${b.status==='reading'?`<div class="prog-mini"><div class="prog-mini-fill" style="width:${b.progress||0}%"></div></div>`:''}
         </div>
         <div class="bk-t">${b.title}</div>
         <div class="bk-a">${b.author}</div>
-        ${b.series?`<div class="serie-badge">📚 ${b.series}${b.seriesNum?' #'+b.seriesNum:''}</div>`:''}
+        ${b.series?`<div class="serie-badge">ð ${b.series}${b.seriesNum?' #'+b.seriesNum:''}</div>`:''}
         ${renderStars(b.rating)}
       </div>
     `).join('');
   }
 }
 
-// ── SIDEBAR TOGGLE ──
+// ââ SIDEBAR TOGGLE ââ
 function toggleSidebar() {
   document.getElementById('sidebar').classList.toggle('open');
   document.getElementById('sidebarOverlay').classList.toggle('open');
@@ -2499,7 +2566,7 @@ document.getElementById('kindleModal').addEventListener('click', e => { if(e.tar
 document.getElementById('kindleDeviceModal').addEventListener('click', e => { if(e.target===document.getElementById('kindleDeviceModal')) closeKindleDeviceModal(); });
 document.getElementById('batchModal').addEventListener('click', e => { if(e.target===document.getElementById('batchModal')) closeBatchModal(); });
 
-// ── BATCH UPLOAD ──
+// ââ BATCH UPLOAD ââ
 let batchItems = []; // [{file, id, meta, status, error}]
 let batchProcessing = false;
 
@@ -2574,21 +2641,21 @@ function renderBatchQueue() {
   el.innerHTML = batchItems.map(item => {
     const statusClass = { ready:'ok', error:'err', pending:'pending', loading:'pending' }[item.status] || '';
     const statusText  = {
-      loading: '⏳ Leser metadata…',
-      pending: '⏳ Venter…',
-      ready:   '✓ Klar til lagring',
-      error:   '⚠️ ' + (item.error || 'Ukjent feil'),
+      loading: 'â³ Leser metadataâ¦',
+      pending: 'â³ Venterâ¦',
+      ready:   'â Klar til lagring',
+      error:   'â ï¸ ' + (item.error || 'Ukjent feil'),
     }[item.status] || '';
 
     const m    = item.meta;
     const title  = m?.title  || item.file.name.replace(/\.[^.]+$/, '');
     const author = m?.author || '';
-    const year   = m?.year   ? ' · ' + m.year : '';
-    const pub    = m?.publisher ? ' · ' + m.publisher : '';
+    const year   = m?.year   ? ' Â· ' + m.year : '';
+    const pub    = m?.publisher ? ' Â· ' + m.publisher : '';
 
     const coverHtml = m?.coverDataUrl
       ? '<img src="' + m.coverDataUrl + '" style="width:100%;height:100%;object-fit:cover;">'
-      : '📖';
+      : 'ð';
 
     return '<div class="batch-item ' + item.status + '" id="bi-' + item.id + '">' +
       '<div class="batch-cover">' + coverHtml + '</div>' +
@@ -2599,7 +2666,7 @@ function renderBatchQueue() {
       '</div>' +
       '<div class="batch-actions">' +
         (item.status !== 'loading'
-          ? '<button class="batch-remove" onclick="removeBatchItem(' + item.id + ')" title="Fjern">✕</button>'
+          ? '<button class="batch-remove" onclick="removeBatchItem(' + item.id + ')" title="Fjern">â</button>'
           : '') +
       '</div>' +
     '</div>';
@@ -2653,7 +2720,7 @@ async function processBatchMetadata() {
         // Use filename as title if nothing found
         item.meta   = { title: item.file.name.replace(/\.[^.]+$/, ''), author: '', year: null };
         item.status = 'ready';
-        item.error  = 'Ingen metadata funnet — fylles inn manuelt';
+        item.error  = 'Ingen metadata funnet â fylles inn manuelt';
       }
     } catch(e) {
       item.status = 'ready'; // still saveable
@@ -2670,7 +2737,7 @@ async function saveBatchBooks() {
 
   batchProcessing = true;
   const btn = document.getElementById('batchSaveBtn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Lagrer…'; }
+  if (btn) { btn.disabled = true; btn.textContent = 'Lagrerâ¦'; }
 
   for (const item of toSave) {
     try {
@@ -2715,15 +2782,15 @@ async function saveBatchBooks() {
     }
   }
 
-  try { await saveBooks(); } catch(e) { showToast('⚠️ Lagringsfeil: ' + e.message); }
+  try { await saveBooks(); } catch(e) { showToast('â ï¸ Lagringsfeil: ' + e.message); }
 
   batchProcessing = false;
   closeBatchModal();
   render();
-  showToast('✓ ' + toSave.length + ' bok' + (toSave.length !== 1 ? 'er' : '') + ' lagt til!');
+  showToast('â ' + toSave.length + ' bok' + (toSave.length !== 1 ? 'er' : '') + ' lagt til!');
 }
 
-// ── READING TIMELINE ──
+// ââ READING TIMELINE ââ
 function renderReadingTimeline() {
   const finished = books
     .filter(b => b.status === 'done' && b.finishedDate)
@@ -2757,17 +2824,17 @@ function renderReadingTimeline() {
   });
 
   return '<div class="chart-section">' +
-    '<div class="chart-title">Leselogg — bøker per måned</div>' +
+    '<div class="chart-title">Leselogg â bÃ¸ker per mÃ¥ned</div>' +
     rows.join('') +
   '</div>';
 }
 
-// ── STATISTICS VIEW ──
+// ââ STATISTICS VIEW ââ
 function renderStatsView() {
   const done    = books.filter(b => b.status === 'done');
   const reading = books.filter(b => b.status === 'reading');
   const rated   = books.filter(b => b.rating > 0);
-  const avgRating = rated.length ? (rated.reduce((s,b)=>s+b.rating,0)/rated.length).toFixed(1) : '—';
+  const avgRating = rated.length ? (rated.reduce((s,b)=>s+b.rating,0)/rated.length).toFixed(1) : 'â';
 
   // Genre breakdown
   const genreCounts = {};
@@ -2802,9 +2869,9 @@ function renderStatsView() {
   grid.style.display = 'block';
   grid.innerHTML = `
     <div class="stats-big-grid">
-      <div class="stat-big"><div class="sv">${books.length}</div><div class="sl">Bøker totalt</div></div>
+      <div class="stat-big"><div class="sv">${books.length}</div><div class="sl">BÃ¸ker totalt</div></div>
       <div class="stat-big"><div class="sv">${done.length}</div><div class="sl">Lest</div></div>
-      <div class="stat-big"><div class="sv">${reading.length}</div><div class="sl">Leser nå</div></div>
+      <div class="stat-big"><div class="sv">${reading.length}</div><div class="sl">Leser nÃ¥</div></div>
       <div class="stat-big"><div class="sv">${avgRating}</div><div class="sl">Snittkarakter</div></div>
       <div class="stat-big"><div class="sv">${Object.keys(genreCounts).length}</div><div class="sl">Sjangre</div></div>
       <div class="stat-big"><div class="sv">${Object.keys(authorCounts).length}</div><div class="sl">Forfattere</div></div>
@@ -2834,7 +2901,7 @@ function renderStatsView() {
 
     ${decades.length ? `
     <div class="chart-section">
-      <div class="chart-title">Bøker per tiår</div>
+      <div class="chart-title">BÃ¸ker per tiÃ¥r</div>
       ${decades.map(([d,n]) => `
         <div class="bar-row">
           <div class="bar-label">${d}-tallet</div>
@@ -2848,27 +2915,27 @@ function renderStatsView() {
   grid.style.display = 'block';
 }
 
-// ── EXPORT ──
+// ââ EXPORT ââ
 function exportLibrary() {
-  const rows = [['Tittel','Forfatter','Sjanger','År','Status','Fremgang','Karakter','Forlag','ISBN']];
+  const rows = [['Tittel','Forfatter','Sjanger','Ãr','Status','Fremgang','Karakter','Forlag','ISBN']];
   books.forEach(b => rows.push([
     b.title, b.author, b.genre||'', b.year||'',
-    {reading:'Leser nå',done:'Lest',wishlist:'Ønskeliste',unread:'Ikke lest'}[b.status]||b.status,
+    {reading:'Leser nÃ¥',done:'Lest',wishlist:'Ãnskeliste',unread:'Ikke lest'}[b.status]||b.status,
     b.progress||0, b.rating||0, b.publisher||'', b.isbn||''
   ]));
   const csv = rows.map(r => r.map(v => '"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
   const a = document.createElement('a');
-  a.href = 'data:text/csv;charset=utf-8,﻿' + encodeURIComponent(csv);
+  a.href = 'data:text/csv;charset=utf-8,ï»¿' + encodeURIComponent(csv);
   a.download = 'bibliothek.csv';
   a.click();
-  showToast('📊 Bibliotek eksportert');
+  showToast('ð Bibliotek eksportert');
 }
 
-// ── AI RECOMMENDATIONS ──
+// ââ AI RECOMMENDATIONS ââ
 let recMessages = [];
 let recTyping   = false;
 
-// ── LOCAL FALLBACK RECOMMENDATIONS ──
+// ââ LOCAL FALLBACK RECOMMENDATIONS ââ
 function nl(s) { return s; } // identity, just for clarity
 
 function generateLocalReply(question) {
@@ -2907,7 +2974,7 @@ function generateLocalReply(question) {
       if (nextOwned)
         lines.push('\ud83d\udc49 Neste: **' + nextOwned.title + '** \u2014 du eier den allerede! \ud83d\udcda');
       else if (lastRead)
-        lines.push('\ud83d\udc49 Del ' + nextNum + ' mangler i biblioteket. \ud83d\uded2 Søk: https://www.bokus.com/cgi-bin/product_search.cgi?search_word=' + encodeURIComponent(series));
+        lines.push('\ud83d\udc49 Del ' + nextNum + ' mangler i biblioteket. \ud83d\uded2 SÃ¸k: https://www.bokus.com/cgi-bin/product_search.cgi?search_word=' + encodeURIComponent(series));
       return lines.join('\n');
     }
   }
@@ -2925,23 +2992,23 @@ function generateLocalReply(question) {
       unread.slice(0,6).forEach(b => lines.push('- ' + b.title + ' av ' + b.author));
       if (unread.length > 6) lines.push('...og ' + (unread.length-6) + ' til');
     }
-    if (lines.length === 0) return 'Du har lest alle bøkene dine! \ud83c\udf89';
+    if (lines.length === 0) return 'Du har lest alle bÃ¸kene dine! \ud83c\udf89';
     return lines.join('\n');
   }
 
   // Wishlist
   if (q.includes('\xf8nskeliste') || q.includes('kj\xf8pe')) {
-    if (!wish.length) return '\xd8nskelisten er tom. Sett status «\xd8nskeliste» p\xe5 bøker du vil lese!';
+    if (!wish.length) return '\xd8nskelisten er tom. Sett status Â«\xd8nskelisteÂ» p\xe5 bÃ¸ker du vil lese!';
     return '\ud83d\uded2 **\xd8nskelisten:**\n' + wish.map(b => '- ' + b.title + ' av ' + b.author).join('\n');
   }
 
   // Generic / reading now
   const nextUp = unread[0] || reading[0];
-  const lines = ['Hei! Du har ' + books.length + ' bøker i biblioteket.'];
+  const lines = ['Hei! Du har ' + books.length + ' bÃ¸ker i biblioteket.'];
   if (reading.length > 0) lines.push('Du leser n\xe5: **' + reading[0].title + '** (' + (reading[0].progress||0) + '%)');
   if (nextUp && nextUp.status !== 'reading') lines.push('Neste: **' + nextUp.title + '** av ' + nextUp.author);
   lines.push('');
-  lines.push('_AI-anbefalinger er midlertidig utilgjengelig fra Claude-appen. Prøv spørsmål om serier, ønskeliste eller hva du eier!_');
+  lines.push('_AI-anbefalinger er midlertidig utilgjengelig fra Claude-appen. PrÃ¸v spÃ¸rsmÃ¥l om serier, Ã¸nskeliste eller hva du eier!_');
   return lines.join('\n');
 }
 
@@ -2962,17 +3029,17 @@ function buildLibraryContext() {
   });
 
   const bookLines = books.slice(0,40).map(b => {
-    const statusLabel = {done:"Lest",reading:"Leser nå",unread:"Ikke lest",wishlist:"Ønskeliste"}[b.status]||b.status;
+    const statusLabel = {done:"Lest",reading:"Leser nÃ¥",unread:"Ikke lest",wishlist:"Ãnskeliste"}[b.status]||b.status;
     return "- " + b.title + " av " + (b.author||"ukjent") +
-      (b.rating ? " (★"+b.rating+")" : "") +
+      (b.rating ? " (â"+b.rating+")" : "") +
       (b.series ? " [Serie: "+b.series+(b.seriesNum?" #"+b.seriesNum:"")+"]" : "") +
       " ["+statusLabel+"]";
   });
 
   const parts = [
-    "Du er en personlig bokanbefalingsassistent for en norsk bruker. Svar alltid på norsk.",
+    "Du er en personlig bokanbefalingsassistent for en norsk bruker. Svar alltid pÃ¥ norsk.",
     "",
-    "BRUKERENS BIBLIOTEK (" + books.length + " bøker):",
+    "BRUKERENS BIBLIOTEK (" + books.length + " bÃ¸ker):",
     bookLines.join("\n"),
     "",
   ];
@@ -2985,14 +3052,14 @@ function buildLibraryContext() {
 
   parts.push(
     "INSTRUKSJONER:",
-    "- Gi anbefalinger for bøker brukeren ALLEREDE EIER (les disse neste!) OG nye kjøp",
-    "- Marker alltid: 📚 Allerede i biblioteket | 🛒 Ny bok å kjøpe",
-    "- For serier: finn neste del og sjekk om den er i biblioteket eller må kjøpes",
-    "- Forklar HVORFOR du anbefaler — knytt det til bøker de har likt",
-    "- Foreslå kjøpslenker slik: https://www.bokus.com/bok/ eller https://www.ark.no/search?q=TITTEL",
+    "- Gi anbefalinger for bÃ¸ker brukeren ALLEREDE EIER (les disse neste!) OG nye kjÃ¸p",
+    "- Marker alltid: ð Allerede i biblioteket | ð Ny bok Ã¥ kjÃ¸pe",
+    "- For serier: finn neste del og sjekk om den er i biblioteket eller mÃ¥ kjÃ¸pes",
+    "- Forklar HVORFOR du anbefaler â knytt det til bÃ¸ker de har likt",
+    "- ForeslÃ¥ kjÃ¸pslenker slik: https://www.bokus.com/bok/ eller https://www.ark.no/search?q=TITTEL",
     "- Anbefal gjerne norske forfattere",
     "- Maks 3-4 anbefalinger om gangen",
-    "- Spør om smaken hvis biblioteket er lite eller du trenger mer info"
+    "- SpÃ¸r om smaken hvis biblioteket er lite eller du trenger mer info"
   );
 
   return parts.join("\n");
@@ -3010,7 +3077,7 @@ function renderRecommendationsView() {
 
   const seriesNames = [...new Set(books.filter(b=>b.series).map(b=>b.series))].slice(0,2);
   const seriesChips = seriesNames.map(s => 'Neste i ' + s + '-serien');
-  const chips = ['Hva bør jeg lese nå?', ...seriesChips, 'Norske anbefalinger', 'Lik mine favoritter', 'Noe jeg allerede eier', 'Utfordre meg litt'].slice(0,6);
+  const chips = ['Hva bÃ¸r jeg lese nÃ¥?', ...seriesChips, 'Norske anbefalinger', 'Lik mine favoritter', 'Noe jeg allerede eier', 'Utfordre meg litt'].slice(0,6);
 
   grid.innerHTML = `
     <div class="rec-chat">
@@ -3020,8 +3087,8 @@ function renderRecommendationsView() {
           ${chips.map(ch => `<button class="chip" onclick="sendRecMessage('${ch}')">${ch}</button>`).join('')}
         </div>
         <div class="rec-input-wrap">
-          <input class="rec-input" id="recInput" placeholder="Spør om bokanbefalinger…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendRecMessage()}">
-          <button class="rec-send" id="recSendBtn" onclick="sendRecMessage()" title="Send">➤</button>
+          <input class="rec-input" id="recInput" placeholder="SpÃ¸r om bokanbefalingerâ¦" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendRecMessage()}">
+          <button class="rec-send" id="recSendBtn" onclick="sendRecMessage()" title="Send">â¤</button>
         </div>
       </div>
     </div>
@@ -3035,15 +3102,15 @@ function renderRecommendationsView() {
 
     let greeting;
     if (total === 0) {
-      greeting = 'Hei! Biblioteket ditt er tomt ennå. Legg til noen bøker du har lest, så gir jeg deg skreddersydde anbefalinger!';
+      greeting = 'Hei! Biblioteket ditt er tomt ennÃ¥. Legg til noen bÃ¸ker du har lest, sÃ¥ gir jeg deg skreddersydde anbefalinger!';
     } else if (done === 0 && reading === 0) {
-      const titles = books.slice(0,3).map(b => '«' + b.title + '»').join(', ');
-      greeting = 'Hei! Jeg ser du har ' + total + ' bok' + (total>1?'er':'') + ' i biblioteket (' + titles + (total>3?'…':') ') + '). Merk dem som «Lest» så kan jeg gi deg personlige anbefalinger basert på hva du har likt!';
+      const titles = books.slice(0,3).map(b => 'Â«' + b.title + 'Â»').join(', ');
+      greeting = 'Hei! Jeg ser du har ' + total + ' bok' + (total>1?'er':'') + ' i biblioteket (' + titles + (total>3?'â¦':') ') + '). Merk dem som Â«LestÂ» sÃ¥ kan jeg gi deg personlige anbefalinger basert pÃ¥ hva du har likt!';
     } else {
-      const favs = books.filter(b=>b.rating>=4).slice(0,2).map(b=>'«'+b.title+'»').join(' og ');
-      greeting = 'Hei! Jeg har sett gjennom biblioteket ditt — ' + done + ' leste bøker' +
+      const favs = books.filter(b=>b.rating>=4).slice(0,2).map(b=>'Â«'+b.title+'Â»').join(' og ');
+      greeting = 'Hei! Jeg har sett gjennom biblioteket ditt â ' + done + ' leste bÃ¸ker' +
         (favs ? ', og jeg merker at du liker ' + favs : '') +
-        '. Hva slags bok er du i humør for nå?';
+        '. Hva slags bok er du i humÃ¸r for nÃ¥?';
     }
     addRecMessage('ai', greeting);
   } else {
@@ -3067,7 +3134,7 @@ function renderRecMessages() {
       .replace(/(https?:\/\/[\w./?=&%+#-]+)/g, '<a href="$1" target="_blank" style="color:var(--gold);text-decoration:underline;">$1</a>');
     const isUser = m.role === 'user';
     return '<div class="msg ' + (isUser?'user':'ai') + '">' +
-      '<div class="msg-avatar">' + (isUser?'👤':'📚') + '</div>' +
+      '<div class="msg-avatar">' + (isUser?'ð¤':'ð') + '</div>' +
       '<div class="msg-bubble">' + html + '</div></div>';
   }).join('');
   // Scroll to bottom
@@ -3079,7 +3146,7 @@ function showTyping() {
   if (!el) return;
   const div = document.createElement('div');
   div.className = 'msg ai'; div.id = 'typingIndicator';
-  div.innerHTML = '<div class="msg-avatar">📚</div><div class="msg-bubble"><div class="typing"><span></span><span></span><span></span></div></div>';
+  div.innerHTML = '<div class="msg-avatar">ð</div><div class="msg-bubble"><div class="typing"><span></span><span></span><span></span></div></div>';
   el.appendChild(div);
   el.scrollTop = el.scrollHeight;
 }
@@ -3102,7 +3169,7 @@ async function sendRecMessage(preset) {
   if (btn) btn.disabled = true;
   showTyping();
 
-  // Run API call in isolation — storage errors must NOT bleed in here
+  // Run API call in isolation â storage errors must NOT bleed in here
   (async () => {
     try {
       const systemPrompt = buildLibraryContext();
@@ -3138,11 +3205,11 @@ async function sendRecMessage(preset) {
       hideTyping();
       const msg = e.message || String(e);
       if (msg === 'no_server') {
-        addRecMessage('ai', '⚙️ Lim inn server-URL i sidemenyen for å aktivere AI-anbefalinger.' + generateLocalReply(text));
+        addRecMessage('ai', 'âï¸ Lim inn server-URL i sidemenyen for Ã¥ aktivere AI-anbefalinger.' + generateLocalReply(text));
       } else if (msg === 'empty_response' || msg.includes('fetch') || msg.includes('Failed')) {
         addRecMessage('ai', generateLocalReply(text));
       } else {
-        addRecMessage('ai', '❌ ' + msg.slice(0, 150) + ' ' + generateLocalReply(text));
+        addRecMessage('ai', 'â ' + msg.slice(0, 150) + ' ' + generateLocalReply(text));
       }
     }
 
@@ -3151,12 +3218,12 @@ async function sendRecMessage(preset) {
     if (btn2) btn2.disabled = false;
     document.getElementById('recInput')?.focus();
   })();
-  return; // early return — cleanup handled inside IIFE above
+  return; // early return â cleanup handled inside IIFE above
 }
 
-// ══════════════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 // GOOGLE DRIVE SYNC
-// ══════════════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 const GDRIVE_CLIENT_ID  = '103120965146-0ln9it5tqo5tir7nhpr4mcpaako3oi2u.apps.googleusercontent.com';
 const GDRIVE_SCOPES     = 'https://www.googleapis.com/auth/drive.appdata';
 const GDRIVE_FILE_NAME  = 'bibliothek-library.json';
@@ -3166,7 +3233,7 @@ let gdriveFileId    = null;  // Drive file ID once found/created
 let gdriveSyncing   = false;
 let gdriveLastSync  = null;
 
-// ── UI helpers ──
+// ââ UI helpers ââ
 function gdriveSetState(state, label) {
   const dot = document.getElementById('gdriveDot');
   const lbl = document.getElementById('gdriveLabel');
@@ -3176,11 +3243,11 @@ function gdriveSetState(state, label) {
   if (lbl) lbl.textContent = label;
   if (btn) {
     if (state === 'connected') {
-      btn.textContent = 'Synk nå';
+      btn.textContent = 'Synk nÃ¥';
       btn.className = 'gdrive-btn';
       btn.onclick = gdriveSync;
     } else if (state === 'syncing') {
-      btn.textContent = '…';
+      btn.textContent = 'â¦';
       btn.className = 'gdrive-btn';
       btn.disabled = true;
     } else {
@@ -3192,13 +3259,13 @@ function gdriveSetState(state, label) {
   }
 }
 
-// ── OAuth — bruker Google sin OOB/manual copy flow ──
-// Siden appen kjører lokalt (file://) kan vi ikke bruke redirect_uri.
+// ââ OAuth â bruker Google sin OOB/manual copy flow ââ
+// Siden appen kjÃ¸rer lokalt (file://) kan vi ikke bruke redirect_uri.
 // Vi bruker i stedet en side som viser token direkte (OOB-flow via
-// urn:ietf:wg:oauth:2.0:oob er deprecated, så vi bruker en Google-side
+// urn:ietf:wg:oauth:2.0:oob er deprecated, sÃ¥ vi bruker en Google-side
 // som poster meldingen tilbake til oss).
 function gdriveAuth() {
-  // Åpne Google OAuth med redirect til spesiell postmessage-URI
+  // Ãpne Google OAuth med redirect til spesiell postmessage-URI
   const params = new URLSearchParams({
     client_id:     GDRIVE_CLIENT_ID,
     redirect_uri:  'storagerelay://http/localhost?id=auth',
@@ -3217,7 +3284,7 @@ function showTokenInputDialog() {
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
 
   const SCOPE_ENC = encodeURIComponent(GDRIVE_SCOPES);
-  // Use postmessage redirect — works without redirect_uri registration
+  // Use postmessage redirect â works without redirect_uri registration
   const oauthUrl = 'https://accounts.google.com/o/oauth2/v2/auth' +
     '?client_id=' + GDRIVE_CLIENT_ID +
     '&redirect_uri=' + encodeURIComponent('urn:ietf:wg:oauth:2.0:oob') +
@@ -3236,13 +3303,13 @@ function showTokenInputDialog() {
   overlay.innerHTML =
     '<div style="background:#1a1a20;border:1px solid #3d3b38;border-radius:12px;padding:28px;max-width:500px;width:100%;font-family:Outfit,sans-serif;">' +
       '<h3 style="color:#e4cc9e;margin-bottom:6px;font-size:18px;">Koble til Google Drive</h3>' +
-      '<p style="color:#6e6b65;font-size:13px;margin-bottom:18px;line-height:1.5;">Følg stegene under for å hente tilgangstokenet ditt.</p>' +
+      '<p style="color:#6e6b65;font-size:13px;margin-bottom:18px;line-height:1.5;">FÃ¸lg stegene under for Ã¥ hente tilgangstokenet ditt.</p>' +
 
       '<div style="background:#111114;border-radius:8px;padding:14px;margin-bottom:12px;display:flex;gap:12px;align-items:flex-start;">' +
         '<div style="background:#c8a96e;color:#0a0a0c;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px;">1</div>' +
         '<div>' +
-          '<p style="color:#edeae4;font-size:13px;margin:0 0 8px;">Gå til Google OAuth Playground og logg inn:</p>' +
-          '<a href="https://developers.google.com/oauthplayground/" target="_blank" style="display:inline-block;padding:8px 16px;background:#c8a96e;color:#0a0a0c;border-radius:7px;font-size:13px;font-weight:600;text-decoration:none;">Åpne OAuth Playground ↗</a>' +
+          '<p style="color:#edeae4;font-size:13px;margin:0 0 8px;">GÃ¥ til Google OAuth Playground og logg inn:</p>' +
+          '<a href="https://developers.google.com/oauthplayground/" target="_blank" style="display:inline-block;padding:8px 16px;background:#c8a96e;color:#0a0a0c;border-radius:7px;font-size:13px;font-weight:600;text-decoration:none;">Ãpne OAuth Playground â</a>' +
         '</div>' +
       '</div>' +
 
@@ -3291,7 +3358,7 @@ async function submitManualToken() {
 
   if (!token || token.length < 20) {
     input.style.borderColor = '#e05555';
-    input.placeholder = 'Tokenet ser ikke riktig ut…';
+    input.placeholder = 'Tokenet ser ikke riktig utâ¦';
     return;
   }
 
@@ -3302,14 +3369,14 @@ async function submitManualToken() {
 async function handleGdriveToken(token) {
   gdriveToken = token;
   await storageSet('gdrive_token', token);
-  gdriveSetState('syncing', 'Kobler til…');
+  gdriveSetState('syncing', 'Kobler tilâ¦');
   await gdriveSync();
 }
 
-// No redirect to handle — manual flow only
+// No redirect to handle â manual flow only
 
 
-// ── Find or create the app file in Drive ──
+// ââ Find or create the app file in Drive ââ
 async function gdriveFindOrCreateFile() {
   // Search in appDataFolder (hidden, app-specific)
   const searchRes = await fetch(
@@ -3332,7 +3399,7 @@ async function gdriveFindOrCreateFile() {
   return { fileId: gdriveFileId, exists: false, modified: null };
 }
 
-// ── Download books from Drive ──
+// ââ Download books from Drive ââ
 async function gdriveDownload() {
   if (!gdriveFileId) return null;
   const res = await fetch(
@@ -3345,7 +3412,7 @@ async function gdriveDownload() {
   return JSON.parse(text);
 }
 
-// ── Upload books to Drive ──
+// ââ Upload books to Drive ââ
 async function gdriveUpload(data) {
   const body = JSON.stringify(data);
   const url = gdriveFileId
@@ -3360,11 +3427,11 @@ async function gdriveUpload(data) {
   return res.ok;
 }
 
-// ── Main sync: merge local + Drive, keep newest ──
+// ââ Main sync: merge local + Drive, keep newest ââ
 async function gdriveSync() {
   if (!gdriveToken || gdriveSyncing) return;
   gdriveSyncing = true;
-  gdriveSetState('syncing', 'Synkroniserer…');
+  gdriveSetState('syncing', 'Synkronisererâ¦');
 
   try {
     const { exists, modified } = await gdriveFindOrCreateFile();
@@ -3401,18 +3468,18 @@ async function gdriveSync() {
     gdriveLastSync = new Date();
     const timeStr = gdriveLastSync.toLocaleTimeString('no', { hour:'2-digit', minute:'2-digit' });
     gdriveSetState('connected', 'Drive synket ' + timeStr);
-    showToast('☁️ Google Drive synket!');
+    showToast('âï¸ Google Drive synket!');
 
   } catch(e) {
     console.error('Drive sync error:', e);
     gdriveSetState('error', 'Synk feilet');
-    showToast('❌ Drive synk feilet: ' + e.message);
+    showToast('â Drive synk feilet: ' + e.message);
   }
 
   gdriveSyncing = false;
 }
 
-// ── Auto-sync after every save ──
+// ââ Auto-sync after every save ââ
 const _origSaveBooks = saveBooks;
 saveBooks = async function() {
   await _origSaveBooks();
@@ -3421,13 +3488,13 @@ saveBooks = async function() {
   }
 };
 
-// ── Restore token and init Drive on load ──
+// ââ Restore token and init Drive on load ââ
 async function gdriveInit() {
   try {
     const saved = await storageGet('gdrive_token');
     if (saved) {
       gdriveToken = saved;
-      gdriveSetState('syncing', 'Gjenkobler…');
+      gdriveSetState('syncing', 'Gjenkoblerâ¦');
       await gdriveSync();
     } else {
       gdriveSetState('', 'Google Drive');
@@ -3437,9 +3504,9 @@ async function gdriveInit() {
   }
 }
 
-// ── INIT ──
+// ââ INIT ââ
 
-// ═══ PIN SYNC ═══
+// âââ PIN SYNC âââ
 window._pinKey = null;
 window._pinTimer = null;
 
@@ -3470,8 +3537,8 @@ async function pinLoad(pin) {
 function pinUpdateBtn() {
   const btn = document.getElementById('pinSyncBtn');
   if (!btn) return;
-  if (window._pinKey) { btn.textContent='🔄 PIN aktiv'; btn.style.color='#5bb578'; btn.style.borderColor='#5bb578'; }
-  else { btn.textContent='🔒 Koble til med PIN'; btn.style.color=''; btn.style.borderColor=''; }
+  if (window._pinKey) { btn.textContent='ð PIN aktiv'; btn.style.color='#5bb578'; btn.style.borderColor='#5bb578'; }
+  else { btn.textContent='ð Koble til med PIN'; btn.style.color=''; btn.style.borderColor=''; }
 }
 
 function openPinModal() {
@@ -3481,13 +3548,13 @@ function openPinModal() {
   ov.id = 'pinOverlay';
   ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(8px);';
   ov.innerHTML = `<div style="background:#1a1a20;border:1px solid #3d3b38;border-radius:16px;padding:28px;max-width:340px;width:100%;font-family:Outfit,sans-serif;">
-    <h3 style="color:#c8a96e;margin-bottom:6px;font-size:20px;font-family:'Cormorant Garamond',serif;font-weight:700;">📚 Bibliothek Sync</h3>
-    <p style="color:#6e6b65;font-size:13px;margin-bottom:20px;line-height:1.5;">Bruk samme PIN på alle enheter for å synke biblioteket automatisk.</p>
+    <h3 style="color:#c8a96e;margin-bottom:6px;font-size:20px;font-family:'Cormorant Garamond',serif;font-weight:700;">ð Bibliothek Sync</h3>
+    <p style="color:#6e6b65;font-size:13px;margin-bottom:20px;line-height:1.5;">Bruk samme PIN pÃ¥ alle enheter for Ã¥ synke biblioteket automatisk.</p>
     <label style="font-size:11px;color:#6e6b65;text-transform:uppercase;letter-spacing:0.1em;display:block;margin-bottom:6px;">PIN-kode (4+ tegn)</label>
     <input id="pinInput" type="password" inputmode="numeric" placeholder="f.eks. 1234"
       style="width:100%;padding:12px;background:#0a0a0c;border:1px solid #3d3b38;border-radius:8px;color:#edeae4;font-size:20px;letter-spacing:0.4em;text-align:center;outline:none;box-sizing:border-box;margin-bottom:16px;"
       onkeydown="if(event.key==='Enter')submitPin()">
-    ${saved?'<p style="font-size:11px;color:#5bb578;margin-bottom:12px;">✓ Lagret PIN funnet</p>':''}
+    ${saved?'<p style="font-size:11px;color:#5bb578;margin-bottom:12px;">â Lagret PIN funnet</p>':''}
     <div style="display:flex;gap:10px;margin-bottom:8px;">
       <button onclick="document.getElementById('pinOverlay').remove()" style="flex:1;padding:11px;background:transparent;border:1px solid #3d3b38;color:#6e6b65;border-radius:8px;cursor:pointer;font-size:13px;">Avbryt</button>
       <button onclick="submitPin()" style="flex:2;padding:11px;background:#c8a96e;border:none;color:#0a0a0c;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">Koble til</button>
@@ -3506,7 +3573,7 @@ async function submitPin() {
   try { localStorage.setItem('bib_pin', pin); } catch(e) {}
   document.getElementById('pinOverlay')?.remove();
   const n = await pinLoad(pin);
-  showToast(n>0 ? '✓ '+n+' bøker hentet fra server!' : '✓ PIN aktivert – synker automatisk');
+  showToast(n>0 ? 'â '+n+' bÃ¸ker hentet fra server!' : 'â PIN aktivert â synker automatisk');
   pinUpdateBtn();
 }
 
@@ -3518,7 +3585,7 @@ async function init() {
     if (savedPin) {
       window._pinKey = savedPin;
       pinLoad(savedPin).then(n => {
-        if (n > 0) showToast('✓ '+n+' bøker synket fra server');
+        if (n > 0) showToast('â '+n+' bÃ¸ker synket fra server');
         pinUpdateBtn();
       });
     }
@@ -3535,8 +3602,8 @@ async function init() {
 
   // Show IS_WEB status in console
   console.log(IS_WEB
-    ? 'Bibliothek kjorer som nettside — localStorage og server aktivert'
-    : 'Bibliothek kjorer i sandkasse — begrenset funksjonalitet'
+    ? 'Bibliothek kjorer som nettside â localStorage og server aktivert'
+    : 'Bibliothek kjorer i sandkasse â begrenset funksjonalitet'
   );
 
   // Init Google Drive after UI is ready
