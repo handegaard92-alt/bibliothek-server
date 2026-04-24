@@ -25695,10 +25695,7 @@ async function sendDirectToKindle() {
 
   if (!b?.fileData && !b?.r2Key) { showToast('⚠️ Ingen fil lastet opp'); return; }
   if (!device)       { showToast('⚠️ Velg en Kindle-enhet'); return; }
-  if (!server)       {
-    showToast('⚠️ Lim inn server-URL i sidemenyen først');
-    return;
-  }
+  if (!server)       { showToast('⚠️ Lim inn server-URL i sidemenyen først'); return; }
 
   const btn = document.getElementById('kindleDirectBtn');
   const lbl = document.getElementById('kindleDirectLabel');
@@ -25706,7 +25703,34 @@ async function sendDirectToKindle() {
   lbl.textContent = 'Sender…';
 
   try {
-    // Convert base64 dataUrl back to a Blob
+    // Bruk R2-nøkkel hvis filen er lagret permanent
+    if (b.r2Key && window._pinKey) {
+      const form = new FormData();
+      form.append('toEmail',    device.email);
+      form.append('bookTitle',  b.title || '');
+      form.append('bookAuthor', b.author || '');
+      form.append('r2Pin',      window._pinKey);
+      form.append('r2BookId',   String(b.id));
+      form.append('r2FileName', b.fileName || 'bok.epub');
+      const res  = await fetch(server + '/send-to-kindle', { method: 'POST', body: form });
+      const json = await res.json();
+      if (json.ok) {
+        showToast('✓ Sendt til ' + device.name + '!');
+        closeKindleModal();
+      } else {
+        showToast('✗ ' + (json.error || 'Sending feilet'));
+        lbl.textContent = 'Send direkte til Kindle';
+        btn.disabled = false;
+      }
+      return;
+    }
+    // Fallback: send fil fra minnet
+    if (!b.fileData) {
+      showToast('⚠️ Fil ikke tilgjengelig – last opp på nytt');
+      lbl.textContent = 'Send direkte til Kindle';
+      btn.disabled = false;
+      return;
+    }
     const dataUrl  = b.fileData;
     const arr      = dataUrl.split(',');
     const mime     = arr[0].match(/:(.*?);/)[1];
@@ -25714,26 +25738,23 @@ async function sendDirectToKindle() {
     const u8       = new Uint8Array(bstr.length);
     for (let i = 0; i < bstr.length; i++) u8[i] = bstr.charCodeAt(i);
     const blob     = new Blob([u8], { type: mime });
-
     const form = new FormData();
     form.append('file',       blob, b.fileName || 'bok.epub');
     form.append('toEmail',    device.email);
     form.append('bookTitle',  b.title || '');
     form.append('bookAuthor', b.author || '');
-
     const res  = await fetch(server + '/send-to-kindle', { method: 'POST', body: form });
     const json = await res.json();
-
     if (json.ok) {
-      showToast('✅ Sendt til ' + device.name + '!');
+      showToast('✓ Sendt til ' + device.name + '!');
       closeKindleModal();
     } else {
-      showToast('❌ ' + (json.error || 'Sending feilet'));
+      showToast('✗ ' + (json.error || 'Sending feilet'));
       lbl.textContent = 'Send direkte til Kindle';
       btn.disabled = false;
     }
   } catch(err) {
-    showToast('❌ Kunne ikke nå serveren — sjekk URL');
+    showToast('✗ Kunne ikke nå serveren');
     lbl.textContent = 'Send direkte til Kindle';
     btn.disabled = false;
   }
