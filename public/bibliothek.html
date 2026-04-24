@@ -25709,9 +25709,9 @@ async function sendDirectToKindle() {
       form.append('toEmail',    device.email);
       form.append('bookTitle',  b.title || '');
       form.append('bookAuthor', b.author || '');
-      form.append('r2Pin',      window._pinKey);
-      form.append('r2BookId',   String(b.id));
-      form.append('r2FileName', b.fileName || 'bok.epub');
+      form.append('pin',      window._pinKey);
+      form.append('bookId',   String(b.id));
+      form.append('fileName', b.fileName || 'bok.epub');
       const res  = await fetch(server + '/send-to-kindle', { method: 'POST', body: form });
       const json = await res.json();
       if (json.ok) {
