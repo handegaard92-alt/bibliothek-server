@@ -24251,14 +24251,22 @@ font-family: 'Source Sans Pro'
       </div>
       <div id="pinStatus" style="font-size: 10px; color: var(--green); margin-top: 5px; min-height: 14px;">✓ Tilkoblet med PIN</div>
     </div>
-    <button class="btn-add" onclick="openAddModal()">
+    <button class="btn-add" onclick="openAddModal()" id="btnAddBook">
       <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg>
       Legg til bok
     </button>
-    <button class="btn-add" onclick="openBatchModal()" style="margin-top:4px;">
+    <button class="btn-add" onclick="openBatchModal()" id="btnBatchUpload" style="margin-top:4px;">
       <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg>
       Last opp flere bøker
     </button>
+    <div class="kindle-email-area">
+      <div class="kindle-label">👤 Gjeste-PIN</div>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <input class="kindle-input" id="guestPinInput" placeholder="Opprett gjeste-PIN" maxlength="20" style="font-size:12px;flex:1;">
+        <button onclick="createGuestPin()" style="padding:4px 10px;border-radius:5px;font-size:11px;font-family:'Outfit',sans-serif;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);white-space:nowrap;">Opprett</button>
+      </div>
+      <div id="guestPinStatus" style="font-size:10px;color:var(--muted);margin-top:5px;min-height:14px;"></div>
+    </div>
     <div class="kindle-email-area">
       <div class="kindle-label">→ Server-URL</div>
       <input class="kindle-input" id="serverUrl" placeholder="https://din-server.onrender.com" oninput="saveServerUrl(this.value)" style="font-size:11px;">
@@ -25852,6 +25860,11 @@ function render() {
   document.getElementById('cnt-wishlist').textContent = books.filter(b=>b.status==='wishlist').length;
   document.getElementById('cnt-unread').textContent = books.filter(b=>b.status==='unread').length;
 
+  var btnAdd = document.getElementById('btnAddBook');
+  var btnBatch = document.getElementById('btnBatchUpload');
+  if (btnAdd) btnAdd.style.display = window._readOnly ? 'none' : '';
+  if (btnBatch) btnBatch.style.display = window._readOnly ? 'none' : '';
+
   // Stats
   const reading = books.filter(b=>b.status==='reading').length;
   const done = books.filter(b=>b.status==='done').length;
@@ -26709,6 +26722,34 @@ async function pushToPin() {
   } catch(e) { console.warn('pushToPin failed:', e); }
 }
 
+async function createGuestPin() {
+  var ownerPin = document.getElementById('pinInput')?.value?.trim();
+  var guestPin = document.getElementById('guestPinInput')?.value?.trim();
+  var server = getServerUrl();
+  if (!ownerPin) { document.getElementById('guestPinStatus').textContent = 'Koble til med eier-PIN først'; return; }
+  if (!guestPin) { document.getElementById('guestPinStatus').textContent = 'Skriv inn en gjeste-PIN'; return; }
+  if (guestPin === ownerPin) { document.getElementById('guestPinStatus').textContent = 'Gjeste-PIN må være forskjellig fra eier-PIN'; return; }
+  document.getElementById('guestPinStatus').textContent = 'Oppretter…';
+  try {
+    var resp = await fetch(server + '/guest-link', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ ownerPin: ownerPin, guestPin: guestPin })
+    });
+    var json = await resp.json();
+    if (json.ok) {
+      document.getElementById('guestPinStatus').textContent = '✓ Gjeste-PIN "' + guestPin + '" opprettet!';
+      document.getElementById('guestPinStatus').style.color = 'var(--green)';
+    } else {
+      document.getElementById('guestPinStatus').textContent = '✗ ' + (json.error || 'Feil');
+      document.getElementById('guestPinStatus').style.color = 'var(--red)';
+    }
+  } catch(e) {
+    document.getElementById('guestPinStatus').textContent = '✗ Kunne ikke nå server';
+    document.getElementById('guestPinStatus').style.color = 'var(--red)';
+  }
+}
+
 async function connectPin() {
   var raw = (document.getElementById('pinInput')?.value || '').trim();
   if (!raw) { setPinStatus('Skriv inn en PIN-kode', 'var(--muted)'); return; }
@@ -26722,6 +26763,7 @@ async function connectPin() {
     var resp = await fetch(server + '/library/' + encodeURIComponent(key));
     if (resp.ok) {
       var json = await resp.json();
+      if (json.readOnly) { window._readOnly = true; } else { window._readOnly = false; }
       var serverTs = json.updatedAt ? new Date(json.updatedAt).getTime() : 0;
       var localTs = parseInt(localStorage.getItem('bibliothek_ts') || '0');
       if (serverTs > localTs) {
