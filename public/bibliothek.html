@@ -31416,7 +31416,7 @@ async function createGuestPin() {
     var resp = await fetch(server + '/guest-link', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ ownerPin: await pinHash(ownerPin), guestPin: await pinHash(guestPin) })
+      body: JSON.stringify({ ownerPin: ownerPin, guestPin: guestPin })
     });
     var json = await resp.json();
     if (json.ok) {
@@ -31484,15 +31484,7 @@ async function init() {
   if (savedPin && getServerUrl()) {
     var pinEl = document.getElementById('pinInput');
     if (pinEl) pinEl.value = savedPin;
-    pinHash(savedPin).then(async function(k){ window._pinKey = k; setPinStatus('✓ Tilkoblet med PIN', 'var(--green)');
-      // Push lokale enheter til server ved oppstart
-      if (kindleDevices.length > 0) {
-        fetch(getServerUrl() + '/library/' + encodeURIComponent(k + '_devices'), {
-          method: 'PUT', headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ books: kindleDevices })
-        }).catch(function(e){ console.warn('init device sync failed:', e); });
-      }
-    });
+    pinHash(savedPin).then(function(k){ window._pinKey = k; setPinStatus('✓ Tilkoblet med PIN', 'var(--green)'); });
   }
   await loadKindleDevices();
   await loadServerUrl();
