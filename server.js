@@ -64,8 +64,8 @@ const guestStore = new Map();
 app.post('/guest-link', (req, res) => {
   const { ownerPin, guestPin } = req.body;
   if (!ownerPin || !guestPin) return res.status(400).json({ ok: false, error: 'ownerPin og guestPin er påkrevd' });
-  const ownerKey = hashPin(ownerPin);
-  const guestKey = hashPin(guestPin);
+  const ownerKey = ownerPin; // allerede hashet av klient
+  const guestKey = guestPin; // allerede hashet av klient
   if (!pinStore.has(ownerKey)) return res.status(404).json({ ok: false, error: 'Eier-bibliotek ikke funnet' });
   guestStore.set(guestKey, ownerKey);
   res.json({ ok: true, message: 'Gjeste-PIN opprettet' });
