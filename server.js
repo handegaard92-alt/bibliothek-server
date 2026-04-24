@@ -58,8 +58,28 @@ app.get('/health', (req, res) => {
 });
 
 // PIN-based library sync
+// Gjeste-PIN store: guestKey -> ownerKey
+const guestStore = new Map();
+
+app.post('/guest-link', (req, res) => {
+  const { ownerPin, guestPin } = req.body;
+  if (!ownerPin || !guestPin) return res.status(400).json({ ok: false, error: 'ownerPin og guestPin er påkrevd' });
+  const ownerKey = hashPin(ownerPin);
+  const guestKey = hashPin(guestPin);
+  if (!pinStore.has(ownerKey)) return res.status(404).json({ ok: false, error: 'Eier-bibliotek ikke funnet' });
+  guestStore.set(guestKey, ownerKey);
+  res.json({ ok: true, message: 'Gjeste-PIN opprettet' });
+});
+
 app.get('/library/:pin', (req, res) => {
   const key = hashPin(req.params.pin);
+  // Sjekk om dette er en gjeste-PIN
+  const ownerKey = guestStore.get(key);
+  if (ownerKey) {
+    const data = pinStore.get(ownerKey);
+    if (!data) return res.json({ ok: true, books: [], updatedAt: null, readOnly: true });
+    return res.json({ ok: true, books: data.books, updatedAt: data.updatedAt, readOnly: true });
+  }
   const data = pinStore.get(key);
   if (!data) return res.json({ ok: true, books: [], updatedAt: null });
   res.json({ ok: true, books: data.books, updatedAt: data.updatedAt });
