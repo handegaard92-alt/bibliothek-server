@@ -31330,22 +31330,28 @@ async function saveBatchBooks() {
         added:       Date.now(),
       };
 
-      // Upload epub cover to R2 async to get a permanent URL
-      if (m.coverDataUrl && m.coverDataUrl.startsWith('data:') && window._pinKey && getServerUrl()) {
+      books.push(book);
+
+      // Upload epub file (and cover) to R2 in background
+      if (window._pinKey && getServerUrl()) {
+        const _bid = bookId;
+        const _fileData = {
+          dataUrl,
+          name: item.file.name,
+          type: item.file.type || 'application/octet-stream',
+          coverDataUrl: (m.coverDataUrl && m.coverDataUrl.startsWith('data:')) ? m.coverDataUrl : null,
+        };
+        uploadToR2(_bid, _fileData).catch(e => console.warn('batch R2 upload failed:', e));
+      } else if (m.coverDataUrl && m.coverDataUrl.startsWith('data:') && window._pinKey && getServerUrl()) {
+        // Cover only — kept for fallback path (won't reach here given outer condition above)
         const _bid = bookId;
         uploadCoverOnlyToR2(_bid, m.coverDataUrl).then(url => {
           if (url) {
             const idx = books.findIndex(b => b.id === _bid);
-            if (idx !== -1) {
-              books[idx].coverUrl = url;
-              saveBooks();
-              render();
-            }
+            if (idx !== -1) { books[idx].coverUrl = url; saveBooks(); render(); }
           }
         }).catch(() => {});
       }
-
-      books.push(book);
     } catch(e) {
       console.error('Failed to save', item.file.name, e);
     }
