@@ -316,25 +316,51 @@ app.get('/series-proxy', async (req, res) => {
       'Accept-Language': 'nb-NO,nb;q=0.9,no;q=0.8',
     };
 
-    // Try ebok.no search
-    const searchUrl = `https://www.ebok.no/search/?q=${q}`;
-    const searchHtml = await fetch(searchUrl, { headers }).then(r => r.text());
+    // ebok.no book pages: /eboker/<category>/<slug>/ or /lydboker/<category>/<slug>/
+    // Use ebok.no without www to skip an HTTP redirect hop
+    const searchUrl = `https://ebok.no/search/?q=${q}`;
+    const searchHtml = await fetch(searchUrl, { headers, redirect: 'follow' }).then(r => r.text());
 
-    // Find first book link (ebok.no paths look like /krim-og-spenning/book-slug/ or /boker/slug/)
-    const linkMatches = [...searchHtml.matchAll(/href="(\/(?:boker\/)?[a-z0-9\-]+\/[a-z0-9\-]+\/)"/gi)];
-    for (const lm of linkMatches.slice(0, 3)) {
+    const linkMatches = [...searchHtml.matchAll(/href="(\/(?:eboker|lydboker)\/[a-z0-9\-]+\/[a-z0-9\-]+\/)"/gi)];
+    const seenPaths = new Set();
+    for (const lm of linkMatches) {
       const path = lm[1];
-      if (path.includes('/search') || path.includes('/forfatter') || path.includes('/forlag')) continue;
+      if (seenPaths.has(path)) continue;
+      seenPaths.add(path);
+      if (seenPaths.size > 4) break;
+
       try {
-        const pageHtml = await fetch('https://www.ebok.no' + path, { headers }).then(r => r.text());
-        // Look for table rows with serie info — ebok.no uses <th>Serie</th><td>...</td>
-        const seriesMatch = pageHtml.match(/<th[^>]*>[Ss]erie<\/th>\s*<td[^>]*>([^<]{2,80})<\/td>/i) ||
-                            pageHtml.match(/>[Ss]erie<\/[^>]+>[\s\S]{0,30}<[^>]+>([^<]{2,80})</i);
-        const numMatch = pageHtml.match(/<th[^>]*>Nummer i serie<\/th>\s*<td[^>]*>(\d+)<\/td>/i) ||
-                         pageHtml.match(/Nummer i serie[\s\S]{0,30}<[^>]+>(\d+)</i);
-        if (seriesMatch) {
-          return res.json({ ok: true, series: seriesMatch[1].trim(), seriesNum: numMatch ? parseInt(numMatch[1]) : null });
+        const pageHtml = await fetch('https://ebok.no' + path, { headers, redirect: 'follow' }).then(r => r.text());
+
+        // Primary: dataLayer JS object embedded in page (most reliable)
+        // Example: dataLayer = [{"author": "...", "series": "Torsdagsmordklubben", ...}];
+        let series = null;
+        const dlMatch = pageHtml.match(/dataLayer\s*=\s*\[\s*(\{[\s\S]*?\})\s*\]\s*;/);
+        if (dlMatch) {
+          try {
+            const obj = JSON.parse(dlMatch[1]);
+            if (obj.series && typeof obj.series === 'string') series = obj.series.trim();
+          } catch(e) {}
         }
+
+        // Fallback: parse "Serie" row in book_info table
+        if (!series) {
+          const seriesMatch =
+            pageHtml.match(/<span[^>]*class="[^"]*coltable__th[^"]*"[^>]*>[Ss]erie<\/span>\s*<span[^>]*class="[^"]*coltable__td[^"]*"[^>]*>(?:<a[^>]*>)?([^<]{2,80})/i) ||
+            pageHtml.match(/<th[^>]*>[Ss]erie<\/th>\s*<td[^>]*>(?:<a[^>]*>)?([^<]{2,80})/i);
+          if (seriesMatch) series = seriesMatch[1].trim();
+        }
+
+        if (!series) continue;
+
+        // Series number — only present in some book_info tables
+        let seriesNum = null;
+        const numMatch =
+          pageHtml.match(/<span[^>]*class="[^"]*coltable__th[^"]*"[^>]*>Nummer i serie<\/span>\s*<span[^>]*class="[^"]*coltable__td[^"]*"[^>]*>\s*(\d+)/i) ||
+          pageHtml.match(/<th[^>]*>Nummer i serie<\/th>\s*<td[^>]*>\s*(\d+)/i);
+        if (numMatch) seriesNum = parseInt(numMatch[1]);
+
+        return res.json({ ok: true, series, seriesNum });
       } catch(e) { continue; }
     }
     res.json({ ok: true, series: null });
