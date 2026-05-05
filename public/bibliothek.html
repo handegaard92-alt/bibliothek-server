@@ -29659,6 +29659,7 @@ function debounceCoverSearch() {
 }
 
 async function fetchSeriesInfo(title, author) {
+  let foundGenre = null; // collected from NB across all results, used only if no series found
   // 0. ebok.no via server proxy
   var server = getServerUrl();
   if (server) {
@@ -29679,6 +29680,7 @@ async function fetchSeriesInfo(title, author) {
       // Extract genre/type from NB subjects
       const subjects = Array.isArray(m.subject) ? m.subject : (m.subject ? [m.subject] : []);
       const nbGenre = mapGenre([...subjects, m.genre||'', m.type||'', m.mediaType||'']);
+      if (!foundGenre && nbGenre !== 'Annet') foundGenre = nbGenre;
 
       // Collect series candidates from all known field names
       const seriesCandidates = [
@@ -29720,13 +29722,8 @@ async function fetchSeriesInfo(title, author) {
         }
 
         if (seriesName.length > 1) {
-          return { series: seriesName, seriesNum, genre: nbGenre !== 'Annet' ? nbGenre : null };
+          return { series: seriesName, seriesNum, genre: foundGenre };
         }
-      }
-
-      // No series, but still return genre if found
-      if (nbGenre !== 'Annet') {
-        return { series: null, seriesNum: null, genre: nbGenre };
       }
     }
   } catch(e) {}
@@ -29738,7 +29735,7 @@ async function fetchSeriesInfo(title, author) {
     for (const d of (olJson?.docs || [])) {
       if (d.series?.length) {
         const num = title.match(/#\s*(\d+)|[Bb]ook\s+(\d+)|[Dd]el\s+(\d+)|[Nn]r\.?\s*(\d+)/);
-        return { series: d.series[0], seriesNum: num ? parseInt(num[1]||num[2]||num[3]||num[4]) : null };
+        return { series: d.series[0], seriesNum: num ? parseInt(num[1]||num[2]||num[3]||num[4]) : null, genre: foundGenre };
       }
     }
   } catch(e) {}
@@ -29747,10 +29744,12 @@ async function fetchSeriesInfo(title, author) {
   const titleLower = title.toLowerCase();
   for (const b of books) {
     if (b.series && b.title && titleLower.includes(b.series.toLowerCase().split(' ')[0].toLowerCase())) {
-      return { series: b.series, seriesNum: null };
+      return { series: b.series, seriesNum: null, genre: foundGenre };
     }
   }
 
+  // No series found anywhere — return genre alone if NB had one
+  if (foundGenre) return { series: null, seriesNum: null, genre: foundGenre };
   return null;
 }
 
