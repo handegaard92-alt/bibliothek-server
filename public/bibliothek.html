@@ -31734,6 +31734,8 @@ async function loginConnect() {
     if (serverTs > localTs && json.books?.length) {
       books = json.books;
       await saveBooks();
+    } else if (!window._readOnly && books.length && localTs >= serverTs) {
+      await pushToPin();
     }
     render();
     document.getElementById('loginOverlay').classList.remove('visible');

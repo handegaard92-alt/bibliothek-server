@@ -89,7 +89,6 @@ app.post('/guest-link', async (req, res) => {
   if (!ownerPin || !guestPin) return res.status(400).json({ ok: false, error: 'ownerPin og guestPin er påkrevd' });
   const ownerKey = ownerPin;
   const guestKey = guestPin;
-  if (!pinStore.has(ownerKey)) return res.status(404).json({ ok: false, error: 'Eier-bibliotek ikke funnet' });
   guestStore.set(guestKey, ownerKey);
   // Lagre persistent i R2
   try {
@@ -126,32 +125,58 @@ app.delete('/guest-links/:ownerPin/:guestPin', async (req, res) => {
 // Restore guest links from R2 into guestStore on startup / owner sync
 app.post('/guest-links/:ownerPin/restore', async (req, res) => {
   const ownerKey = req.params.ownerPin;
-  if (!pinStore.has(ownerKey)) return res.status(404).json({ ok: false, error: 'Eier ikke funnet' });
   const list = await loadGuestList(ownerKey);
   list.forEach(g => guestStore.set(g.guestKey, ownerKey));
   res.json({ ok: true, restored: list.length });
 });
 
-app.get('/library/:pin', (req, res) => {
-  const key = req.params.pin; // App sender allerede hashet PIN
-  // Sjekk om dette er en gjeste-PIN
-  const ownerKey = guestStore.get(key);
+async function loadLibrary(key) {
+  if (!r2) return null;
+  try {
+    const data = await r2.send(new GetObjectCommand({ Bucket: BUCKET, Key: `${key}/library.json` }));
+    const chunks = [];
+    for await (const chunk of data.Body) chunks.push(chunk);
+    return JSON.parse(Buffer.concat(chunks).toString());
+  } catch(e) { return null; }
+}
+
+async function saveLibrary(key, books, updatedAt) {
+  if (!r2) return;
+  await r2.send(new PutObjectCommand({
+    Bucket: BUCKET, Key: `${key}/library.json`,
+    Body: JSON.stringify({ books, updatedAt }), ContentType: 'application/json',
+  })).catch(e => console.warn('R2 library save failed:', e.message));
+}
+
+app.get('/library/:pin', async (req, res) => {
+  const key = req.params.pin;
+  // Check if guest PIN
+  let ownerKey = guestStore.get(key);
+  if (!ownerKey && r2) {
+    // Guest store may be empty after redeploy — not easily recoverable without owner context
+  }
   if (ownerKey) {
-    const data = pinStore.get(ownerKey);
+    let data = pinStore.get(ownerKey);
+    if (!data) data = await loadLibrary(ownerKey);
     if (!data) return res.json({ ok: true, books: [], updatedAt: null, readOnly: true });
+    if (!pinStore.has(ownerKey)) pinStore.set(ownerKey, data);
     return res.json({ ok: true, books: data.books, updatedAt: data.updatedAt, readOnly: true });
   }
-  const data = pinStore.get(key);
+  let data = pinStore.get(key);
+  if (!data) data = await loadLibrary(key);
   if (!data) return res.json({ ok: true, books: [], updatedAt: null });
+  if (!pinStore.has(key)) pinStore.set(key, data);
   res.json({ ok: true, books: data.books, updatedAt: data.updatedAt });
 });
 
-app.put('/library/:pin', (req, res) => {
-  const key = req.params.pin; // App sender allerede hashet PIN
+app.put('/library/:pin', async (req, res) => {
+  const key = req.params.pin;
   const { books } = req.body;
   if (!Array.isArray(books)) return res.status(400).json({ ok: false, error: 'books must be array' });
-  pinStore.set(key, { books, updatedAt: new Date().toISOString() });
-  res.json({ ok: true, updatedAt: pinStore.get(key).updatedAt });
+  const updatedAt = new Date().toISOString();
+  pinStore.set(key, { books, updatedAt });
+  await saveLibrary(key, books, updatedAt);
+  res.json({ ok: true, updatedAt });
 });
 
 // R2 File upload - lagre epub permanent
