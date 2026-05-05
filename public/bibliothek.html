@@ -24,6 +24,23 @@
   --r: 12px;
   --r2: 8px;
 }
+:root.light {
+  --bg: #f4f1ec;
+  --surface: #ffffff;
+  --surface2: #edeae4;
+  --surface3: #e4e0d8;
+  --border: rgba(0,0,0,0.07);
+  --border2: rgba(0,0,0,0.13);
+  --gold: #9a7230;
+  --gold2: #b88c44;
+  --gold-dim: rgba(154,114,48,0.1);
+  --text: #1c1a16;
+  --muted: #7a7670;
+  --muted2: #bfbbb5;
+  --red: #c04040;
+  --blue: #3a79b5;
+  --green: #3a9558;
+}
 * { margin:0; padding:0; box-sizing:border-box; }
 html, body { height:100%; }
 body {
@@ -29040,6 +29057,7 @@ font-family: 'Source Sans Pro'
       <option value="added">Sist lagt til</option>
       <option value="finished">Sist lest</option>
     </select>
+    <button id="themeToggle" onclick="toggleTheme()" title="Bytt mellom mørk og lys modus" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:var(--r2);padding:6px 10px;font-size:15px;cursor:pointer;line-height:1;flex-shrink:0;">🌙</button>
   </div>
 
   <div class="content">
@@ -29363,6 +29381,7 @@ let pendingCoverUrl = null;
 let pendingCoverAlts = [];
 let kindleBookId = null;
 let pendingFileData = null; // {name, type, dataUrl}
+let pendingCoverIsUpload = false; // true når cover er manuelt lastet opp
 
 const STORAGE_KEY  = 'bibliothek_books';
 const DEVICES_KEY  = 'bibliothek_kindle_devices';
@@ -29564,18 +29583,34 @@ function debounceCoverSearch() {
 }
 
 async function fetchSeriesInfo(title, author) {
+  // 1. Prøv Nasjonalbiblioteket
   try {
     const q = encodeURIComponent(title + (author ? ' ' + author : ''));
-    const url = `https://openlibrary.org/search.json?q=${q}&limit=5&fields=title,author_name,series`;
-    const json = await fetchJSON(url);
-    for (const d of (json?.docs || [])) {
+    const nbUrl = `https://api.nb.no/catalog/v1/items?q=${q}&size=5&mediatype=b%C3%B8ker`;
+    const nbJson = await fetchJSON(nbUrl);
+    for (const item of (nbJson?._embedded?.items || [])) {
+      const m = item.metadata || {};
+      const series = (m.series||m.seriesTitle||m.isPartOf||[])[0];
+      if (series && typeof series === 'string' && series.length > 1) {
+        const rawNum = (m.seriesNumber||m.partNumber||m.volumeNumber||[])[0];
+        return { series, seriesNum: rawNum ? parseInt(rawNum) : null };
+      }
+    }
+  } catch(e) {}
+
+  // 2. Fallback: Open Library
+  try {
+    const q = encodeURIComponent(title + (author ? ' ' + author : ''));
+    const olUrl = `https://openlibrary.org/search.json?q=${q}&limit=5&fields=title,author_name,series`;
+    const olJson = await fetchJSON(olUrl);
+    for (const d of (olJson?.docs || [])) {
       if (d.series?.length) {
-        // Prøv å finne serienummer fra tittelen (f.eks. "#3" eller "Book 3")
         const num = title.match(/#\s*(\d+)|[Bb]ook\s+(\d+)|[Dd]el\s+(\d+)|[Nn]r\.?\s*(\d+)/);
         return { series: d.series[0], seriesNum: num ? parseInt(num[1]||num[2]||num[3]||num[4]) : null };
       }
     }
   } catch(e) {}
+
   return null;
 }
 
@@ -29628,6 +29663,7 @@ function handleCoverUpload(input) {
     document.getElementById('coverStatus').style.color = 'var(--green)';
     document.getElementById('coverAltBtns').innerHTML = '';
   };
+  pendingCoverIsUpload = true;
   reader.readAsDataURL(file);
   input.value = '';
 }
@@ -30196,6 +30232,7 @@ function openAddModal() {
   pendingCoverUrl = null;
   pendingCoverAlts = [];
   pendingFileData = null;
+  pendingCoverIsUpload = false;
   document.getElementById('modalTitle').textContent = 'Legg til bok';
   document.getElementById('deleteBtn').style.display = 'none';
   ['fTitle','fAuthor','fYear','fProgress','fRating','fSeries','fSeriesNum','fFinishedDate'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
@@ -30219,6 +30256,7 @@ function openEditModal(id) {
   pendingCoverUrl = b.coverUrl || null;
   pendingCoverAlts = [];
   pendingFileData = null;
+  pendingCoverIsUpload = false;
   document.getElementById('modalTitle').textContent = 'Rediger bok';
   document.getElementById('deleteBtn').style.display = 'block';
   document.getElementById('fTitle').value = b.title;
@@ -30252,6 +30290,7 @@ function closeModal() {
   editingId = null;
   pendingFileData = null;
   pendingCoverUrl = null;
+  pendingCoverIsUpload = false;
 }
 
 function toggleFinishedDate() {
@@ -30317,10 +30356,48 @@ async function uploadToR2(bookId, fileData) {
   }
 }
 
+async function uploadCoverOnlyToR2(bookId, dataUrl) {
+  var server = getServerUrl();
+  var pin = window._pinKey;
+  if (!server || !pin) return null;
+  try {
+    var arr = dataUrl.split(',');
+    var mime = arr[0].match(/:(.*?);/)[1];
+    var bstr = atob(arr[1]);
+    var u8 = new Uint8Array(bstr.length);
+    for (var i = 0; i < bstr.length; i++) u8[i] = bstr.charCodeAt(i);
+    var blob = new Blob([u8], { type: mime });
+    var form = new FormData();
+    form.append('file', blob, 'cover.jpg');
+    form.append('pin', pin);
+    form.append('bookId', String(bookId) + '_cover');
+    var res = await fetch(server + '/files/upload', { method: 'POST', body: form });
+    var json = await res.json();
+    if (json.ok) {
+      return server + '/files/download/' + encodeURIComponent(pin) + '/' + String(bookId) + '_cover/cover.jpg';
+    }
+  } catch(e) { console.warn('cover upload failed:', e); }
+  return null;
+}
+
 async function saveBook() {
   const title = document.getElementById('fTitle').value.trim();
   const author = document.getElementById('fAuthor').value.trim();
   if (!title || !author) { showToast('⚠️ Tittel og forfatter er påkrevd.'); return; }
+
+  const bookId = editingId !== null ? editingId : Date.now();
+
+  // Løs opp cover-URL: last opp til R2 hvis manuelt opplastet, ellers bruk som den er
+  let resolvedCoverUrl = null;
+  if (pendingCoverUrl?.startsWith('data:')) {
+    if (pendingCoverIsUpload && window._pinKey && getServerUrl()) {
+      resolvedCoverUrl = await uploadCoverOnlyToR2(bookId, pendingCoverUrl) || null;
+    } else {
+      resolvedCoverUrl = pendingFileData?._remoteCoverUrl || null;
+    }
+  } else {
+    resolvedCoverUrl = pendingCoverUrl || null;
+  }
 
   const data = {
     title, author,
@@ -30329,9 +30406,7 @@ async function saveBook() {
     status: document.getElementById('fStatus').value,
     progress: Math.min(100, Math.max(0, parseInt(document.getElementById('fProgress').value) || 0)),
     rating: Math.min(5, Math.max(0, parseInt(document.getElementById('fRating').value) || 0)),
-    coverUrl: (pendingCoverUrl?.startsWith('data:')
-      ? (pendingFileData?._remoteCoverUrl || null)
-      : pendingCoverUrl) || null,
+    coverUrl: resolvedCoverUrl,
     added: Date.now(),
     isbn: pendingFileData?.isbn || null,
     pages: pendingFileData?.pages || null,
@@ -30364,7 +30439,7 @@ async function saveBook() {
       };
     }
   } else {
-    data.id = Date.now();
+    data.id = bookId;
     books.push(data);
   }
 
@@ -31689,6 +31764,22 @@ async function init() {
   if (pinEl2 && pinEl2.value) pinEl2.type = 'password';
 }
 init();
+
+function toggleTheme() {
+  const isLight = document.documentElement.classList.toggle('light');
+  document.getElementById('themeToggle').textContent = isLight ? '☀️' : '🌙';
+  localStorage.setItem('bibliothek_theme', isLight ? 'light' : 'dark');
+}
+
+function applyTheme() {
+  const saved = localStorage.getItem('bibliothek_theme');
+  if (saved === 'light') {
+    document.documentElement.classList.add('light');
+    const btn = document.getElementById('themeToggle');
+    if (btn) btn.textContent = '☀️';
+  }
+}
+applyTheme();
 </script>
 
 
