@@ -304,7 +304,7 @@ body {
 .pill.active { background:var(--gold); color:#0a0a0c; border-color:var(--gold); font-weight:500; }
 
 /* GRID */
-.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(145px,1fr)); gap:20px; }
+.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); gap:16px; }
 .grid.lv { grid-template-columns:1fr; gap:8px; }
 
 /* Book card – grid */
@@ -728,14 +728,14 @@ body {
   }
   .topbar-title { display:none; }
   .search-wrap { max-width:none !important; }
-  .sort-sel { display:none; }
+  .sort-sel { font-size:11px !important; padding:5px 8px !important; }
   .view-btns { display:none; }
 
   .content { padding:16px 14px 80px !important; }
 
   .stats-row { grid-template-columns:repeat(2,1fr) !important; }
 
-  .grid { grid-template-columns:repeat(auto-fill,minmax(110px,1fr)) !important; gap:14px !important; }
+  .grid { grid-template-columns:repeat(auto-fill,minmax(85px,1fr)) !important; gap:10px !important; }
 
   .rec-chat { height:calc(100vh - 180px) !important; }
 
@@ -29115,6 +29115,10 @@ font-family: 'Source Sans Pro'
         <div>
           <div id="coverStatus" style="font-size: 12px; color: var(--green);">Omslag hentet fra epub-fil ✓</div>
           <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;" id="coverAltBtns"></div>
+          <label style="display:inline-block;margin-top:6px;font-size:11px;color:var(--gold);cursor:pointer;text-decoration:underline;text-underline-offset:2px;" title="Last opp eget omslags-bilde">
+            📁 Last opp bilde
+            <input type="file" accept="image/*" id="coverUploadInput" style="display:none" onchange="handleCoverUpload(this)">
+          </label>
         </div>
       </div>
     </div>
@@ -29553,7 +29557,42 @@ function debounceCoverSearch() {
   const title = document.getElementById('fTitle').value.trim();
   const author = document.getElementById('fAuthor').value.trim();
   if (title.length < 2) return;
-  coverDebounceTimer = setTimeout(() => searchCover(title, author), 700);
+  coverDebounceTimer = setTimeout(() => {
+    searchCover(title, author);
+    autoFillSeries(title, author);
+  }, 700);
+}
+
+async function fetchSeriesInfo(title, author) {
+  try {
+    const q = encodeURIComponent(title + (author ? ' ' + author : ''));
+    const url = `https://openlibrary.org/search.json?q=${q}&limit=5&fields=title,author_name,series`;
+    const json = await fetchJSON(url);
+    for (const d of (json?.docs || [])) {
+      if (d.series?.length) {
+        // Prøv å finne serienummer fra tittelen (f.eks. "#3" eller "Book 3")
+        const num = title.match(/#\s*(\d+)|[Bb]ook\s+(\d+)|[Dd]el\s+(\d+)|[Nn]r\.?\s*(\d+)/);
+        return { series: d.series[0], seriesNum: num ? parseInt(num[1]||num[2]||num[3]||num[4]) : null };
+      }
+    }
+  } catch(e) {}
+  return null;
+}
+
+async function autoFillSeries(title, author) {
+  const sfEl = document.getElementById('fSeries');
+  const snEl = document.getElementById('fSeriesNum');
+  if (!sfEl || sfEl.value.trim()) return; // ikke overstyr hvis allerede fylt inn
+  const info = await fetchSeriesInfo(title, author);
+  if (!info) return;
+  sfEl.value = info.series;
+  sfEl.style.borderColor = 'var(--gold)';
+  setTimeout(() => { sfEl.style.borderColor = ''; }, 2000);
+  if (snEl && !snEl.value && info.seriesNum) {
+    snEl.value = info.seriesNum;
+    snEl.style.borderColor = 'var(--gold)';
+    setTimeout(() => { snEl.style.borderColor = ''; }, 2000);
+  }
 }
 
 async function searchCover(title, author) {
@@ -29576,6 +29615,21 @@ async function searchCover(title, author) {
 
   pendingCoverAlts = alts;
   selectCoverAlt(0);
+}
+
+function handleCoverUpload(input) {
+  const file = input.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    pendingCoverUrl = e.target.result;
+    document.getElementById('coverThumb').innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:5px;">`;
+    document.getElementById('coverStatus').textContent = 'Omslag lastet opp ✓';
+    document.getElementById('coverStatus').style.color = 'var(--green)';
+    document.getElementById('coverAltBtns').innerHTML = '';
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
 }
 
 function selectCoverAlt(idx) {
