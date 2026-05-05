@@ -323,7 +323,7 @@ body {
 .pill.active { background:var(--gold); color:#0a0a0c; border-color:var(--gold); font-weight:500; }
 
 /* GRID */
-.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:16px; }
+.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:12px; }
 .grid.lv { grid-template-columns:1fr; gap:8px; }
 
 /* Book card – grid */
@@ -29066,16 +29066,19 @@ font-family: 'Source Sans Pro'
         <svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24"><path d="M3 3h7v7H3zm11 0h7v7h-7zM3 14h7v7H3zm11 0h7v7h-7z"></path></svg>
       </button>
     </div>
-    <select class="sort-sel" id="sortSel" onchange="onSortChange(this)">
-      <option value="">Sortering</option>
-      <option value="title">Tittel A–Å</option>
-      <option value="author">Forfatter</option>
-      <option value="series">Serie</option>
-      <option value="year">Nyeste</option>
-      <option value="rating">Beste vurdering</option>
-      <option value="added">Sist lagt til</option>
-      <option value="finished">Sist lest</option>
-    </select>
+    <div style="display:flex;align-items:center;gap:2px;flex-shrink:0;">
+      <select class="sort-sel" id="sortSel" onchange="onSortChange(this)">
+        <option value="">Sortering</option>
+        <option value="title">Tittel A–Å</option>
+        <option value="author">Forfatter</option>
+        <option value="series">Serie</option>
+        <option value="year">Nyeste</option>
+        <option value="rating">Beste vurdering</option>
+        <option value="added">Sist lagt til</option>
+        <option value="finished">Sist lest</option>
+      </select>
+      <button id="clearSortBtn" onclick="clearSort()" title="Fjern sortering" style="display:none;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:var(--r2);padding:5px 8px;font-size:13px;cursor:pointer;line-height:1;">×</button>
+    </div>
     <button id="themeToggle" onclick="toggleTheme()" title="Bytt mellom mørk og lys modus" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:var(--r2);padding:6px 10px;font-size:15px;cursor:pointer;line-height:1;flex-shrink:0;">🌙</button>
     <button class="user-menu-btn" id="userMenuBtn" onclick="toggleUserPanel()" title="Brukermeny">👤</button>
   </div>
@@ -31013,13 +31016,17 @@ function clearFilters() {
 
 var _activeSort = '';
 function onSortChange(sel) {
-  var v = sel.value;
-  if (v === _activeSort && v !== '') {
-    _activeSort = '';
-    sel.value = '';
-  } else {
-    _activeSort = v;
-  }
+  _activeSort = sel.value;
+  var btn = document.getElementById('clearSortBtn');
+  if (btn) btn.style.display = sel.value ? 'inline-block' : 'none';
+  render();
+}
+function clearSort() {
+  _activeSort = '';
+  var sel = document.getElementById('sortSel');
+  if (sel) sel.value = '';
+  var btn = document.getElementById('clearSortBtn');
+  if (btn) btn.style.display = 'none';
   render();
 }
 function setViewMode(m) {
@@ -31190,6 +31197,13 @@ async function processBatchMetadata() {
       }
 
       if (meta?.title) {
+        // Try to auto-fill series info
+        if (meta.title && !meta.series) {
+          try {
+            const sInfo = await fetchSeriesInfo(meta.title, meta.author || '');
+            if (sInfo?.series) { meta.series = sInfo.series; meta.seriesNum = sInfo.seriesNum; }
+          } catch(e) {}
+        }
         item.meta   = meta;
         item.status = 'ready';
       } else {
@@ -31227,18 +31241,22 @@ async function saveBatchBooks() {
 
       const m = item.meta || {};
       // Prefer remote URL for persistence; base64 covers can't be stored
-      const coverUrl = (m.coverDataUrl && !m.coverDataUrl.startsWith('data:'))
+      // Use remote cover URL if available; data: covers will be uploaded to R2 after saving
+      let coverUrl = (m.coverDataUrl && !m.coverDataUrl.startsWith('data:'))
         ? m.coverDataUrl
         : (m.coverUrl || (m.epubIsbn
             ? 'https://covers.openlibrary.org/b/isbn/' + m.epubIsbn + '-L.jpg'
             : null));
 
+      const bookId = Date.now() + Math.random();
       const book = {
-        id:          Date.now() + Math.random(),
+        id:          bookId,
         title:       m.title || item.file.name.replace(/\.[^.]+$/, ''),
         author:      m.author || '',
         genre:       m.mappedGenre || 'Annet',
         year:        m.year || null,
+        series:      m.series || null,
+        seriesNum:   m.seriesNum || null,
         status:      'unread',
         progress:    0,
         rating:      0,
@@ -31251,6 +31269,16 @@ async function saveBatchBooks() {
         fileData:    dataUrl,
         added:       Date.now(),
       };
+
+      // Upload epub cover to R2 if it's a data: URL
+      if (m.coverDataUrl && m.coverDataUrl.startsWith('data:') && window._pinKey && getServerUrl()) {
+        uploadCoverOnlyToR2(bookId, m.coverDataUrl).then(url => {
+          if (url) {
+            const idx = books.findIndex(b => b.id === bookId);
+            if (idx !== -1) { books[idx].coverUrl = url; saveBooks(); render(); }
+          }
+        }).catch(() => {});
+      }
 
       books.push(book);
     } catch(e) {
