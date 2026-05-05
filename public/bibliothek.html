@@ -323,7 +323,7 @@ body {
 .pill.active { background:var(--gold); color:#0a0a0c; border-color:var(--gold); font-weight:500; }
 
 /* GRID */
-.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:20px; }
+.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:16px; }
 .grid.lv { grid-template-columns:1fr; gap:8px; }
 
 /* Book card – grid */
@@ -29444,7 +29444,7 @@ let view = 'all';
 let genreFilter = null;
 let seriesFilter = null;
 let authorFilter = null;
-let viewMode = localStorage.getItem('bibliothek_view') || 'list';
+let viewMode = 'list';
 let editingId = null;
 let coverDebounceTimer = null;
 let pendingCoverUrl = null;
@@ -31024,7 +31024,6 @@ function onSortChange(sel) {
 }
 function setViewMode(m) {
   viewMode = m;
-  localStorage.setItem('bibliothek_view', m);
   document.getElementById('vbtnGrid').classList.toggle('active', m==='grid');
   document.getElementById('vbtnList').classList.toggle('active', m==='list');
   render();
@@ -31780,7 +31779,7 @@ async function loadGuestLinks() {
       return '<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border);">' +
         '<span style="flex:1;font-size:11px;color:var(--text);">' + (g.label || '—') + '</span>' +
         '<span style="font-size:10px;color:var(--muted);">' + date + '</span>' +
-        '<button onclick="deleteGuestLink('' + g.guestKey + '')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:13px;padding:0 2px;" title="Fjern gjest">✕</button>' +
+        '<button onclick="deleteGuestLink(\'' + g.guestKey + '\')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:13px;padding:0 2px;" title="Fjern gjest">✕</button>' +
         '</div>';
     }).join('');
   } catch(e) {}
