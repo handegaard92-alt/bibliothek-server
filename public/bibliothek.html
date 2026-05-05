@@ -321,7 +321,7 @@ body {
 .pill.active { background:var(--gold); color:#0a0a0c; border-color:var(--gold); font-weight:500; }
 
 /* GRID */
-.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); gap:16px; }
+.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:20px; }
 .grid.lv { grid-template-columns:1fr; gap:8px; }
 
 /* Book card – grid */
@@ -752,7 +752,7 @@ body {
 
   .stats-row { grid-template-columns:repeat(2,1fr) !important; }
 
-  .grid { grid-template-columns:repeat(auto-fill,minmax(85px,1fr)) !important; gap:10px !important; }
+  .grid { grid-template-columns:repeat(auto-fill,minmax(140px,1fr)) !important; gap:12px !important; }
 
   .rec-chat { height:calc(100vh - 180px) !important; }
 
@@ -31727,6 +31727,9 @@ async function init() {
             if (serverTs > localTs && json.books?.length) {
               books = json.books;
               await saveBooks();
+            } else if (!window._readOnly && books.length) {
+              // Server er tom (f.eks. etter redeploy) — push lokal data tilbake
+              await pushToPin();
             }
             render();
           }
