@@ -31623,12 +31623,19 @@ async function connectPin() {
     window._pinKey = null;
   }
 }
+async function serverAvailable(url) {
+  try {
+    const r = await fetch(url + '/health', { signal: AbortSignal.timeout(3000) });
+    return r.ok;
+  } catch(e) { return false; }
+}
+
 async function init() {
   await loadBooks();
   var savedPin = localStorage.getItem('bibliothek_pin');
   var overlay = document.getElementById('loginOverlay');
 
-  if (IS_WEB && AUTO_SERVER_URL) {
+  if (IS_WEB && AUTO_SERVER_URL && await serverAvailable(AUTO_SERVER_URL)) {
     if (savedPin) {
       // Returnererende bruker: koble til i bakgrunnen, ikke vis overlay
       var pinEl = document.getElementById('pinInput');
@@ -31656,7 +31663,7 @@ async function init() {
       if (overlay) overlay.classList.add('visible');
     }
   } else {
-    // Ikke selvhostet (Claude-app e.l.): skjul overlay, bruk eksisterende PIN-felt
+    // Ikke selvhostet, preview-panel, eller server utilgjengelig
     if (savedPin) {
       var pinEl = document.getElementById('pinInput');
       if (pinEl) pinEl.value = savedPin;
