@@ -660,6 +660,49 @@ body {
 }
 .sidebar-overlay.open { display:block; }
 
+/* ── LOGIN OVERLAY ── */
+#loginOverlay {
+  display:none;
+  position:fixed; inset:0; z-index:200;
+  background:var(--bg);
+  align-items:center; justify-content:center;
+  flex-direction:column;
+}
+#loginOverlay.visible { display:flex; }
+.login-box {
+  background:var(--surface);
+  border:1px solid var(--border2);
+  border-radius:var(--r);
+  padding:40px 48px;
+  width:360px; max-width:calc(100vw - 40px);
+  display:flex; flex-direction:column; gap:18px;
+}
+.login-title {
+  font-family:'Cormorant Garamond',serif;
+  font-size:34px; font-weight:700;
+  color:var(--gold); text-align:center; letter-spacing:0.03em; line-height:1;
+}
+.login-subtitle {
+  font-size:12px; color:var(--muted); text-align:center;
+  letter-spacing:0.12em; text-transform:uppercase; margin-top:-6px;
+}
+.login-input {
+  width:100%; padding:10px 14px;
+  background:var(--surface2); border:1px solid var(--border2);
+  border-radius:var(--r2); color:var(--text);
+  font-size:15px; font-family:'Outfit',sans-serif; outline:none;
+}
+.login-input:focus { border-color:var(--gold); }
+.login-btn {
+  width:100%; padding:11px;
+  background:var(--gold); color:#1a1408;
+  border:none; border-radius:var(--r2);
+  font-size:14px; font-weight:600; font-family:'Outfit',sans-serif;
+  cursor:pointer; transition:opacity 0.15s;
+}
+.login-btn:hover { opacity:0.88; }
+#loginStatus { font-size:12px; color:var(--muted); text-align:center; min-height:16px; }
+
 /* ── MOBILE RESPONSIVE ── */
 @media (max-width: 700px) {
   body { overflow:hidden; }
@@ -28875,6 +28918,16 @@ font-family: 'Source Sans Pro'
 <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()" title="Meny">☰</button>
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
+<div id="loginOverlay">
+  <div class="login-box">
+    <div class="login-title">Bibliothek</div>
+    <div class="login-subtitle">Norsk e-bokbibliotek</div>
+    <input class="login-input" id="loginPinInput" type="password" placeholder="PIN-kode" maxlength="20" onkeydown="if(event.key==='Enter')loginConnect()">
+    <button class="login-btn" onclick="loginConnect()">Logg inn</button>
+    <div id="loginStatus"></div>
+  </div>
+</div>
+
 <!-- ── SIDEBAR ── -->
 <aside class="sidebar" id="sidebar">
   <div class="logo-area">
@@ -30618,7 +30671,7 @@ function render() {
           ${b.year?`<span style="font-size:12px;color:var(--muted)">${b.year}</span>`:''}
           ${b.status==='reading'?`<span class="lv-prog">${b.progress||0}%</span>`:''}
           <div class="lv-btns">
-            <button class="lv-ic-btn" onclick="openEditModal(${b.id})">✏️ Rediger</button>
+            ${window._readOnly?'':'<button class="lv-ic-btn" onclick="openEditModal('+b.id+')">✏️ Rediger</button>'}
             ${(b.fileData||b.r2Key)?`<button class="lv-ic-btn" onclick="openKindleModal(${b.id})">📤 Kindle</button>`:''}
           </div>
         </div>
@@ -30628,13 +30681,13 @@ function render() {
     const bmap = {reading:'b-reading',done:'b-done',wishlist:'b-wish',unread:''};
     const blbl = {reading:'Leser nå',done:'Lest',wishlist:'Ønskeliste',unread:''};
     grid.innerHTML = filtered.map((b,i) => `
-      <div class="bk" style="animation-delay:${i*0.04}s" onclick="openEditModal(${b.id})">
+      <div class="bk" style="animation-delay:${i*0.04}s" ${window._readOnly?'':'onclick="openEditModal('+b.id+')"'}>
         <div class="bk-cover-wrap">
           ${coverHtml(b)}
           ${blbl[b.status]?`<span class="bk-badge ${bmap[b.status]}">${blbl[b.status]}</span>`:''}
           <div class="bk-overlay">
             <button class="ov-btn ov-kindle" onclick="event.stopPropagation();openKindleModal(${b.id})" ${(!b.fileData&&!b.r2Key)?'style="opacity:0.5;cursor:default"':''}>📤 Send til Kindle</button>
-            <button class="ov-btn ov-edit" onclick="event.stopPropagation();openEditModal(${b.id})">✏️ Rediger</button>
+            ${window._readOnly?'':'<button class="ov-btn ov-edit" onclick="event.stopPropagation();openEditModal('+b.id+')">✏️ Rediger</button>'}
           </div>
           ${b.status==='reading'?`<div class="prog-mini"><div class="prog-mini-fill" style="width:${b.progress||0}%"></div></div>`:''}
         </div>
@@ -31408,15 +31461,17 @@ async function createGuestPin() {
   var ownerPin = document.getElementById('pinInput')?.value?.trim();
   var guestPin = document.getElementById('guestPinInput')?.value?.trim();
   var server = getServerUrl();
-  if (!ownerPin) { document.getElementById('guestPinStatus').textContent = 'Koble til med eier-PIN først'; return; }
+  if (!window._pinKey) { document.getElementById('guestPinStatus').textContent = 'Koble til med eier-PIN først'; return; }
   if (!guestPin) { document.getElementById('guestPinStatus').textContent = 'Skriv inn en gjeste-PIN'; return; }
   if (guestPin === ownerPin) { document.getElementById('guestPinStatus').textContent = 'Gjeste-PIN må være forskjellig fra eier-PIN'; return; }
   document.getElementById('guestPinStatus').textContent = 'Oppretter…';
   try {
+    var guestKey = await pinHash(guestPin);
     var resp = await fetch(server + '/guest-link', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ ownerPin: ownerPin, guestPin: guestPin })
+      // Send allerede hashede nøkler så server slipper å hashe på nytt
+      body: JSON.stringify({ ownerPin: window._pinKey, guestPin: guestKey })
     });
     var json = await resp.json();
     if (json.ok) {
@@ -31429,6 +31484,42 @@ async function createGuestPin() {
   } catch(e) {
     document.getElementById('guestPinStatus').textContent = '✗ Kunne ikke nå server';
     document.getElementById('guestPinStatus').style.color = 'var(--red)';
+  }
+}
+
+function setLoginStatus(msg, color) {
+  var el = document.getElementById('loginStatus');
+  if (el) { el.textContent = msg; el.style.color = color || 'var(--muted)'; }
+}
+
+async function loginConnect() {
+  var raw = (document.getElementById('loginPinInput')?.value || '').trim();
+  if (!raw) { setLoginStatus('Skriv inn en PIN-kode'); return; }
+  var server = getServerUrl();
+  if (!server) { setLoginStatus('Ingen server funnet', 'var(--red)'); return; }
+  setLoginStatus('Kobler til…', 'var(--gold)');
+  try {
+    var key = await pinHash(raw);
+    window._pinKey = key;
+    var resp = await fetch(server + '/library/' + encodeURIComponent(key));
+    if (!resp.ok) { setLoginStatus('✗ Feil: ' + resp.status, 'var(--red)'); window._pinKey = null; return; }
+    var json = await resp.json();
+    window._readOnly = !!json.readOnly;
+    localStorage.setItem('bibliothek_pin', raw);
+    var pinEl = document.getElementById('pinInput');
+    if (pinEl) pinEl.value = raw;
+    var serverTs = json.updatedAt ? new Date(json.updatedAt).getTime() : 0;
+    var localTs = parseInt(localStorage.getItem('bibliothek_ts') || '0');
+    if (serverTs > localTs && json.books?.length) {
+      books = json.books;
+      await saveBooks();
+    }
+    render();
+    document.getElementById('loginOverlay').classList.remove('visible');
+    setPinStatus('✓ Tilkoblet med PIN', 'var(--green)');
+  } catch(e) {
+    setLoginStatus('✗ Kunne ikke nå server', 'var(--red)');
+    window._pinKey = null;
   }
 }
 
@@ -31481,28 +31572,58 @@ async function connectPin() {
 async function init() {
   await loadBooks();
   var savedPin = localStorage.getItem('bibliothek_pin');
-  if (savedPin && getServerUrl()) {
-    var pinEl = document.getElementById('pinInput');
-    if (pinEl) pinEl.value = savedPin;
-    pinHash(savedPin).then(function(k){ window._pinKey = k; setPinStatus('✓ Tilkoblet med PIN', 'var(--green)'); });
+  var overlay = document.getElementById('loginOverlay');
+
+  if (IS_WEB && AUTO_SERVER_URL) {
+    if (savedPin) {
+      // Returnererende bruker: koble til i bakgrunnen, ikke vis overlay
+      var pinEl = document.getElementById('pinInput');
+      if (pinEl) pinEl.value = savedPin;
+      pinHash(savedPin).then(async function(k) {
+        window._pinKey = k;
+        try {
+          var resp = await fetch(AUTO_SERVER_URL + '/library/' + encodeURIComponent(k));
+          if (resp.ok) {
+            var json = await resp.json();
+            window._readOnly = !!json.readOnly;
+            var serverTs = json.updatedAt ? new Date(json.updatedAt).getTime() : 0;
+            var localTs = parseInt(localStorage.getItem('bibliothek_ts') || '0');
+            if (serverTs > localTs && json.books?.length) {
+              books = json.books;
+              await saveBooks();
+            }
+            render();
+          }
+        } catch(e) {}
+        setPinStatus('✓ Tilkoblet med PIN', 'var(--green)');
+      });
+    } else {
+      // Ny bruker: vis login-overlay
+      if (overlay) overlay.classList.add('visible');
+    }
+  } else {
+    // Ikke selvhostet (Claude-app e.l.): skjul overlay, bruk eksisterende PIN-felt
+    if (savedPin) {
+      var pinEl = document.getElementById('pinInput');
+      if (pinEl) pinEl.value = savedPin;
+      pinHash(savedPin).then(function(k){ window._pinKey = k; setPinStatus('✓ Tilkoblet med PIN', 'var(--green)'); });
+    }
   }
+
   await loadKindleDevices();
   await loadServerUrl();
   render();
 
-  // Hide server URL field when self-hosted (auto-detected)
   if (AUTO_SERVER_URL) {
     const sec = document.getElementById('serverUrlSection');
     if (sec) sec.style.display = 'none';
   }
 
-  // Show IS_WEB status in console
   console.log(IS_WEB
     ? 'Bibliothek kjorer som nettside — localStorage og server aktivert'
     : 'Bibliothek kjorer i sandkasse — begrenset funksjonalitet'
   );
 
-  // Gjenopprett PIN-visning
   var pinEl2 = document.getElementById('pinInput');
   if (pinEl2 && pinEl2.value) pinEl2.type = 'password';
 }

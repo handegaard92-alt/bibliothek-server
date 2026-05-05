@@ -64,15 +64,16 @@ const guestStore = new Map();
 app.post('/guest-link', (req, res) => {
   const { ownerPin, guestPin } = req.body;
   if (!ownerPin || !guestPin) return res.status(400).json({ ok: false, error: 'ownerPin og guestPin er påkrevd' });
-  const ownerKey = hashPin(ownerPin);
-  const guestKey = hashPin(guestPin);
+  // App sender allerede hashede nøkler (window._pinKey / pinHash(rawPin))
+  const ownerKey = ownerPin;
+  const guestKey = guestPin;
   if (!pinStore.has(ownerKey)) return res.status(404).json({ ok: false, error: 'Eier-bibliotek ikke funnet' });
   guestStore.set(guestKey, ownerKey);
   res.json({ ok: true, message: 'Gjeste-PIN opprettet' });
 });
 
 app.get('/library/:pin', (req, res) => {
-  const key = hashPin(req.params.pin);
+  const key = req.params.pin; // App sender allerede hashet PIN
   // Sjekk om dette er en gjeste-PIN
   const ownerKey = guestStore.get(key);
   if (ownerKey) {
@@ -86,7 +87,7 @@ app.get('/library/:pin', (req, res) => {
 });
 
 app.put('/library/:pin', (req, res) => {
-  const key = hashPin(req.params.pin);
+  const key = req.params.pin; // App sender allerede hashet PIN
   const { books } = req.body;
   if (!Array.isArray(books)) return res.status(400).json({ ok: false, error: 'books must be array' });
   pinStore.set(key, { books, updatedAt: new Date().toISOString() });
