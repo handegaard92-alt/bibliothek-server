@@ -323,7 +323,7 @@ body {
 .pill.active { background:var(--gold); color:#0a0a0c; border-color:var(--gold); font-weight:500; }
 
 /* GRID */
-.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:12px; }
+.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); gap:10px; }
 .grid.lv { grid-template-columns:1fr; gap:8px; }
 
 /* Book card – grid */
@@ -790,7 +790,7 @@ body {
 
   .stats-row { grid-template-columns:repeat(2,1fr) !important; }
 
-  .grid { grid-template-columns:repeat(auto-fill,minmax(140px,1fr)) !important; gap:12px !important; }
+  .grid { grid-template-columns:repeat(auto-fill,minmax(110px,1fr)) !important; gap:10px !important; }
 
   .rec-chat { height:calc(100vh - 180px) !important; }
 
@@ -29675,10 +29675,35 @@ async function fetchSeriesInfo(title, author) {
     const nbJson = await fetchJSON(nbUrl);
     for (const item of (nbJson?._embedded?.items || [])) {
       const m = item.metadata || {};
-      const seriesArr = m.series || m.seriesTitle || m.isPartOf || [];
-      const series = seriesArr.find(s => typeof s === 'string' && s.length > 1);
+      // Try many possible field names for series in NB API
+      const seriesFields = [
+        m.series, m.seriesTitle, m.seriesTittel, m.serie, m.serier,
+        m.isPartOf, m.hasSeries, m.seriesStatement, m.belongsTo,
+        m.partOfSeries, m.seriesMembership,
+      ];
+      let series = null;
+      for (const sf of seriesFields) {
+        if (!sf) continue;
+        if (typeof sf === 'string' && sf.length > 1) { series = sf; break; }
+        if (Array.isArray(sf)) {
+          const found = sf.find(s => typeof s === 'string' && s.length > 1);
+          if (found) { series = found; break; }
+        }
+      }
+      if (!series) {
+        // Last resort: scan all string values in metadata for a series-like field
+        const metaStr = JSON.stringify(m);
+        const sm = metaStr.match(/"(?:serie[^"]*|seriesTitle|isPartOfSeries)"\s*:\s*"([^"]{3,80})"/i);
+        if (sm) series = sm[1];
+      }
       if (series) {
-        const rawNum = (m.seriesNumber || m.partNumber || m.volumeNumber || [])[0];
+        const numFields = [m.seriesNumber, m.partNumber, m.volumeNumber, m.seriesNumbering, m.nummer];
+        let rawNum = null;
+        for (const nf of numFields) {
+          if (!nf) continue;
+          const v = Array.isArray(nf) ? nf[0] : nf;
+          if (v) { rawNum = v; break; }
+        }
         return { series, seriesNum: rawNum ? parseInt(rawNum) : null };
       }
     }
@@ -30773,7 +30798,7 @@ function getFiltered() {
     b.author.toLowerCase().includes(q) ||
     (b.genre||'').toLowerCase().includes(q)
   );
-  const sel = _activeSort || 'title';
+  const sel = _activeSort || 'added';
   if (sel === 'title')  f.sort((a,b) => a.title.localeCompare(b.title,'no'));
   else if (sel === 'author')   f.sort((a,b) => (a.author||'').localeCompare(b.author||'','no'));
   else if (sel === 'year')     f.sort((a,b) => (b.year||0)-(a.year||0));
@@ -31241,12 +31266,10 @@ async function saveBatchBooks() {
 
       const m = item.meta || {};
       // Prefer remote URL for persistence; base64 covers can't be stored
-      // Use remote cover URL if available; data: covers will be uploaded to R2 after saving
-      let coverUrl = (m.coverDataUrl && !m.coverDataUrl.startsWith('data:'))
-        ? m.coverDataUrl
-        : (m.coverUrl || (m.epubIsbn
-            ? 'https://covers.openlibrary.org/b/isbn/' + m.epubIsbn + '-L.jpg'
-            : null));
+      // Use data: URL for in-session display; R2 upload replaces with permanent URL async
+      // saveBooks() strips data: from localStorage, but in-memory book keeps it for display
+      let coverUrl = m.coverDataUrl || m.coverUrl ||
+        (m.epubIsbn ? 'https://covers.openlibrary.org/b/isbn/' + m.epubIsbn + '-L.jpg' : null);
 
       const bookId = Date.now() + Math.random();
       const book = {
@@ -31270,12 +31293,17 @@ async function saveBatchBooks() {
         added:       Date.now(),
       };
 
-      // Upload epub cover to R2 if it's a data: URL
+      // Upload epub cover to R2 async to get a permanent URL
       if (m.coverDataUrl && m.coverDataUrl.startsWith('data:') && window._pinKey && getServerUrl()) {
-        uploadCoverOnlyToR2(bookId, m.coverDataUrl).then(url => {
+        const _bid = bookId;
+        uploadCoverOnlyToR2(_bid, m.coverDataUrl).then(url => {
           if (url) {
-            const idx = books.findIndex(b => b.id === bookId);
-            if (idx !== -1) { books[idx].coverUrl = url; saveBooks(); render(); }
+            const idx = books.findIndex(b => b.id === _bid);
+            if (idx !== -1) {
+              books[idx].coverUrl = url;
+              saveBooks();
+              render();
+            }
           }
         }).catch(() => {});
       }

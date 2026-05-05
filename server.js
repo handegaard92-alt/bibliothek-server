@@ -302,22 +302,32 @@ app.get('/series-proxy', async (req, res) => {
   if (!title) return res.json({ ok: false });
   try {
     const q = encodeURIComponent((title + (author ? ' ' + author : '')).slice(0, 80));
+    const headers = {
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Accept': 'text/html,application/xhtml+xml',
+      'Accept-Language': 'nb-NO,nb;q=0.9,no;q=0.8',
+    };
+
+    // Try ebok.no search
     const searchUrl = `https://www.ebok.no/search/?q=${q}`;
-    const headers = { 'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html' };
     const searchHtml = await fetch(searchUrl, { headers }).then(r => r.text());
-    // Extract first product link
-    const linkMatch = searchHtml.match(/href="(\/[a-z]+-[a-z]+\/[^"]+\/)"/i) ||
-                      searchHtml.match(/href="(\/boker\/[^"]+\/)"/i);
-    if (linkMatch) {
-      const pageHtml = await fetch('https://www.ebok.no' + linkMatch[1], { headers }).then(r => r.text());
-      // Parse series info from table rows
-      const seriesMatch = pageHtml.match(/Serie<\/[^>]+>\s*<[^>]+>([^<]{3,80})</i) ||
-                          pageHtml.match(/>[Ss]erie[^<]*<\/[^>]+>[^<]*<[^>]*>([^<]{3,80})</);
-      const numMatch = pageHtml.match(/Nummer i serie<\/[^>]+>\s*<[^>]+>(\d+)</i) ||
-                       pageHtml.match(/>[Nn]ummer i serie[^<]*<\/[^>]+>[^<]*<[^>]*>(\d+)</);
-      if (seriesMatch) {
-        return res.json({ ok: true, series: seriesMatch[1].trim(), seriesNum: numMatch ? parseInt(numMatch[1]) : null });
-      }
+
+    // Find first book link (ebok.no paths look like /krim-og-spenning/book-slug/ or /boker/slug/)
+    const linkMatches = [...searchHtml.matchAll(/href="(\/(?:boker\/)?[a-z0-9\-]+\/[a-z0-9\-]+\/)"/gi)];
+    for (const lm of linkMatches.slice(0, 3)) {
+      const path = lm[1];
+      if (path.includes('/search') || path.includes('/forfatter') || path.includes('/forlag')) continue;
+      try {
+        const pageHtml = await fetch('https://www.ebok.no' + path, { headers }).then(r => r.text());
+        // Look for table rows with serie info — ebok.no uses <th>Serie</th><td>...</td>
+        const seriesMatch = pageHtml.match(/<th[^>]*>[Ss]erie<\/th>\s*<td[^>]*>([^<]{2,80})<\/td>/i) ||
+                            pageHtml.match(/>[Ss]erie<\/[^>]+>[\s\S]{0,30}<[^>]+>([^<]{2,80})</i);
+        const numMatch = pageHtml.match(/<th[^>]*>Nummer i serie<\/th>\s*<td[^>]*>(\d+)<\/td>/i) ||
+                         pageHtml.match(/Nummer i serie[\s\S]{0,30}<[^>]+>(\d+)</i);
+        if (seriesMatch) {
+          return res.json({ ok: true, series: seriesMatch[1].trim(), seriesNum: numMatch ? parseInt(numMatch[1]) : null });
+        }
+      } catch(e) { continue; }
     }
     res.json({ ok: true, series: null });
   } catch(e) { res.json({ ok: false, error: e.message }); }
