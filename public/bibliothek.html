@@ -29020,12 +29020,14 @@ font-family: 'Source Sans Pro'
       Last opp flere bøker
     </button>
     <div class="kindle-email-area">
-      <div class="kindle-label">👤 Gjeste-PIN</div>
-      <div style="display:flex;gap:6px;align-items:center;">
-        <input class="kindle-input" id="guestPinInput" placeholder="Opprett gjeste-PIN" maxlength="20" style="font-size:12px;flex:1;">
-        <button onclick="createGuestPin()" style="padding:4px 10px;border-radius:5px;font-size:11px;font-family:'Outfit',sans-serif;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);white-space:nowrap;">Opprett</button>
+      <div class="kindle-label">👤 Gjeste-tilgang</div>
+      <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px;">
+        <input class="kindle-input" id="guestLabelInput" placeholder="Navn (f.eks. Pappa)" maxlength="30" style="font-size:12px;flex:1;">
+        <input class="kindle-input" id="guestPinInput" placeholder="PIN" maxlength="20" style="font-size:12px;width:70px;">
+        <button onclick="createGuestPin()" style="padding:4px 10px;border-radius:5px;font-size:11px;font-family:'Outfit',sans-serif;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);white-space:nowrap;">+</button>
       </div>
-      <div id="guestPinStatus" style="font-size: 10px; color: var(--red); margin-top: 5px; min-height: 14px;">✗ Eier-bibliotek ikke funnet</div>
+      <div id="guestPinStatus" style="font-size:10px;color:var(--muted);margin-bottom:6px;min-height:14px;"></div>
+      <div id="guestList" style="display:flex;flex-direction:column;gap:4px;"></div>
     </div>
     <div class="kindle-email-area">
       <div class="kindle-label">→ Server-URL</div>
@@ -29043,11 +29045,11 @@ font-family: 'Source Sans Pro'
       <input class="search" id="searchInput" placeholder="Søk på tittel, forfatter, sjanger…" oninput="render()">
     </div>
     <div class="view-btns">
-      <button class="vbtn" id="vbtnGrid" onclick="setViewMode('grid')" title="Rutenett">
-        <svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24"><path d="M3 3h7v7H3zm11 0h7v7h-7zM3 14h7v7H3zm11 0h7v7h-7z"></path></svg>
-      </button>
-      <button class="vbtn active" id="vbtnList" onclick="setViewMode('list')" title="Liste">
+      <button class="vbtn active" id="vbtnList" onclick="setViewMode('list')" title="Listevisning">
         <svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24"><path d="M3 4h18v2H3zm0 7h18v2H3zm0 7h18v2H3z"></path></svg>
+      </button>
+      <button class="vbtn" id="vbtnGrid" onclick="setViewMode('grid')" title="Bokhylle">
+        <svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24"><path d="M3 3h7v7H3zm11 0h7v7h-7zM3 14h7v7H3zm11 0h7v7h-7z"></path></svg>
       </button>
     </div>
     <select class="sort-sel" onchange="render()">
@@ -29379,7 +29381,7 @@ let view = 'all';
 let genreFilter = null;
 let seriesFilter = null;
 let authorFilter = null;
-let viewMode = 'grid';
+let viewMode = 'list';
 let editingId = null;
 let coverDebounceTimer = null;
 let pendingCoverUrl = null;
@@ -31646,6 +31648,7 @@ async function pushToPin() {
 async function createGuestPin() {
   var ownerPin = document.getElementById('pinInput')?.value?.trim();
   var guestPin = document.getElementById('guestPinInput')?.value?.trim();
+  var label    = document.getElementById('guestLabelInput')?.value?.trim() || guestPin;
   var server = getServerUrl();
   if (!window._pinKey) { document.getElementById('guestPinStatus').textContent = 'Koble til med eier-PIN først'; return; }
   if (!guestPin) { document.getElementById('guestPinStatus').textContent = 'Skriv inn en gjeste-PIN'; return; }
@@ -31656,13 +31659,15 @@ async function createGuestPin() {
     var resp = await fetch(server + '/guest-link', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      // Send allerede hashede nøkler så server slipper å hashe på nytt
-      body: JSON.stringify({ ownerPin: window._pinKey, guestPin: guestKey })
+      body: JSON.stringify({ ownerPin: window._pinKey, guestPin: guestKey, label })
     });
     var json = await resp.json();
     if (json.ok) {
-      document.getElementById('guestPinStatus').textContent = '✓ Gjeste-PIN "' + guestPin + '" opprettet!';
+      document.getElementById('guestPinStatus').textContent = '✓ Opprettet';
       document.getElementById('guestPinStatus').style.color = 'var(--green)';
+      document.getElementById('guestPinInput').value = '';
+      document.getElementById('guestLabelInput').value = '';
+      await loadGuestLinks();
     } else {
       document.getElementById('guestPinStatus').textContent = '✗ ' + (json.error || 'Feil');
       document.getElementById('guestPinStatus').style.color = 'var(--red)';
@@ -31671,6 +31676,36 @@ async function createGuestPin() {
     document.getElementById('guestPinStatus').textContent = '✗ Kunne ikke nå server';
     document.getElementById('guestPinStatus').style.color = 'var(--red)';
   }
+}
+
+async function loadGuestLinks() {
+  var server = getServerUrl();
+  var el = document.getElementById('guestList');
+  if (!el || !window._pinKey || !server) return;
+  try {
+    var resp = await fetch(server + '/guest-links/' + encodeURIComponent(window._pinKey));
+    if (!resp.ok) return;
+    var json = await resp.json();
+    var guests = json.guests || [];
+    if (!guests.length) { el.innerHTML = '<div style="font-size:10px;color:var(--muted);">Ingen gjester ennå.</div>'; return; }
+    el.innerHTML = guests.map(g => {
+      var date = g.created ? new Date(g.created).toLocaleDateString('no') : '';
+      return '<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border);">' +
+        '<span style="flex:1;font-size:11px;color:var(--text);">' + (g.label || '—') + '</span>' +
+        '<span style="font-size:10px;color:var(--muted);">' + date + '</span>' +
+        '<button onclick="deleteGuestLink('' + g.guestKey + '')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:13px;padding:0 2px;" title="Fjern gjest">✕</button>' +
+        '</div>';
+    }).join('');
+  } catch(e) {}
+}
+
+async function deleteGuestLink(guestKey) {
+  var server = getServerUrl();
+  if (!server || !window._pinKey) return;
+  try {
+    await fetch(server + '/guest-links/' + encodeURIComponent(window._pinKey) + '/' + encodeURIComponent(guestKey), { method: 'DELETE' });
+    await loadGuestLinks();
+  } catch(e) {}
 }
 
 function setLoginStatus(msg, color) {
@@ -31703,6 +31738,10 @@ async function loginConnect() {
     render();
     document.getElementById('loginOverlay').classList.remove('visible');
     setPinStatus('✓ Tilkoblet med PIN', 'var(--green)');
+    if (!window._readOnly) {
+      fetch(server + '/guest-links/' + encodeURIComponent(key) + '/restore', { method: 'POST' }).catch(()=>{});
+      loadGuestLinks();
+    }
   } catch(e) {
     setLoginStatus('✗ Kunne ikke nå server', 'var(--red)');
     window._pinKey = null;
@@ -31746,6 +31785,10 @@ async function connectPin() {
           }
         }
       } catch(de) { console.warn('device load failed:', de); }
+      if (!window._readOnly) {
+        fetch(server + '/guest-links/' + encodeURIComponent(key) + '/restore', { method: 'POST' }).catch(()=>{});
+        loadGuestLinks();
+      }
     } else {
       setPinStatus('✗ Feil: ' + resp.status, 'var(--red)');
       window._pinKey = null;
@@ -31789,6 +31832,10 @@ async function init() {
               await pushToPin();
             }
             render();
+          }
+          if (!window._readOnly) {
+            fetch(AUTO_SERVER_URL + '/guest-links/' + encodeURIComponent(k) + '/restore', { method: 'POST' }).catch(()=>{});
+            loadGuestLinks();
           }
         } catch(e) {}
         setPinStatus('✓ Tilkoblet med PIN', 'var(--green)');

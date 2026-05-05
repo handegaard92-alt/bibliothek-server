@@ -35,6 +35,29 @@ function hashPin(pin) {
   return crypto.createHash('sha256').update(String(pin)).digest('hex').slice(0, 16);
 }
 
+// R2-nøkkel for gjeste-PIN-liste per eier
+function guestListKey(ownerKey) {
+  return `${ownerKey}/_guests.json`;
+}
+
+async function loadGuestList(ownerKey) {
+  if (!r2) return [];
+  try {
+    const data = await r2.send(new GetObjectCommand({ Bucket: BUCKET, Key: guestListKey(ownerKey) }));
+    const chunks = [];
+    for await (const chunk of data.Body) chunks.push(chunk);
+    return JSON.parse(Buffer.concat(chunks).toString());
+  } catch(e) { return []; }
+}
+
+async function saveGuestList(ownerKey, list) {
+  if (!r2) return;
+  await r2.send(new PutObjectCommand({
+    Bucket: BUCKET, Key: guestListKey(ownerKey),
+    Body: JSON.stringify(list), ContentType: 'application/json',
+  }));
+}
+
 // Serve app
 const publicDir = path.join(__dirname, 'public');
 app.use(express.static(publicDir));
@@ -61,15 +84,52 @@ app.get('/health', (req, res) => {
 // Gjeste-PIN store: guestKey -> ownerKey
 const guestStore = new Map();
 
-app.post('/guest-link', (req, res) => {
-  const { ownerPin, guestPin } = req.body;
+app.post('/guest-link', async (req, res) => {
+  const { ownerPin, guestPin, label } = req.body;
   if (!ownerPin || !guestPin) return res.status(400).json({ ok: false, error: 'ownerPin og guestPin er påkrevd' });
-  // App sender allerede hashede nøkler (window._pinKey / pinHash(rawPin))
   const ownerKey = ownerPin;
   const guestKey = guestPin;
   if (!pinStore.has(ownerKey)) return res.status(404).json({ ok: false, error: 'Eier-bibliotek ikke funnet' });
   guestStore.set(guestKey, ownerKey);
+  // Lagre persistent i R2
+  try {
+    const list = await loadGuestList(ownerKey);
+    const existing = list.findIndex(g => g.guestKey === guestKey);
+    const entry = { guestKey, label: label || guestPin, created: new Date().toISOString() };
+    if (existing >= 0) list[existing] = entry; else list.push(entry);
+    await saveGuestList(ownerKey, list);
+  } catch(e) { console.warn('guest list R2 save failed:', e.message); }
   res.json({ ok: true, message: 'Gjeste-PIN opprettet' });
+});
+
+// List guest links for owner
+app.get('/guest-links/:ownerPin', async (req, res) => {
+  const ownerKey = req.params.ownerPin;
+  const list = await loadGuestList(ownerKey);
+  // Marker hvilke som er aktive i guestStore
+  const enriched = list.map(g => ({ ...g, active: guestStore.has(g.guestKey) }));
+  res.json({ ok: true, guests: enriched });
+});
+
+// Delete a guest link
+app.delete('/guest-links/:ownerPin/:guestPin', async (req, res) => {
+  const ownerKey = req.params.ownerPin;
+  const guestKey = req.params.guestPin;
+  guestStore.delete(guestKey);
+  try {
+    const list = await loadGuestList(ownerKey);
+    await saveGuestList(ownerKey, list.filter(g => g.guestKey !== guestKey));
+  } catch(e) { console.warn('guest list R2 delete failed:', e.message); }
+  res.json({ ok: true });
+});
+
+// Restore guest links from R2 into guestStore on startup / owner sync
+app.post('/guest-links/:ownerPin/restore', async (req, res) => {
+  const ownerKey = req.params.ownerPin;
+  if (!pinStore.has(ownerKey)) return res.status(404).json({ ok: false, error: 'Eier ikke funnet' });
+  const list = await loadGuestList(ownerKey);
+  list.forEach(g => guestStore.set(g.guestKey, ownerKey));
+  res.json({ ok: true, restored: list.length });
 });
 
 app.get('/library/:pin', (req, res) => {
