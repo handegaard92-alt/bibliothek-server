@@ -29675,36 +29675,58 @@ async function fetchSeriesInfo(title, author) {
     const nbJson = await fetchJSON(nbUrl);
     for (const item of (nbJson?._embedded?.items || [])) {
       const m = item.metadata || {};
-      // Try many possible field names for series in NB API
-      const seriesFields = [
+
+      // Extract genre/type from NB subjects
+      const subjects = Array.isArray(m.subject) ? m.subject : (m.subject ? [m.subject] : []);
+      const nbGenre = mapGenre([...subjects, m.genre||'', m.type||'', m.mediaType||'']);
+
+      // Collect series candidates from all known field names
+      const seriesCandidates = [
         m.series, m.seriesTitle, m.seriesTittel, m.serie, m.serier,
         m.isPartOf, m.hasSeries, m.seriesStatement, m.belongsTo,
         m.partOfSeries, m.seriesMembership,
-      ];
-      let series = null;
-      for (const sf of seriesFields) {
-        if (!sf) continue;
-        if (typeof sf === 'string' && sf.length > 1) { series = sf; break; }
-        if (Array.isArray(sf)) {
-          const found = sf.find(s => typeof s === 'string' && s.length > 1);
-          if (found) { series = found; break; }
-        }
-      }
-      if (!series) {
-        // Last resort: scan all string values in metadata for a series-like field
+      ].flat().filter(Boolean).map(s => typeof s === 'string' ? s : null).filter(Boolean);
+
+      if (!seriesCandidates.length) {
+        // Scan all string values whose key contains "serie"
         const metaStr = JSON.stringify(m);
         const sm = metaStr.match(/"(?:serie[^"]*|seriesTitle|isPartOfSeries)"\s*:\s*"([^"]{3,80})"/i);
-        if (sm) series = sm[1];
+        if (sm) seriesCandidates.push(sm[1]);
       }
-      if (series) {
-        const numFields = [m.seriesNumber, m.partNumber, m.volumeNumber, m.seriesNumbering, m.nummer];
-        let rawNum = null;
-        for (const nf of numFields) {
-          if (!nf) continue;
-          const v = Array.isArray(nf) ? nf[0] : nf;
-          if (v) { rawNum = v; break; }
+
+      for (const raw of seriesCandidates) {
+        // NB often returns "Series Name ; N" or "Series Name, N" combining title + number
+        const semiMatch = raw.match(/^(.+?)\s*[;,]\s*(\d+)\s*$/);
+        const nrMatch   = raw.match(/^(.+?)\s+(?:nr\.?\s*|#\s*|del\s+|bind\s+)(\d+)\s*$/i);
+        let seriesName = raw.trim();
+        let seriesNum  = null;
+
+        if (semiMatch) { seriesName = semiMatch[1].trim(); seriesNum = parseInt(semiMatch[2]); }
+        else if (nrMatch) { seriesName = nrMatch[1].trim(); seriesNum = parseInt(nrMatch[2]); }
+
+        // If no number found in name string, check dedicated number fields
+        if (!seriesNum) {
+          const numFields = [m.seriesNumber, m.partNumber, m.volumeNumber, m.seriesNumbering, m.nummer];
+          for (const nf of numFields) {
+            if (!nf) continue;
+            const v = Array.isArray(nf) ? nf[0] : nf;
+            if (v) { seriesNum = parseInt(v) || null; break; }
+          }
+          // Also try to extract number from end of series name: "Carl Hamilton 8"
+          if (!seriesNum) {
+            const trailNum = seriesName.match(/\s+(\d+)$/);
+            if (trailNum) { seriesName = seriesName.slice(0, -trailNum[0].length).trim(); seriesNum = parseInt(trailNum[1]); }
+          }
         }
-        return { series, seriesNum: rawNum ? parseInt(rawNum) : null };
+
+        if (seriesName.length > 1) {
+          return { series: seriesName, seriesNum, genre: nbGenre !== 'Annet' ? nbGenre : null };
+        }
+      }
+
+      // No series, but still return genre if found
+      if (nbGenre !== 'Annet') {
+        return { series: null, seriesNum: null, genre: nbGenre };
       }
     }
   } catch(e) {}
@@ -29735,16 +29757,23 @@ async function fetchSeriesInfo(title, author) {
 async function autoFillSeries(title, author) {
   const sfEl = document.getElementById('fSeries');
   const snEl = document.getElementById('fSeriesNum');
-  if (!sfEl || sfEl.value.trim()) return; // ikke overstyr hvis allerede fylt inn
+  const gEl  = document.getElementById('fGenre');
   const info = await fetchSeriesInfo(title, author);
   if (!info) return;
-  sfEl.value = info.series;
-  sfEl.style.borderColor = 'var(--gold)';
-  setTimeout(() => { sfEl.style.borderColor = ''; }, 2000);
+  if (sfEl && !sfEl.value.trim() && info.series) {
+    sfEl.value = info.series;
+    sfEl.style.borderColor = 'var(--gold)';
+    setTimeout(() => { sfEl.style.borderColor = ''; }, 2000);
+  }
   if (snEl && !snEl.value && info.seriesNum) {
     snEl.value = info.seriesNum;
     snEl.style.borderColor = 'var(--gold)';
     setTimeout(() => { snEl.style.borderColor = ''; }, 2000);
+  }
+  if (gEl && info.genre && (!gEl.value || gEl.value === 'Roman' || gEl.value === 'Annet')) {
+    gEl.value = info.genre;
+    gEl.style.borderColor = 'var(--gold)';
+    setTimeout(() => { gEl.style.borderColor = ''; }, 2000);
   }
 }
 
@@ -30211,6 +30240,8 @@ async function processFile(file) {
           const g = mapGenre([epubMeta.desc, epubMeta.title]);
           if (g !== 'Annet') document.getElementById('fGenre').value = g;
         }
+        // Series + genre from NB/ebok.no (async, don't block)
+        autoFillSeries(epubMeta.title, epubMeta.author || '');
 
         const isbn = epubMeta.epubIsbn || extractISBN(file.name);
         const extras = [
@@ -30279,6 +30310,7 @@ async function processFile(file) {
     if (info.authors)     document.getElementById('fAuthor').value = info.authors;
     if (info.year)        document.getElementById('fYear').value   = info.year;
     if (info.mappedGenre) document.getElementById('fGenre').value  = info.mappedGenre;
+    autoFillSeries(info.title, info.authors || '');
 
     if (info.coverUrl) {
       pendingCoverUrl = info.coverUrl;
