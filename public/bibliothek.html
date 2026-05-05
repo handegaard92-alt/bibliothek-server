@@ -311,6 +311,8 @@ body {
 
 /* Genre pills */
 .pills { display:flex; gap:7px; flex-wrap:wrap; margin-bottom:24px; }
+.pills-row { display:flex; flex-direction:column; gap:6px; }
+.filter-label { font-size:10px; font-weight:600; letter-spacing:0.15em; text-transform:uppercase; color:var(--muted2); padding:0 4px; }
 .pill {
   padding:5px 15px; border-radius:20px;
   border:1px solid var(--border); background:transparent;
@@ -29181,7 +29183,8 @@ font-family: 'Source Sans Pro'
     <div class="fr">
       <div class="fg">
         <label class="fl">Serie</label>
-        <input class="fi" id="fSeries" placeholder="f.eks. Harry Potter">
+        <input class="fi" id="fSeries" placeholder="f.eks. Harry Potter" list="seriesList" autocomplete="off">
+        <datalist id="seriesList"></datalist>
       </div>
       <div class="fg">
         <label class="fl">Del nr.</label>
@@ -29374,6 +29377,8 @@ font-family: 'Source Sans Pro'
 let books = [];
 let view = 'all';
 let genreFilter = null;
+let seriesFilter = null;
+let authorFilter = null;
 let viewMode = 'grid';
 let editingId = null;
 let coverDebounceTimer = null;
@@ -29583,26 +29588,26 @@ function debounceCoverSearch() {
 }
 
 async function fetchSeriesInfo(title, author) {
-  // 1. Prøv Nasjonalbiblioteket
+  // 1. Nasjonalbiblioteket – tittel/forfatter-søk
   try {
-    const q = encodeURIComponent(title + (author ? ' ' + author : ''));
+    const q = encodeURIComponent((title + (author ? ' ' + author : '')).slice(0, 80));
     const nbUrl = `https://api.nb.no/catalog/v1/items?q=${q}&size=5&mediatype=b%C3%B8ker`;
     const nbJson = await fetchJSON(nbUrl);
     for (const item of (nbJson?._embedded?.items || [])) {
       const m = item.metadata || {};
-      const series = (m.series||m.seriesTitle||m.isPartOf||[])[0];
-      if (series && typeof series === 'string' && series.length > 1) {
-        const rawNum = (m.seriesNumber||m.partNumber||m.volumeNumber||[])[0];
+      const seriesArr = m.series || m.seriesTitle || m.isPartOf || [];
+      const series = seriesArr.find(s => typeof s === 'string' && s.length > 1);
+      if (series) {
+        const rawNum = (m.seriesNumber || m.partNumber || m.volumeNumber || [])[0];
         return { series, seriesNum: rawNum ? parseInt(rawNum) : null };
       }
     }
   } catch(e) {}
 
-  // 2. Fallback: Open Library
+  // 2. Open Library – serier
   try {
     const q = encodeURIComponent(title + (author ? ' ' + author : ''));
-    const olUrl = `https://openlibrary.org/search.json?q=${q}&limit=5&fields=title,author_name,series`;
-    const olJson = await fetchJSON(olUrl);
+    const olJson = await fetchJSON(`https://openlibrary.org/search.json?q=${q}&limit=5&fields=title,author_name,series`);
     for (const d of (olJson?.docs || [])) {
       if (d.series?.length) {
         const num = title.match(/#\s*(\d+)|[Bb]ook\s+(\d+)|[Dd]el\s+(\d+)|[Nn]r\.?\s*(\d+)/);
@@ -29610,6 +29615,14 @@ async function fetchSeriesInfo(title, author) {
       }
     }
   } catch(e) {}
+
+  // 3. Sjekk om serien allerede finnes i biblioteket (fuzzy match på tittel)
+  const titleLower = title.toLowerCase();
+  for (const b of books) {
+    if (b.series && b.title && titleLower.includes(b.series.toLowerCase().split(' ')[0].toLowerCase())) {
+      return { series: b.series, seriesNum: null };
+    }
+  }
 
   return null;
 }
@@ -30247,6 +30260,7 @@ function openAddModal() {
   document.getElementById('coverAltBtns').innerHTML = '';
   const isnS = document.getElementById('isbnStatus'); isnS.style.display='none'; isnS.innerHTML='';
   document.getElementById('bookModal').classList.add('open');
+  updateSeriesDatalist();
 }
 
 function openEditModal(id) {
@@ -30283,6 +30297,7 @@ function openEditModal(id) {
   }
   document.getElementById('coverAltBtns').innerHTML = '';
   document.getElementById('bookModal').classList.add('open');
+  updateSeriesDatalist();
 }
 
 function closeModal() {
@@ -30291,6 +30306,13 @@ function closeModal() {
   pendingFileData = null;
   pendingCoverUrl = null;
   pendingCoverIsUpload = false;
+}
+
+function updateSeriesDatalist() {
+  const dl = document.getElementById('seriesList');
+  if (!dl) return;
+  const unique = [...new Set(books.map(b => b.series).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'no'));
+  dl.innerHTML = unique.map(s => `<option value="${s}">`).join('');
 }
 
 function toggleFinishedDate() {
@@ -30664,6 +30686,8 @@ function getFiltered() {
   else if (view === 'wishlist') f = f.filter(b => b.status === 'wishlist');
   else if (view === 'unread') f = f.filter(b => b.status === 'unread');
   if (genreFilter) f = f.filter(b => b.genre === genreFilter);
+  if (seriesFilter) f = f.filter(b => b.series === seriesFilter);
+  if (authorFilter) f = f.filter(b => b.author === authorFilter);
   if (q) f = f.filter(b =>
     b.title.toLowerCase().includes(q) ||
     b.author.toLowerCase().includes(q) ||
@@ -30765,17 +30789,38 @@ function render() {
     `;
   } else { hero.innerHTML = ''; }
 
-  // Pills
-  const genres = [...new Set(books.map(b=>b.genre).filter(Boolean))].sort();
-  document.getElementById('pillsWrap').innerHTML =
-    `<button class="pill ${!genreFilter?'active':''}" onclick="setGenre(null)">Alle</button>` +
-    genres.map(g=>`<button class="pill ${genreFilter===g?'active':''}" onclick="setGenre('${g}')">${g}</button>`).join('');
+  // Pills – sjanger, serie og forfatter
+  const genres   = [...new Set(books.map(b=>b.genre).filter(Boolean))].sort();
+  const allSeries = [...new Set(books.map(b=>b.series).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'no'));
+  const authors  = [...new Set(books.map(b=>b.author).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'no'));
+
+  const anyFilter = genreFilter || seriesFilter || authorFilter;
+  let pillsHtml = `<div class="pills-row">`;
+  pillsHtml += `<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">`;
+  pillsHtml += `<button class="pill ${!anyFilter?'active':''}" onclick="clearFilters()">Alle</button>`;
+  pillsHtml += genres.map(g=>`<button class="pill ${genreFilter===g?'active':''}" onclick="setGenre('${g}')">${g}</button>`).join('');
+  pillsHtml += `</div>`;
+  if (allSeries.length) {
+    pillsHtml += `<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">`;
+    pillsHtml += `<span class="filter-label">Serie</span>`;
+    pillsHtml += allSeries.map(s=>`<button class="pill ${seriesFilter===s?'active':''}" onclick="setSeries('${s.replace(/'/g,"\\'")}')">📚 ${s}</button>`).join('');
+    pillsHtml += `</div>`;
+  }
+  if (authors.length > 1) {
+    pillsHtml += `<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">`;
+    pillsHtml += `<span class="filter-label">Forfatter</span>`;
+    pillsHtml += authors.map(a=>`<button class="pill ${authorFilter===a?'active':''}" onclick="setAuthor('${a.replace(/'/g,"\\'")}')">✍️ ${a}</button>`).join('');
+    pillsHtml += `</div>`;
+  }
+  pillsHtml += `</div>`;
+  document.getElementById('pillsWrap').innerHTML = pillsHtml;
 
   // Titles
   const viewNames = {all:'Alle bøker',reading:'Leser nå',done:'Lest',wishlist:'Ønskeliste',unread:'Ikke lest'};
-  document.getElementById('secTitle').textContent = genreFilter || viewNames[view] || 'Alle bøker';
+  const activeFilterLabel = seriesFilter || authorFilter || genreFilter;
+  document.getElementById('secTitle').textContent = activeFilterLabel || viewNames[view] || 'Alle bøker';
   document.getElementById('secCnt').textContent = `${filtered.length} bøker`;
-  document.getElementById('topbarTitle').textContent = genreFilter || viewNames[view] || 'Alle bøker';
+  document.getElementById('topbarTitle').textContent = activeFilterLabel || viewNames[view] || 'Alle bøker';
 
   const grid = document.getElementById('booksGrid');
   grid.className = viewMode==='list' ? 'grid lv' : 'grid';
@@ -30843,13 +30888,13 @@ function setViewMobile(el, v) {
   if (el) el.classList.add('active');
   const sideNav = document.querySelector('.nav-item[data-view="'+v+'"]');
   if (sideNav) setView(sideNav, v);
-  else { view = v; genreFilter = null; render(); }
+  else { view = v; genreFilter = null; seriesFilter = null; authorFilter = null; render(); }
   closeSidebar();
 }
 
 function setView(el, v) {
   view = v;
-  genreFilter = null;
+  genreFilter = null; seriesFilter = null; authorFilter = null;
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   if (el) el.classList.add('active');
   if (v === 'stats') {
@@ -30874,6 +30919,18 @@ function updateCounts() {
 
 function setGenre(g) {
   genreFilter = g;
+  render();
+}
+function setSeries(s) {
+  seriesFilter = s; authorFilter = null;
+  render();
+}
+function setAuthor(a) {
+  authorFilter = a; seriesFilter = null;
+  render();
+}
+function clearFilters() {
+  genreFilter = null; seriesFilter = null; authorFilter = null;
   render();
 }
 
