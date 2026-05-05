@@ -29140,7 +29140,7 @@ font-family: 'Source Sans Pro'
     <div class="hero-wrap" id="heroWrap"></div>
     <div class="pills" id="pillsWrap"><button class="pill active" onclick="setGenre(null)">Alle</button><button class="pill " onclick="setGenre('Roman')">Roman</button></div>
     <div class="sec-hdr"><span class="sec-title" id="secTitle">Alle bøker</span><span class="sec-cnt" id="secCnt">2 bøker</span></div>
-    <div class="grid" id="booksGrid" style="display: block;">
+    <div class="grid" id="booksGrid">
       <div class="bk" style="animation-delay:0s" onclick="openEditModal(1777008165351)">
         <div class="bk-cover-wrap">
           <img src="https://bibliothek-server-1.onrender.com/files/download/0670783b46c5906cf84d0501e8a44dc5a1e446dad06a4b2f443d54242cb78054/1777008165351_cover/cover.jpg" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.style.display='none';this.nextSibling.style.display='flex'">
@@ -30963,6 +30963,7 @@ function render() {
 
   const grid = document.getElementById('booksGrid');
   grid.className = viewMode==='list' ? 'grid lv' : 'grid';
+  grid.style.display = '';
 
   if (!filtered.length) {
     grid.innerHTML = `<div class="empty"><h3>Ingen bøker funnet</h3><p>Prøv et annet søk eller legg til en ny bok.</p><button class="btn-save" onclick="openAddModal()">Legg til bok</button></div>`;
