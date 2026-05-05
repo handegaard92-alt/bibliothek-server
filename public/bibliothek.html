@@ -31291,9 +31291,10 @@ async function saveBatchBooks() {
   const btn = document.getElementById('batchSaveBtn');
   if (btn) { btn.disabled = true; btn.textContent = 'Lagrer…'; }
 
+  const pendingUploads = []; // {bookId, fileData}
+
   for (const item of toSave) {
     try {
-      // Read file as dataUrl
       const dataUrl = await new Promise((res, rej) => {
         const fr = new FileReader();
         fr.onload  = e => res(e.target.result);
@@ -31302,9 +31303,6 @@ async function saveBatchBooks() {
       });
 
       const m = item.meta || {};
-      // Prefer remote URL for persistence; base64 covers can't be stored
-      // Use data: URL for in-session display; R2 upload replaces with permanent URL async
-      // saveBooks() strips data: from localStorage, but in-memory book keeps it for display
       let coverUrl = m.coverDataUrl || m.coverUrl ||
         (m.epubIsbn ? 'https://covers.openlibrary.org/b/isbn/' + m.epubIsbn + '-L.jpg' : null);
 
@@ -31332,37 +31330,96 @@ async function saveBatchBooks() {
 
       books.push(book);
 
-      // Upload epub file (and cover) to R2 in background
       if (window._pinKey && getServerUrl()) {
-        const _bid = bookId;
-        const _fileData = {
-          dataUrl,
-          name: item.file.name,
-          type: item.file.type || 'application/octet-stream',
-          coverDataUrl: (m.coverDataUrl && m.coverDataUrl.startsWith('data:')) ? m.coverDataUrl : null,
-        };
-        uploadToR2(_bid, _fileData).catch(e => console.warn('batch R2 upload failed:', e));
-      } else if (m.coverDataUrl && m.coverDataUrl.startsWith('data:') && window._pinKey && getServerUrl()) {
-        // Cover only — kept for fallback path (won't reach here given outer condition above)
-        const _bid = bookId;
-        uploadCoverOnlyToR2(_bid, m.coverDataUrl).then(url => {
-          if (url) {
-            const idx = books.findIndex(b => b.id === _bid);
-            if (idx !== -1) { books[idx].coverUrl = url; saveBooks(); render(); }
+        pendingUploads.push({
+          bookId,
+          fileData: {
+            dataUrl,
+            name: item.file.name,
+            type: item.file.type || 'application/octet-stream',
+            coverDataUrl: (m.coverDataUrl && m.coverDataUrl.startsWith('data:')) ? m.coverDataUrl : null,
           }
-        }).catch(() => {});
+        });
       }
     } catch(e) {
       console.error('Failed to save', item.file.name, e);
     }
   }
 
+  // Save metadata first (slim copy goes to localStorage and server, no fileData)
   try { await saveBooks(); } catch(e) { showToast('⚠️ Lagringsfeil: ' + e.message); }
+  render();
+
+  // Now run R2 uploads — wait for all so user knows when files are persisted
+  if (pendingUploads.length) {
+    if (btn) btn.textContent = 'Laster opp filer 0/' + pendingUploads.length + '…';
+    let done = 0, failed = 0;
+    await Promise.all(pendingUploads.map(async u => {
+      try {
+        await uploadToR2Silent(u.bookId, u.fileData);
+        done++;
+      } catch(e) {
+        console.warn('batch upload failed for', u.bookId, e);
+        failed++;
+      }
+      if (btn) btn.textContent = 'Laster opp filer ' + (done+failed) + '/' + pendingUploads.length + '…';
+    }));
+    // Persist final state with all r2Keys
+    try { await saveBooks(); } catch(_) {}
+    if (failed) showToast('⚠️ ' + failed + ' fil(er) feilet å laste opp');
+  }
 
   batchProcessing = false;
   closeBatchModal();
   render();
   showToast('✓ ' + toSave.length + ' bok' + (toSave.length !== 1 ? 'er' : '') + ' lagt til!');
+}
+
+// Same as uploadToR2 but doesn't show per-file toast or call saveBooks/render
+// (caller batches these to avoid spam)
+async function uploadToR2Silent(bookId, fileData) {
+  var server = getServerUrl();
+  var pin = window._pinKey;
+  if (!server || !pin || !fileData || !fileData.dataUrl) {
+    throw new Error('missing server/pin/dataUrl');
+  }
+  var arr = fileData.dataUrl.split(',');
+  var mime = arr[0].match(/:(.*?);/)[1];
+  var bstr = atob(arr[1]);
+  var u8 = new Uint8Array(bstr.length);
+  for (var i = 0; i < bstr.length; i++) u8[i] = bstr.charCodeAt(i);
+  var blob = new Blob([u8], { type: mime });
+  var form = new FormData();
+  form.append('file', blob, fileData.name || 'bok.epub');
+  form.append('pin', pin);
+  form.append('bookId', String(bookId));
+  var res = await fetch(server + '/files/upload', { method: 'POST', body: form });
+  var json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'R2 upload failed');
+  var idx = books.findIndex(function(b) { return b.id === bookId; });
+  if (idx !== -1) {
+    books[idx].r2Key = json.key;
+    books[idx].fileData = null;
+    if (fileData.coverDataUrl && fileData.coverDataUrl.startsWith('data:')) {
+      try {
+        var cArr = fileData.coverDataUrl.split(',');
+        var cMime = cArr[0].match(/:(.*?);/)[1];
+        var cBstr = atob(cArr[1]);
+        var cU8 = new Uint8Array(cBstr.length);
+        for (var ci = 0; ci < cBstr.length; ci++) cU8[ci] = cBstr.charCodeAt(ci);
+        var cBlob = new Blob([cU8], { type: cMime });
+        var cForm = new FormData();
+        cForm.append('file', cBlob, 'cover.jpg');
+        cForm.append('pin', pin);
+        cForm.append('bookId', String(bookId) + '_cover');
+        var cRes = await fetch(server + '/files/upload', { method: 'POST', body: cForm });
+        var cJson = await cRes.json();
+        if (cJson.ok) {
+          books[idx].coverUrl = server + '/files/download/' + encodeURIComponent(pin) + '/' + String(bookId) + '_cover/cover.jpg';
+        }
+      } catch(ce) { console.warn('cover upload failed:', ce); }
+    }
+  }
 }
 
 // ── READING TIMELINE ──
