@@ -30346,6 +30346,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ── MODAL ──
 function openAddModal() {
+  if (window._readOnly) return;
   editingId = null;
   pendingCoverUrl = null;
   pendingCoverAlts = [];
@@ -30369,6 +30370,7 @@ function openAddModal() {
 }
 
 function openEditModal(id) {
+  if (window._readOnly) return;
   const b = books.find(x => x.id === id);
   if (!b) return;
   editingId = id;
@@ -30938,8 +30940,8 @@ function render() {
   if (viewMode === 'list') {
     grid.innerHTML = filtered.map((b,i) => `
       <div class="bk lv-item" style="animation-delay:${i*0.03}s">
-        <div class="bk-cover-wrap" onclick="openEditModal(${b.id})">${coverHtml(b)}</div>
-        <div class="lv-info" onclick="openEditModal(${b.id})">
+        <div class="bk-cover-wrap" ${window._readOnly?'':'onclick="openEditModal('+b.id+')"'}>${coverHtml(b)}</div>
+        <div class="lv-info" ${window._readOnly?'':'onclick="openEditModal('+b.id+')"'}>
           <div class="lv-t">${b.title}</div>
           <div class="lv-a">${b.author}</div>
           ${b.series?`<div class="serie-badge" style="margin-top:3px;">📚 ${b.series}${b.seriesNum?' #'+b.seriesNum:''}</div>`:''}
@@ -31081,6 +31083,7 @@ let batchItems = []; // [{file, id, meta, status, error}]
 let batchProcessing = false;
 
 function openBatchModal() {
+  if (window._readOnly) return;
   batchItems = [];
   renderBatchQueue();
   document.getElementById('batchModal').classList.add('open');
