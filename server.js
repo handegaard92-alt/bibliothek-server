@@ -296,5 +296,32 @@ app.post('/ai-chat', async (req, res) => {
   }
 });
 
+// ebok.no series proxy (CORS workaround)
+app.get('/series-proxy', async (req, res) => {
+  const { title, author } = req.query;
+  if (!title) return res.json({ ok: false });
+  try {
+    const q = encodeURIComponent((title + (author ? ' ' + author : '')).slice(0, 80));
+    const searchUrl = `https://www.ebok.no/search/?q=${q}`;
+    const headers = { 'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html' };
+    const searchHtml = await fetch(searchUrl, { headers }).then(r => r.text());
+    // Extract first product link
+    const linkMatch = searchHtml.match(/href="(\/[a-z]+-[a-z]+\/[^"]+\/)"/i) ||
+                      searchHtml.match(/href="(\/boker\/[^"]+\/)"/i);
+    if (linkMatch) {
+      const pageHtml = await fetch('https://www.ebok.no' + linkMatch[1], { headers }).then(r => r.text());
+      // Parse series info from table rows
+      const seriesMatch = pageHtml.match(/Serie<\/[^>]+>\s*<[^>]+>([^<]{3,80})</i) ||
+                          pageHtml.match(/>[Ss]erie[^<]*<\/[^>]+>[^<]*<[^>]*>([^<]{3,80})</);
+      const numMatch = pageHtml.match(/Nummer i serie<\/[^>]+>\s*<[^>]+>(\d+)</i) ||
+                       pageHtml.match(/>[Nn]ummer i serie[^<]*<\/[^>]+>[^<]*<[^>]*>(\d+)</);
+      if (seriesMatch) {
+        return res.json({ ok: true, series: seriesMatch[1].trim(), seriesNum: numMatch ? parseInt(numMatch[1]) : null });
+      }
+    }
+    res.json({ ok: true, series: null });
+  } catch(e) { res.json({ ok: false, error: e.message }); }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log('Bibliothek server on port ' + PORT));

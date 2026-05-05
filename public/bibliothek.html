@@ -10,13 +10,13 @@
   --surface: #111114;
   --surface2: #18181d;
   --surface3: #1f1f26;
-  --border: rgba(255,255,255,0.06);
-  --border2: rgba(255,255,255,0.1);
+  --border: rgba(255,255,255,0.10);
+  --border2: rgba(255,255,255,0.16);
   --gold: #c8a96e;
   --gold2: #e4cc9e;
   --gold-dim: rgba(200,169,110,0.12);
   --text: #edeae4;
-  --muted: #6e6b65;
+  --muted: #908d87;
   --muted2: #3d3b38;
   --red: #e05555;
   --blue: #5b9bd5;
@@ -428,6 +428,42 @@ body {
 }
 .lv-prog { font-size:12px; color:var(--blue); }
 .lv-btns { display:flex; gap:6px; }
+/* ── USER MENU ── */
+.user-menu-btn {
+  background:transparent; border:1px solid var(--border);
+  color:var(--muted); border-radius:var(--r2); padding:6px 10px;
+  font-size:15px; cursor:pointer; line-height:1; flex-shrink:0;
+  transition:border-color 0.13s, color 0.13s;
+}
+.user-menu-btn:hover { border-color:var(--gold); color:var(--gold); }
+.user-panel {
+  position:fixed; top:56px; right:12px; z-index:1200;
+  background:var(--surface); border:1px solid var(--border2);
+  border-radius:var(--r); padding:16px; min-width:280px;
+  box-shadow:0 12px 40px rgba(0,0,0,0.6);
+  display:none;
+}
+.user-panel.open { display:block; }
+.user-panel-header { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:12px; }
+.user-panel-status { display:flex; align-items:center; gap:8px; margin-bottom:14px; padding:10px 12px; background:var(--surface2); border-radius:var(--r2); }
+.user-panel-status-dot { width:8px; height:8px; border-radius:50%; background:var(--green); flex-shrink:0; }
+.user-panel-status-dot.guest { background:var(--blue); }
+.user-panel-status-dot.offline { background:var(--muted2); }
+.user-panel-switch-btn { width:100%; padding:9px 12px; border-radius:var(--r2); border:1px solid var(--border); background:transparent; color:var(--text); font-size:13px; cursor:pointer; font-family:'Outfit',sans-serif; text-align:left; margin-bottom:10px; }
+.user-panel-switch-btn:hover { border-color:var(--gold); color:var(--gold); }
+.up-section { border-top:1px solid var(--border); padding-top:10px; margin-top:4px; }
+.up-section-label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.07em; margin-bottom:8px; }
+.up-pin-row { display:flex; gap:6px; align-items:center; margin-bottom:8px; }
+.up-guest-row { display:flex; gap:6px; align-items:center; margin-bottom:6px; }
+.conflict-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.72); z-index:2100; display:flex; align-items:center; justify-content:center; padding:20px; }
+.conflict-box { background:var(--surface); border:1px solid var(--border2); border-radius:var(--r); padding:28px; max-width:460px; width:100%; }
+.conflict-title { font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:600; margin-bottom:8px; }
+.conflict-desc { font-size:13px; color:var(--muted); margin-bottom:18px; line-height:1.5; }
+.conflict-options { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.conflict-opt { padding:14px; border-radius:var(--r2); border:1px solid var(--border); background:var(--surface2); cursor:pointer; transition:border-color 0.13s; }
+.conflict-opt:hover { border-color:var(--gold); }
+.conflict-opt-label { font-size:12px; color:var(--muted); margin-bottom:4px; }
+.conflict-opt-val { font-size:14px; font-weight:500; }
 .lv-ic-btn {
   padding:5px 8px; border-radius:6px; border:1px solid var(--border);
   background:transparent; color:var(--muted); cursor:pointer;
@@ -29003,14 +29039,6 @@ font-family: 'Source Sans Pro'
     </div>
   </nav>
   <div class="sidebar-bottom">
-    <div class="kindle-email-area">
-      <div class="kindle-label">🔒 Synk mellom enheter</div>
-      <div style="display:flex;gap:6px;align-items:center;">
-        <input class="kindle-input" id="pinInput" type="password" placeholder="PIN-kode" maxlength="20" style="font-size:12px;flex:1;" onkeydown="if(event.key==='Enter')connectPin()">
-        <button onclick="connectPin()" style="padding:4px 10px;border-radius:5px;font-size:11px;font-family:'Outfit',sans-serif;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);white-space:nowrap;">Koble til</button>
-      </div>
-      <div id="pinStatus" style="font-size: 10px; color: var(--green); margin-top: 5px; min-height: 14px;">✓ Tilkoblet med PIN</div>
-    </div>
     <button class="btn-add" onclick="openAddModal()" id="btnAddBook">
       <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg>
       Legg til bok
@@ -29019,20 +29047,6 @@ font-family: 'Source Sans Pro'
       <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg>
       Last opp flere bøker
     </button>
-    <div class="kindle-email-area">
-      <div class="kindle-label">👤 Gjeste-tilgang</div>
-      <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px;">
-        <input class="kindle-input" id="guestLabelInput" placeholder="Navn (f.eks. Pappa)" maxlength="30" style="font-size:12px;flex:1;">
-        <input class="kindle-input" id="guestPinInput" placeholder="PIN" maxlength="20" style="font-size:12px;width:70px;">
-        <button onclick="createGuestPin()" style="padding:4px 10px;border-radius:5px;font-size:11px;font-family:'Outfit',sans-serif;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);white-space:nowrap;">+</button>
-      </div>
-      <div id="guestPinStatus" style="font-size:10px;color:var(--muted);margin-bottom:6px;min-height:14px;"></div>
-      <div id="guestList" style="display:flex;flex-direction:column;gap:4px;"></div>
-    </div>
-    <div class="kindle-email-area">
-      <div class="kindle-label">→ Server-URL</div>
-      <input class="kindle-input" id="serverUrl" placeholder="https://din-server.onrender.com" oninput="saveServerUrl(this.value)" style="font-size:11px;">
-    </div>
   </div>
 </aside>
 
@@ -29052,7 +29066,8 @@ font-family: 'Source Sans Pro'
         <svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24"><path d="M3 3h7v7H3zm11 0h7v7h-7zM3 14h7v7H3zm11 0h7v7h-7z"></path></svg>
       </button>
     </div>
-    <select class="sort-sel" onchange="render()">
+    <select class="sort-sel" id="sortSel" onchange="onSortChange(this)">
+      <option value="">Sortering</option>
       <option value="title">Tittel A–Å</option>
       <option value="author">Forfatter</option>
       <option value="series">Serie</option>
@@ -29062,6 +29077,54 @@ font-family: 'Source Sans Pro'
       <option value="finished">Sist lest</option>
     </select>
     <button id="themeToggle" onclick="toggleTheme()" title="Bytt mellom mørk og lys modus" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:var(--r2);padding:6px 10px;font-size:15px;cursor:pointer;line-height:1;flex-shrink:0;">🌙</button>
+    <button class="user-menu-btn" id="userMenuBtn" onclick="toggleUserPanel()" title="Brukermeny">👤</button>
+  </div>
+
+  <!-- User panel -->
+  <div class="user-panel" id="userPanel">
+    <div class="user-panel-header">Konto</div>
+    <div class="user-panel-status" id="upStatus">
+      <div class="user-panel-status-dot offline" id="upDot"></div>
+      <span id="upStatusText" style="font-size:13px;">Ikke tilkoblet</span>
+    </div>
+    <button class="user-panel-switch-btn" onclick="switchUser()">🔄 Bytt bruker</button>
+    <div id="upOwnerSection" style="display:none;">
+      <div class="up-section">
+        <div class="up-section-label">Gjeste-tilgang</div>
+        <div class="up-guest-row">
+          <input class="kindle-input" id="guestLabelInput" placeholder="Navn (f.eks. Pappa)" maxlength="30" style="font-size:12px;flex:1;">
+          <input class="kindle-input" id="guestPinInput" placeholder="PIN" maxlength="20" style="font-size:12px;width:70px;">
+          <button onclick="createGuestPin()" style="padding:4px 10px;border-radius:5px;font-size:11px;font-family:'Outfit',sans-serif;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);white-space:nowrap;">+</button>
+        </div>
+        <div id="guestPinStatus" style="font-size:10px;color:var(--muted);margin-bottom:6px;min-height:14px;"></div>
+        <div id="guestList" style="display:flex;flex-direction:column;gap:4px;"></div>
+      </div>
+      <div class="up-section" style="margin-top:10px;">
+        <div class="up-section-label">PIN-kode</div>
+        <div class="up-pin-row">
+          <input class="kindle-input" id="pinInput" type="password" placeholder="PIN-kode" maxlength="20" style="font-size:12px;flex:1;" onkeydown="if(event.key==='Enter')connectPin()">
+          <button onclick="connectPin()" style="padding:4px 10px;border-radius:5px;font-size:11px;font-family:'Outfit',sans-serif;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);white-space:nowrap;">Koble til</button>
+        </div>
+        <div id="pinStatus" style="font-size:10px;color:var(--green);margin-top:4px;min-height:14px;"></div>
+      </div>
+    </div>
+  </div>
+  <!-- Conflict resolution dialog -->
+  <div id="conflictOverlay" class="conflict-overlay" style="display:none;" onclick="if(event.target===this){}">
+    <div class="conflict-box">
+      <div class="conflict-title">Konflikt mellom versjoner</div>
+      <div class="conflict-desc" id="conflictDesc">Biblioteket på serveren og lokalt er forskjellige. Hvilken versjon vil du beholde?</div>
+      <div class="conflict-options">
+        <div class="conflict-opt" onclick="resolveConflict('server')" id="conflictOptServer">
+          <div class="conflict-opt-label">Server</div>
+          <div class="conflict-opt-val" id="conflictServerInfo">–</div>
+        </div>
+        <div class="conflict-opt" onclick="resolveConflict('local')" id="conflictOptLocal">
+          <div class="conflict-opt-label">Lokalt</div>
+          <div class="conflict-opt-val" id="conflictLocalInfo">–</div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="content">
@@ -29381,7 +29444,7 @@ let view = 'all';
 let genreFilter = null;
 let seriesFilter = null;
 let authorFilter = null;
-let viewMode = 'list';
+let viewMode = localStorage.getItem('bibliothek_view') || 'list';
 let editingId = null;
 let coverDebounceTimer = null;
 let pendingCoverUrl = null;
@@ -29445,6 +29508,9 @@ async function saveBooks() {
     return out;
   });
   await storageSet(STORAGE_KEY, JSON.stringify(slim));
+  if (!window._readOnly && window._pinKey) {
+    pushToPin().catch(() => {});
+  }
 }
 
 async function loadServerUrl() {
@@ -29590,6 +29656,15 @@ function debounceCoverSearch() {
 }
 
 async function fetchSeriesInfo(title, author) {
+  // 0. ebok.no via server proxy
+  var server = getServerUrl();
+  if (server) {
+    try {
+      var ebUrl = server + '/series-proxy?title=' + encodeURIComponent(title) + (author ? '&author=' + encodeURIComponent(author) : '');
+      var ebData = await fetchJSON(ebUrl);
+      if (ebData?.ok && ebData.series) return { series: ebData.series, seriesNum: ebData.seriesNum };
+    } catch(e) {}
+  }
   // 1. Nasjonalbiblioteket – tittel/forfatter-søk
   try {
     const q = encodeURIComponent((title + (author ? ' ' + author : '')).slice(0, 80));
@@ -30695,7 +30770,7 @@ function getFiltered() {
     b.author.toLowerCase().includes(q) ||
     (b.genre||'').toLowerCase().includes(q)
   );
-  const sel = document.querySelector('.sort-sel')?.value || 'title';
+  const sel = _activeSort || 'title';
   if (sel === 'title')  f.sort((a,b) => a.title.localeCompare(b.title,'no'));
   else if (sel === 'author')   f.sort((a,b) => (a.author||'').localeCompare(b.author||'','no'));
   else if (sel === 'year')     f.sort((a,b) => (b.year||0)-(a.year||0));
@@ -30936,8 +31011,20 @@ function clearFilters() {
   render();
 }
 
+var _activeSort = '';
+function onSortChange(sel) {
+  var v = sel.value;
+  if (v === _activeSort && v !== '') {
+    _activeSort = '';
+    sel.value = '';
+  } else {
+    _activeSort = v;
+  }
+  render();
+}
 function setViewMode(m) {
   viewMode = m;
+  localStorage.setItem('bibliothek_view', m);
   document.getElementById('vbtnGrid').classList.toggle('active', m==='grid');
   document.getElementById('vbtnList').classList.toggle('active', m==='list');
   render();
@@ -31713,6 +31800,67 @@ function setLoginStatus(msg, color) {
   if (el) { el.textContent = msg; el.style.color = color || 'var(--muted)'; }
 }
 
+// ── USER PANEL ──
+let _userPanelOpen = false;
+function toggleUserPanel() {
+  _userPanelOpen = !_userPanelOpen;
+  document.getElementById('userPanel').classList.toggle('open', _userPanelOpen);
+  if (_userPanelOpen) updateUserPanel();
+}
+function closeUserPanel() {
+  _userPanelOpen = false;
+  document.getElementById('userPanel').classList.remove('open');
+}
+document.addEventListener('click', e => {
+  if (_userPanelOpen && !e.target.closest('#userPanel') && !e.target.closest('#userMenuBtn')) {
+    closeUserPanel();
+  }
+});
+function updateUserPanel() {
+  var dot = document.getElementById('upDot');
+  var txt = document.getElementById('upStatusText');
+  var ownerSec = document.getElementById('upOwnerSection');
+  if (!window._pinKey) {
+    dot.className = 'user-panel-status-dot offline';
+    txt.textContent = 'Ikke tilkoblet';
+    ownerSec.style.display = 'none';
+  } else if (window._readOnly) {
+    dot.className = 'user-panel-status-dot guest';
+    txt.textContent = 'Gjest (lesetilgang)';
+    ownerSec.style.display = 'none';
+  } else {
+    dot.className = 'user-panel-status-dot';
+    txt.textContent = 'Tilkoblet som eier';
+    ownerSec.style.display = '';
+  }
+}
+function switchUser() {
+  closeUserPanel();
+  window._pinKey = null;
+  window._readOnly = false;
+  localStorage.removeItem('bibliothek_pin');
+  document.getElementById('loginOverlay').classList.add('visible');
+  document.getElementById('loginPinInput').value = '';
+  setLoginStatus('');
+  render();
+}
+
+// ── CONFLICT RESOLUTION ──
+let _conflictResolve = null;
+function showConflictDialog(serverTs, localTs, serverCount, localCount) {
+  return new Promise(resolve => {
+    _conflictResolve = resolve;
+    var fmt = ts => ts ? new Date(ts).toLocaleString('nb-NO', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '–';
+    document.getElementById('conflictServerInfo').textContent = fmt(serverTs) + ' · ' + serverCount + ' bøker';
+    document.getElementById('conflictLocalInfo').textContent = fmt(localTs) + ' · ' + localCount + ' bøker';
+    document.getElementById('conflictOverlay').style.display = 'flex';
+  });
+}
+function resolveConflict(choice) {
+  document.getElementById('conflictOverlay').style.display = 'none';
+  if (_conflictResolve) { _conflictResolve(choice); _conflictResolve = null; }
+}
+
 async function loginConnect() {
   var raw = (document.getElementById('loginPinInput')?.value || '').trim();
   if (!raw) { setLoginStatus('Skriv inn en PIN-kode'); return; }
@@ -31731,8 +31879,15 @@ async function loginConnect() {
     if (pinEl) pinEl.value = raw;
     var serverTs = json.updatedAt ? new Date(json.updatedAt).getTime() : 0;
     var localTs = parseInt(localStorage.getItem('bibliothek_ts') || '0');
-    if (serverTs > localTs && json.books?.length) {
-      books = json.books;
+    var serverBooks = json.books || [];
+    var timeDiff = Math.abs(serverTs - localTs);
+    if (!window._readOnly && serverBooks.length && books.length && timeDiff > 30000 && serverTs !== localTs) {
+      // Both have data with different timestamps — show conflict dialog
+      var proceed = await showConflictDialog(serverTs, localTs, serverBooks.length, books.length);
+      if (proceed === 'server') { books = serverBooks; await saveBooks(); }
+      else { await pushToPin(); }
+    } else if (serverTs > localTs && serverBooks.length) {
+      books = serverBooks;
       await saveBooks();
     } else if (!window._readOnly && books.length && localTs >= serverTs) {
       await pushToPin();
@@ -31808,6 +31963,8 @@ async function serverAvailable(url) {
 }
 
 async function init() {
+  document.getElementById('vbtnList').classList.toggle('active', viewMode === 'list');
+  document.getElementById('vbtnGrid').classList.toggle('active', viewMode === 'grid');
   await loadBooks();
   var savedPin = localStorage.getItem('bibliothek_pin');
   var overlay = document.getElementById('loginOverlay');
