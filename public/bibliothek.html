@@ -323,7 +323,7 @@ body {
 .pill.active { background:var(--gold); color:#0a0a0c; border-color:var(--gold); font-weight:500; }
 
 /* GRID */
-.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); gap:10px; }
+.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(110px,160px)); gap:10px; justify-content:start; }
 .grid.lv { grid-template-columns:1fr; gap:8px; }
 
 /* Book card – grid */
@@ -790,7 +790,7 @@ body {
 
   .stats-row { grid-template-columns:repeat(2,1fr) !important; }
 
-  .grid { grid-template-columns:repeat(auto-fill,minmax(110px,1fr)) !important; gap:10px !important; }
+  .grid { grid-template-columns:repeat(auto-fill,minmax(110px,140px)) !important; gap:8px !important; justify-content:start !important; }
 
   .rec-chat { height:calc(100vh - 180px) !important; }
 
@@ -31027,11 +31027,13 @@ function setGenre(g) {
   render();
 }
 function setSeries(s) {
-  seriesFilter = s; authorFilter = null;
+  seriesFilter = seriesFilter === s ? null : s;
+  authorFilter = null;
   render();
 }
 function setAuthor(a) {
-  authorFilter = a; seriesFilter = null;
+  authorFilter = authorFilter === a ? null : a;
+  seriesFilter = null;
   render();
 }
 function clearFilters() {

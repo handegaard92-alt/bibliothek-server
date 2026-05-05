@@ -60,11 +60,19 @@ async function saveGuestList(ownerKey, list) {
 
 // Serve app
 const publicDir = path.join(__dirname, 'public');
-app.use(express.static(publicDir));
+app.use(express.static(publicDir, {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    }
+  }
+}));
 app.get('/', (req, res) => {
   const f = path.join(publicDir, 'bibliothek.html');
-  if (fs.existsSync(f)) res.sendFile(f);
-  else res.json({ status: 'ok', note: 'Place bibliothek.html in /public/' });
+  if (fs.existsSync(f)) {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.sendFile(f);
+  } else res.json({ status: 'ok', note: 'Place bibliothek.html in /public/' });
 });
 
 app.get('/health', (req, res) => {
