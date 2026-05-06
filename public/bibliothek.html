@@ -30554,7 +30554,7 @@ function openBookActions(id) {
     ? 'Send filen til en av dine Kindle-enheter'
     : 'Last opp en fil først for å sende';
   const pBtn = document.getElementById('asProgressBtn');
-  const showProg = b.status === 'reading' || b.status === 'unread';
+  const showProg = b.status === 'reading';
   pBtn.style.display = showProg ? '' : 'none';
   document.getElementById('asProgressHint').textContent = 'Nå: ' + (b.progress || 0) + '%';
   document.getElementById('bookActionsModal').classList.add('open');
