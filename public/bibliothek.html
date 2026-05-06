@@ -870,6 +870,42 @@ body {
 }
 .as-cancel:hover { color:var(--text); }
 
+/* ── QUICK PROGRESS EDIT ── */
+.prog-quick-clickable {
+  cursor:pointer;
+  text-decoration:underline dotted rgba(200,169,110,0.4);
+  text-underline-offset:3px;
+  transition:color 0.15s;
+}
+.prog-quick-clickable:hover { color:var(--gold); }
+.prog-quick {
+  background:var(--surface);
+  border:1px solid var(--border2);
+  border-radius:18px;
+  padding:24px;
+  width:100%; max-width:340px;
+  animation:mIn 0.22s ease;
+}
+.prog-quick h3 {
+  font-family:'Cormorant Garamond',serif;
+  font-size:20px; font-weight:700;
+  margin-bottom:4px;
+}
+.prog-quick .pq-sub { font-size:12px; color:var(--muted); margin-bottom:18px; }
+.pq-row { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+.pq-range { flex:1; accent-color:var(--gold); }
+.pq-num {
+  width:64px; padding:8px 10px;
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:8px;
+  color:var(--text);
+  font-family:'Outfit',sans-serif;
+  font-size:14px; text-align:center;
+}
+.pq-num:focus { outline:none; border-color:var(--gold); }
+.pq-actions { display:flex; gap:8px; justify-content:flex-end; }
+
 /* ── COVER ZOOM ── */
 .cover-zoom-img {
   max-width:min(86vw, 480px);
@@ -29517,6 +29553,23 @@ font-family: 'Source Sans Pro'
   <img id="coverZoomImg" class="cover-zoom-img" alt="">
 </div>
 
+<!-- Quick progress edit -->
+<div class="backdrop" id="progQuickModal" onclick="if(event.target===this)closeQuickProgress()">
+  <div class="prog-quick">
+    <h3 id="pqTitle">Oppdater fremgang</h3>
+    <div class="pq-sub" id="pqSub"></div>
+    <div class="pq-row">
+      <input type="range" min="0" max="100" step="1" id="pqRange" class="pq-range" oninput="document.getElementById('pqNum').value=this.value">
+      <input type="number" min="0" max="100" id="pqNum" class="pq-num" oninput="document.getElementById('pqRange').value=Math.max(0,Math.min(100,parseInt(this.value)||0))">
+      <span style="color:var(--muted);font-size:13px;">%</span>
+    </div>
+    <div class="pq-actions">
+      <button class="btn-cancel" onclick="closeQuickProgress()">Avbryt</button>
+      <button class="btn-save" onclick="saveQuickProgress()">Lagre</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ── STATE ──
 let books = [];
@@ -30527,6 +30580,47 @@ function zoomCoverFromThumb(thumb) {
   if (img && img.src) showCoverZoom(img.src);
 }
 
+// ── QUICK PROGRESS EDIT ──
+let pendingProgressId = null;
+function openQuickProgress(id, ev) {
+  if (ev) ev.stopPropagation();
+  if (window._readOnly) return;
+  const b = books.find(x => x.id === id);
+  if (!b) return;
+  pendingProgressId = id;
+  document.getElementById('pqTitle').textContent = b.title || 'Oppdater fremgang';
+  document.getElementById('pqSub').textContent = b.author || '';
+  const v = b.progress || 0;
+  document.getElementById('pqRange').value = v;
+  document.getElementById('pqNum').value = v;
+  document.getElementById('progQuickModal').classList.add('open');
+  setTimeout(() => { try { document.getElementById('pqNum').select(); } catch(_) {} }, 50);
+}
+function closeQuickProgress() {
+  document.getElementById('progQuickModal').classList.remove('open');
+  pendingProgressId = null;
+}
+async function saveQuickProgress() {
+  const id = pendingProgressId;
+  if (id == null) { closeQuickProgress(); return; }
+  let v = parseInt(document.getElementById('pqNum').value);
+  if (!Number.isFinite(v)) v = 0;
+  v = Math.max(0, Math.min(100, v));
+  const idx = books.findIndex(b => b.id === id);
+  if (idx === -1) { closeQuickProgress(); return; }
+  books[idx].progress = v;
+  if (v === 100 && books[idx].status !== 'done') {
+    books[idx].status = 'done';
+    if (!books[idx].finishedDate) books[idx].finishedDate = new Date().toISOString().slice(0,10);
+  } else if (v > 0 && v < 100 && books[idx].status === 'unread') {
+    books[idx].status = 'reading';
+  }
+  closeQuickProgress();
+  try { await saveBooks(); } catch(e) { console.warn('saveBooks failed', e); }
+  render();
+  showToast('✓ Fremgang oppdatert');
+}
+
 function openEditModal(id) {
   if (window._readOnly) return;
   const b = books.find(x => x.id === id);
@@ -31043,8 +31137,8 @@ function render() {
           <div class="hero-tag">📖 Leser nå</div>
           <div class="hero-t">${b.title}</div>
           <div class="hero-a">${b.author}${b.genre?' · '+b.genre:''}${b.year?' · '+b.year:''}</div>
-          <div class="prog-label"><span>Fremgang</span><span>${b.progress||0}%</span></div>
-          <div class="prog-bar"><div class="prog-fill" style="width:${b.progress||0}%"></div></div>
+          <div class="prog-label"><span>Fremgang</span><span class="prog-quick-clickable" title="Klikk for å oppdatere fremgang" onclick="openQuickProgress(${b.id}, event)">${b.progress||0}%</span></div>
+          <div class="prog-bar" title="Klikk for å oppdatere fremgang" style="cursor:pointer;" onclick="openQuickProgress(${b.id}, event)"><div class="prog-fill" style="width:${b.progress||0}%"></div></div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
             <button class="btn-read" onclick="event.stopPropagation()">▶ Fortsett</button>
             ${(b.fileData||b.r2Key)?`<button style="padding:9px 16px;background:transparent;border:1px solid var(--border2);color:var(--text);font-family:'Outfit',sans-serif;font-size:13px;border-radius:var(--r2);cursor:pointer;" onclick="event.stopPropagation();openKindleModal(${b.id})">📤 Send til Kindle</button>`:''}
@@ -31109,7 +31203,7 @@ function render() {
         <div class="lv-meta">
           ${b.genre?`<span class="lv-tag">${b.genre}</span>`:''}
           ${b.year?`<span style="font-size:12px;color:var(--muted)">${b.year}</span>`:''}
-          ${b.status==='reading'?`<span class="lv-prog">${b.progress||0}%</span>`:''}
+          ${b.status==='reading'?`<span class="lv-prog prog-quick-clickable" title="Klikk for å oppdatere fremgang" onclick="openQuickProgress(${b.id}, event)">${b.progress||0}%</span>`:''}
           <div class="lv-btns">
             ${window._readOnly?'':'<button class="lv-ic-btn" onclick="openEditModal('+b.id+')">✏️ Rediger</button>'}
             ${(b.fileData||b.r2Key)?`<button class="lv-ic-btn" onclick="openKindleModal(${b.id})">📤 Kindle</button>`:''}
@@ -31129,7 +31223,7 @@ function render() {
             <button class="ov-btn ov-kindle" onclick="event.stopPropagation();openKindleModal(${b.id})" ${(!b.fileData&&!b.r2Key)?'style="opacity:0.5;cursor:default"':''}>📤 Send til Kindle</button>
             ${window._readOnly?'':'<button class="ov-btn ov-edit" onclick="event.stopPropagation();openEditModal('+b.id+')">✏️ Rediger</button>'}
           </div>
-          ${b.status==='reading'?`<div class="prog-mini"><div class="prog-mini-fill" style="width:${b.progress||0}%"></div></div>`:''}
+          ${b.status==='reading'?`<div class="prog-mini" title="Klikk for å oppdatere fremgang" style="cursor:pointer;" onclick="event.stopPropagation();openQuickProgress(${b.id}, event)"><div class="prog-mini-fill" style="width:${b.progress||0}%"></div></div>`:''}
         </div>
         <div class="bk-t">${b.title}</div>
         <div class="bk-a">${b.author}</div>
