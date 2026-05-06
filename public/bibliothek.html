@@ -29536,6 +29536,10 @@ font-family: 'Source Sans Pro'
   <div class="action-sheet">
     <h3 id="asTitle">Hva vil du gjøre?</h3>
     <div class="as-sub" id="asSub"></div>
+    <button class="as-btn" id="asProgressBtn" onclick="pickAction('progress')" style="display:none;">
+      <span class="as-ico">📈</span>
+      <span class="as-lbl">Oppdater fremgang<span class="as-hint" id="asProgressHint"></span></span>
+    </button>
     <button class="as-btn" id="asEditBtn" onclick="pickAction('edit')">
       <span class="as-ico">✏️</span>
       <span class="as-lbl">Rediger bok<span class="as-hint">Endre tittel, omslag, fremgang m.m.</span></span>
@@ -30549,6 +30553,10 @@ function openBookActions(id) {
   document.getElementById('asKindleHint').textContent = hasFile
     ? 'Send filen til en av dine Kindle-enheter'
     : 'Last opp en fil først for å sende';
+  const pBtn = document.getElementById('asProgressBtn');
+  const showProg = b.status === 'reading' || b.status === 'unread';
+  pBtn.style.display = showProg ? '' : 'none';
+  document.getElementById('asProgressHint').textContent = 'Nå: ' + (b.progress || 0) + '%';
   document.getElementById('bookActionsModal').classList.add('open');
 }
 function closeBookActions() {
@@ -30561,6 +30569,7 @@ function pickAction(action) {
   if (id == null) return;
   if (action === 'edit') openEditModal(id);
   else if (action === 'kindle') openKindleModal(id);
+  else if (action === 'progress') openQuickProgress(id);
 }
 
 // ── COVER ZOOM ──
