@@ -263,6 +263,14 @@ app.post('/send-to-kindle', upload.single('file'), async (req, res) => {
       return res.status(400).json({ ok: false, error: 'No file provided' });
     }
 
+    // Build attachment filename from bookTitle so Kindle shows title, not ISBN
+    let attachmentName = fileOriginalName;
+    if (bookTitle && bookTitle.trim()) {
+      const ext = (fileOriginalName.match(/\.[a-z0-9]+$/i) || ['.epub'])[0];
+      const safe = bookTitle.trim().replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, ' ').slice(0, 100);
+      if (safe) attachmentName = safe + ext;
+    }
+
     const sgMail = require('@sendgrid/mail');
     sgMail.setApiKey(process.env.SENDGRID_API_KEY);
     await sgMail.send({
@@ -272,7 +280,7 @@ app.post('/send-to-kindle', upload.single('file'), async (req, res) => {
       text: 'Bok sendt fra Bibliothek: ' + (bookTitle || fileOriginalName),
       attachments: [{
         content: fileBuffer.toString('base64'),
-        filename: fileOriginalName,
+        filename: attachmentName,
         type: fileMime,
         disposition: 'attachment'
       }]
@@ -292,7 +300,7 @@ app.post('/ai-chat', async (req, res) => {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1024, system: systemPrompt, messages })
+      body: JSON.stringify({ model: 'claude-sonnet-4-5', max_tokens: 1024, system: systemPrompt, messages })
     });
     const data = await response.json();
     if (!response.ok) return res.status(response.status).json({ ok: false, error: data.error?.message || 'API error' });
