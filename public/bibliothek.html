@@ -29395,6 +29395,13 @@ font-family: 'Source Sans Pro'
       <input class="fi" id="fRating" type="number" min="0" max="5" placeholder="0">
     </div>
     <div class="fg">
+      <label class="fl" style="display:flex;align-items:center;justify-content:space-between;">
+        <span>Notater og sitater</span>
+        <button type="button" onclick="generateAISummary()" style="background:var(--surface2);border:1px solid var(--border);color:var(--gold);font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer;">✨ Hent AI-sammendrag</button>
+      </label>
+      <textarea class="fi" id="fNotes" rows="4" placeholder="Sitater, tanker, AI-sammendrag…" style="resize:vertical;min-height:90px;font-family:'Outfit',sans-serif;"></textarea>
+    </div>
+    <div class="fg">
       <label class="fl">Last opp fil (epub, mobi, pdf, azw3)</label>
       <div class="file-drop" id="fileDrop">
         <input type="file" accept=".epub,.mobi,.pdf,.azw3,.azw" id="fileInput" onchange="handleFile(this)">
@@ -29595,6 +29602,10 @@ font-family: 'Source Sans Pro'
     <button class="as-btn" id="asEditBtn" onclick="pickAction('edit')">
       <span class="as-ico">✏️</span>
       <span class="as-lbl">Rediger bok<span class="as-hint">Endre tittel, omslag, fremgang m.m.</span></span>
+    </button>
+    <button class="as-btn" id="asSimilarBtn" onclick="pickAction('similar')">
+      <span class="as-ico">✨</span>
+      <span class="as-lbl">Lignende bøker<span class="as-hint">AI foreslår 3 bøker som ligner</span></span>
     </button>
     <button class="as-btn" id="asKindleBtn" onclick="pickAction('kindle')">
       <span class="as-ico">📤</span>
@@ -30799,10 +30810,12 @@ function openBookActions(id) {
   const gReading = document.getElementById('asGuestReadingBtn');
   const gUnread = document.getElementById('asGuestUnreadBtn');
 
+  const simBtn = document.getElementById('asSimilarBtn');
   if (window._readOnly) {
     // Gjest: vis kun status-knapper + Kindle
     editBtn.style.display = 'none';
     pBtn.style.display = 'none';
+    if (simBtn) simBtn.style.display = 'none';
     const es = effectiveStatus(b);
     gDone.style.display = es === 'done' ? 'none' : '';
     gReading.style.display = es === 'reading' ? 'none' : '';
@@ -30813,6 +30826,7 @@ function openBookActions(id) {
     gReading.style.display = 'none';
     gUnread.style.display = 'none';
     pBtn.style.display = b.status === 'reading' ? '' : 'none';
+    if (simBtn) simBtn.style.display = '';
     document.getElementById('asProgressHint').textContent = 'Nå: ' + (b.progress || 0) + '%';
   }
 
@@ -30829,6 +30843,7 @@ function pickAction(action) {
   if (action === 'edit') openEditModal(id);
   else if (action === 'kindle') openKindleModal(id);
   else if (action === 'progress') openQuickProgress(id);
+  else if (action === 'similar') askAIAboutBook(id, 'similar');
   else if (action === 'guest-done') {
     setGuestRead(id, { status: 'done', progress: 100, finishedDate: new Date().toISOString().slice(0,10) });
     logReadingActivity();
@@ -31023,6 +31038,7 @@ function openEditModal(id) {
   document.getElementById('fStatus').value = b.status;
   document.getElementById('fProgress').value = b.progress || 0;
   document.getElementById('fRating').value = b.rating || 0;
+  const notesEl = document.getElementById('fNotes'); if (notesEl) notesEl.value = b.notes || '';
   const sfEl = document.getElementById('fSeries'); if(sfEl) sfEl.value = b.series||'';
   const snEl = document.getElementById('fSeriesNum'); if(snEl) snEl.value = b.seriesNum||'';
   const fdEl = document.getElementById('fFinishedDate'); if(fdEl) fdEl.value = b.finishedDate||'';
@@ -31196,6 +31212,7 @@ async function saveBook() {
     status: document.getElementById('fStatus').value,
     progress: Math.min(100, Math.max(0, parseInt(document.getElementById('fProgress').value) || 0)),
     rating: Math.min(5, Math.max(0, parseInt(document.getElementById('fRating').value) || 0)),
+    notes: document.getElementById('fNotes')?.value.trim() || null,
     coverUrl: resolvedCoverUrl,
     added: Date.now(),
     isbn: pendingFileData?.isbn || null,
@@ -31605,6 +31622,19 @@ function render() {
     pillsHtml += `</div>`;
   }
   pillsHtml += `</div>`;
+  // Når en serie er filtrert: legg til leseguide-knapp + manglende-bøker-banner
+  if (seriesFilter) {
+    const missing = window._readOnly ? [] : detectMissingSeriesBooks(seriesFilter);
+    pillsHtml += `<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">`;
+    pillsHtml += `<button class="pill" style="background:var(--gold-dim);border-color:var(--gold);color:var(--gold);" onclick="showSeriesGuide('${seriesFilter.replace(/'/g,"\\'")}')">📖 AI-leseguide</button>`;
+    if (missing.length) {
+      pillsHtml += `<span style="font-size:12px;color:var(--muted);">Mangler #${missing.join(', #')}</span>`;
+      missing.slice(0, 5).forEach(num => {
+        pillsHtml += `<button class="pill" onclick="addMissingBookToWishlist('${seriesFilter.replace(/'/g,"\\'")}', ${num}, this)">+ #${num} på ønskelisten</button>`;
+      });
+    }
+    pillsHtml += `</div>`;
+  }
   document.getElementById('pillsWrap').innerHTML = pillsHtml;
 
   // Titles
@@ -32264,6 +32294,129 @@ function renderStatsView() {
     ${renderReadingTimeline()}
   `;
   grid.style.display = 'block';
+}
+
+// ── AI-HJELPERE ──
+async function callAIOnce(systemPrompt, userMsg, maxTokens) {
+  const server = getServerUrl();
+  if (!server) throw new Error('no_server');
+  const r = await fetch(server + '/ai-chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ systemPrompt, messages: [{ role: 'user', content: userMsg }] })
+  });
+  const j = await r.json();
+  if (!r.ok || !j.ok) throw new Error(j?.error || 'AI-feil ' + r.status);
+  return j.text || '';
+}
+
+// ── #5: AI-SAMMENDRAG AV BOK ──
+async function generateAISummary() {
+  const title = document.getElementById('fTitle').value.trim();
+  const author = document.getElementById('fAuthor').value.trim();
+  if (!title) { showToast('⚠️ Skriv inn tittel først'); return; }
+  const notesEl = document.getElementById('fNotes');
+  const orig = notesEl.value;
+  notesEl.value = (orig ? orig + '\n\n' : '') + '⏳ Henter sammendrag…';
+  notesEl.disabled = true;
+  try {
+    const text = await callAIOnce(
+      'Du er en bokassistent. Svar alltid på norsk. Hold svaret til 3-4 setninger uten spoilere.',
+      'Lag et kort, spoilerfritt sammendrag av boken "' + title + '"' + (author ? ' av ' + author : '') + '. Skriv kun selve sammendraget, uten innledning.',
+      400
+    );
+    const summary = '📖 Sammendrag (AI):\n' + text.trim();
+    notesEl.value = orig ? orig + '\n\n' + summary : summary;
+  } catch(e) {
+    notesEl.value = orig;
+    showToast('⚠️ Kunne ikke hente sammendrag: ' + (e.message || e).slice(0, 80));
+  }
+  notesEl.disabled = false;
+}
+
+// ── #16: MANGLENDE SERIE-BØKER ──
+function detectMissingSeriesBooks(seriesName) {
+  if (!seriesName) return [];
+  const inSeries = books.filter(b => b.series === seriesName && b.seriesNum);
+  if (inSeries.length < 2) return [];
+  const nums = inSeries.map(b => b.seriesNum).sort((a, b) => a - b);
+  const max = nums[nums.length - 1];
+  const min = nums[0];
+  const owned = new Set(nums);
+  const missing = [];
+  for (let i = min; i < max; i++) if (!owned.has(i)) missing.push(i);
+  return missing;
+}
+async function findMissingBookOnEbok(seriesName, num) {
+  const server = getServerUrl();
+  if (!server) return null;
+  try {
+    const r = await fetch(server + '/series-proxy?title=' + encodeURIComponent(seriesName + ' ' + num));
+    const j = await r.json();
+    return j; // {ok, series, seriesNum, genre}
+  } catch(_) { return null; }
+}
+async function addMissingBookToWishlist(seriesName, num, btn) {
+  if (window._readOnly) { showToast('🔒 Logg inn med eier-PIN'); return; }
+  if (btn) { btn.disabled = true; btn.textContent = 'Legger til…'; }
+  // Forsøk å hente eksakt tittel via ebok.no
+  let title = seriesName + ' #' + num;
+  let author = books.find(b => b.series === seriesName)?.author || '';
+  // Plassholder — vi vet ikke alltid eksakt tittel uten forfatter-spesifikt søk
+  const book = {
+    id: Date.now() + Math.random(),
+    title, author,
+    genre: books.find(b => b.series === seriesName)?.genre || 'Annet',
+    series: seriesName,
+    seriesNum: num,
+    status: 'wishlist',
+    progress: 0,
+    rating: 0,
+    coverUrl: null,
+    added: Date.now(),
+  };
+  books.push(book);
+  try { await saveBooks(); } catch(_) {}
+  render();
+  showToast('✓ Lagt til på ønskelisten — rediger for korrekt tittel');
+}
+
+// ── #6: AI-LESEGUIDE FOR SERIE ──
+async function showSeriesGuide(seriesName) {
+  const inSeries = books.filter(b => b.series === seriesName).sort((a,b) => (a.seriesNum||0)-(b.seriesNum||0));
+  const lines = inSeries.map(b => {
+    const st = b.status === 'done' ? 'Lest' : b.status === 'reading' ? 'Leser nå' : 'Ikke lest';
+    return '#' + (b.seriesNum || '?') + ': ' + b.title + ' (' + st + ')';
+  });
+  document.getElementById('cfTitle').textContent = '📖 Leseguide: ' + seriesName;
+  document.getElementById('cfBody').textContent = '⏳ Genererer kort guide til serien…';
+  document.getElementById('cfButtons').innerHTML = '<button class="btn-cancel" onclick="resolveConfirm(null)">Lukk</button>';
+  document.getElementById('confirmModal').classList.add('open');
+  try {
+    const author = inSeries[0]?.author || '';
+    const text = await callAIOnce(
+      'Du er en bokekspert. Svar alltid på norsk. Vær konkret og spoilerfri.',
+      'Lag en kort leseguide for serien "' + seriesName + '"' + (author ? ' av ' + author : '') + '. Inkluder: 1) Hvilken rekkefølge bøkene skal leses i, 2) Hvordan serien henger sammen, 3) Hovedkarakterer eller -tema. Maks 6 setninger. Hold deg til serien jeg eier:\n' + lines.join('\n'),
+      600
+    );
+    document.getElementById('cfBody').textContent = text.trim();
+  } catch(e) {
+    document.getElementById('cfBody').textContent = '⚠️ Kunne ikke hente guide: ' + (e.message || e).slice(0, 80);
+  }
+}
+
+// ── #7 & #14: SPØR AI OM SPESIFIKK BOK / SMART NESTE ──
+function askAIAboutBook(bookId, action) {
+  const b = books.find(x => x.id === bookId);
+  if (!b) return;
+  let q;
+  if (action === 'similar') q = 'Anbefal 3 bøker som ligner på "' + b.title + '" av ' + (b.author||'?') + '. Bruk [BOOK:Tittel|Forfatter]-formatet.';
+  else if (action === 'next') q = 'Basert på at jeg nettopp leste "' + b.title + '", hva passer å lese nå?';
+  else return;
+  // Bytt til anbefalingsfanen og send spørsmålet automatisk
+  const navEl = document.querySelector('.nav-item[data-view="recommendations"]');
+  if (navEl) setView(navEl, 'recommendations');
+  setTimeout(() => sendRecMessage(q), 300);
 }
 
 // ── TILFELDIG BOK ──
