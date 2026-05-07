@@ -32291,9 +32291,125 @@ function renderStatsView() {
         </div>`).join('')}
     </div>` : ''}
 
+    ${renderReadingHeatmap()}
+    ${renderYearInReview()}
     ${renderReadingTimeline()}
   `;
   grid.style.display = 'block';
+}
+
+// ── #11: HEATMAP-KALENDER (siste 365 dager) ──
+function renderReadingHeatmap() {
+  const map = getReadingActivity();
+  const today = new Date();
+  const cells = [];
+  const days = 365;
+  let max = 0;
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const k = d.toISOString().slice(0, 10);
+    const count = map[k] || 0;
+    if (count > max) max = count;
+    cells.push({ date: k, count });
+  }
+  // Beregn ukekolonner med startdag på mandag
+  const firstDate = new Date(cells[0].date);
+  const firstWeekday = (firstDate.getDay() + 6) % 7; // 0 = mandag
+  const padded = Array(firstWeekday).fill(null).concat(cells);
+  const totalActive = cells.filter(c => c.count > 0).length;
+  if (totalActive === 0) return '';
+
+  const intensity = c => {
+    if (!c || !c.count) return 0;
+    if (c.count >= Math.max(3, max*0.66)) return 4;
+    if (c.count >= 2) return 3;
+    if (c.count >= 1) return 2;
+    return 1;
+  };
+  const colors = ['var(--surface2)', 'rgba(200,169,110,0.2)', 'rgba(200,169,110,0.4)', 'rgba(200,169,110,0.7)', 'var(--gold)'];
+
+  // Bygg ruter
+  let html = `<div class="chart-section">
+    <div class="chart-title">📅 Lese-aktivitet siste år (${totalActive} aktive dager)</div>
+    <div style="display:grid;grid-template-columns:repeat(53, 12px);grid-auto-rows:12px;gap:3px;font-size:0;overflow-x:auto;padding:8px 0;">`;
+  // Plasser celler i kolonner ovenfra og ned: men HTML-grid med template-columns og auto-rows fyller rader først.
+  // Vi ønsker 7 rader × ~53 uker. Lag derfor med grid-auto-flow:column.
+  html = `<div class="chart-section">
+    <div class="chart-title">📅 Lese-aktivitet siste år (${totalActive} aktive dager)</div>
+    <div style="display:grid;grid-template-rows:repeat(7, 12px);grid-auto-flow:column;grid-auto-columns:12px;gap:3px;font-size:0;overflow-x:auto;padding:8px 0;">`;
+  for (const c of padded) {
+    if (!c) {
+      html += '<div></div>';
+    } else {
+      const lvl = intensity(c);
+      const dt = new Date(c.date);
+      const lbl = c.count + (c.count === 1 ? ' aktivitet ' : ' aktiviteter ') + 'den ' + dt.toLocaleDateString('no-NO');
+      html += `<div title="${lbl}" style="background:${colors[lvl]};border-radius:2px;width:12px;height:12px;"></div>`;
+    }
+  }
+  html += `</div>
+    <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);margin-top:6px;">
+      Mindre <span style="display:inline-block;width:10px;height:10px;background:${colors[0]};border-radius:2px;"></span>
+      <span style="display:inline-block;width:10px;height:10px;background:${colors[1]};border-radius:2px;"></span>
+      <span style="display:inline-block;width:10px;height:10px;background:${colors[2]};border-radius:2px;"></span>
+      <span style="display:inline-block;width:10px;height:10px;background:${colors[3]};border-radius:2px;"></span>
+      <span style="display:inline-block;width:10px;height:10px;background:${colors[4]};border-radius:2px;"></span>
+      Mer
+    </div>
+  </div>`;
+  return html;
+}
+
+// ── #13: YEAR IN REVIEW ──
+function renderYearInReview() {
+  const yr = new Date().getFullYear();
+  const yrDone = books.filter(b => b.status === 'done' && (b.finishedDate||'').startsWith(String(yr)));
+  if (!yrDone.length) return '';
+  const goal = getReadingGoal();
+  const pct = goal ? Math.min(100, Math.round(yrDone.length / goal * 100)) : null;
+  // Topp-sjanger
+  const gc = {};
+  yrDone.forEach(b => { if (b.genre) gc[b.genre] = (gc[b.genre]||0)+1; });
+  const topGenre = Object.entries(gc).sort((a,b)=>b[1]-a[1])[0];
+  // Topp-forfatter
+  const ac = {};
+  yrDone.forEach(b => { if (b.author) ac[b.author] = (ac[b.author]||0)+1; });
+  const topAuthor = Object.entries(ac).sort((a,b)=>b[1]-a[1])[0];
+  // Beste vurdering
+  const bestRated = yrDone.filter(b => b.rating >= 4).sort((a,b)=>b.rating-a.rating)[0];
+  // Lengste serie i år
+  const seriesCount = {};
+  yrDone.forEach(b => { if (b.series) seriesCount[b.series] = (seriesCount[b.series]||0)+1; });
+  const topSeries = Object.entries(seriesCount).sort((a,b)=>b[1]-a[1])[0];
+  // Måned-fordeling
+  const months = Array(12).fill(0);
+  yrDone.forEach(b => {
+    const m = parseInt((b.finishedDate||'').slice(5,7));
+    if (m >= 1 && m <= 12) months[m-1]++;
+  });
+  const monthMax = Math.max(...months) || 1;
+  const monthNames = ['Jan','Feb','Mar','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Des'];
+
+  return `<div class="chart-section" style="background:linear-gradient(145deg,rgba(200,169,110,0.06),rgba(200,169,110,0.02));border:1px solid rgba(200,169,110,0.3);">
+    <div class="chart-title">✨ ${yr} så langt</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin:8px 0 16px;">
+      <div><div style="font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:700;color:var(--gold);">${yrDone.length}</div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;">Bøker lest${goal?` av ${goal}`:''}</div>${pct!==null?`<div class="prog-bar" style="margin-top:6px;"><div class="prog-fill" style="width:${pct}%"></div></div>`:''}</div>
+      ${topGenre?`<div><div style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:700;">${topGenre[0]}</div><div style="font-size:11px;color:var(--muted);">Topp-sjanger (${topGenre[1]})</div></div>`:''}
+      ${topAuthor?`<div><div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700;">${topAuthor[0].split(',')[0]}</div><div style="font-size:11px;color:var(--muted);">Mest leste forfatter (${topAuthor[1]})</div></div>`:''}
+      ${topSeries?`<div><div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700;">📚 ${topSeries[0]}</div><div style="font-size:11px;color:var(--muted);">Topp-serie (${topSeries[1]} bøker)</div></div>`:''}
+      ${bestRated?`<div><div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:700;">${bestRated.title}</div><div style="font-size:11px;color:var(--muted);">⭐ ${bestRated.rating}/5</div></div>`:''}
+    </div>
+    <div style="border-top:1px solid var(--border);padding-top:12px;">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">Måneds-rytme</div>
+      <div style="display:grid;grid-template-columns:repeat(12,1fr);gap:4px;align-items:end;height:60px;">
+        ${months.map((n,i) => `<div style="display:flex;flex-direction:column;align-items:center;justify-content:end;height:100%;">
+          <div style="width:100%;background:${n?'var(--gold)':'var(--surface2)'};border-radius:3px 3px 0 0;height:${Math.max(2, n/monthMax*100)}%;" title="${monthNames[i]}: ${n} bok${n!==1?'er':''}"></div>
+          <div style="font-size:10px;color:var(--muted);margin-top:3px;">${monthNames[i]}</div>
+        </div>`).join('')}
+      </div>
+    </div>
+  </div>`;
 }
 
 // ── AI-HJELPERE ──
