@@ -29618,7 +29618,8 @@ font-family: 'Source Sans Pro'
   <div class="action-sheet">
     <div id="asCoverWrap" style="display:none;text-align:center;margin:-8px 0 14px;">
       <div id="asCoverBadge" style="font-size:11px;color:var(--gold);letter-spacing:0.16em;text-transform:uppercase;font-weight:600;margin-bottom:10px;display:none;">🎲 Tilfeldig valg</div>
-      <img id="asCoverImg" alt="" style="max-width:140px;max-height:210px;border-radius:8px;box-shadow:0 12px 32px rgba(0,0,0,0.5);cursor:zoom-in;" onclick="zoomCoverFromAS(this)">
+      <img id="asCoverImg" alt="" style="max-width:140px;max-height:210px;border-radius:8px;box-shadow:0 12px 32px rgba(0,0,0,0.5);cursor:zoom-in;" onclick="zoomCoverFromAS(this)" onerror="this.style.display='none';document.getElementById('asCoverFallback').style.display='flex';">
+      <div id="asCoverFallback" style="display:none;width:140px;height:210px;border-radius:8px;box-shadow:0 12px 32px rgba(0,0,0,0.5);align-items:center;justify-content:center;flex-direction:column;padding:14px;text-align:center;margin:0 auto;"></div>
     </div>
     <h3 id="asTitle">Hva vil du gjøre?</h3>
     <div class="as-sub" id="asSub"></div>
@@ -30880,14 +30881,24 @@ function openBookActions(id) {
   const isRandom = _asRandomPick;
   const coverWrap = document.getElementById('asCoverWrap');
   const coverImg = document.getElementById('asCoverImg');
+  const coverFallback = document.getElementById('asCoverFallback');
   const coverBadge = document.getElementById('asCoverBadge');
+  // Bygg en gradient-fallback med tittel/forfatter (samme stil som bokhylla)
+  const [c1, c2] = genreColor(b.genre);
+  coverFallback.style.background = 'linear-gradient(145deg,' + c1 + ',' + c2 + ')';
+  coverFallback.innerHTML =
+    '<div style="font-family:\'Cormorant Garamond\',serif;font-size:18px;font-weight:700;color:var(--text);line-height:1.2;margin-bottom:8px;">' + (b.title || 'Ukjent') + '</div>' +
+    '<div style="font-size:12px;color:var(--muted);">' + (b.author || '') + '</div>';
   if (b.coverUrl) {
+    coverImg.style.display = '';
+    coverFallback.style.display = 'none';
     coverImg.src = b.coverUrl;
     coverImg.alt = b.title || '';
-    coverWrap.style.display = '';
   } else {
-    coverWrap.style.display = 'none';
+    coverImg.style.display = 'none';
+    coverFallback.style.display = 'flex';
   }
+  coverWrap.style.display = '';
   coverBadge.style.display = isRandom ? '' : 'none';
   _asRandomPick = false; // reset etter visning
 
