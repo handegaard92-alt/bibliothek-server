@@ -29804,7 +29804,8 @@ async function fetchSeriesInfo(title, author) {
     try {
       var ebUrl = server + '/series-proxy?title=' + encodeURIComponent(title) + (author ? '&author=' + encodeURIComponent(author) : '');
       var ebData = await fetchJSON(ebUrl);
-      if (ebData?.ok && ebData.series) return { series: ebData.series, seriesNum: ebData.seriesNum };
+      if (ebData?.ok && ebData.series) return { series: ebData.series, seriesNum: ebData.seriesNum, genre: ebData.genre || null };
+      if (ebData?.ok && ebData.genre) foundGenre = ebData.genre;
     } catch(e) {}
   }
   // 1. Nasjonalbiblioteket – tittel/forfatter-søk
@@ -29988,18 +29989,45 @@ function extractISBN(filename) {
 
 // ── OPEN LIBRARY LOOKUP BY ISBN ──
 // ── GENRE MAPPING (shared) ──
+// Order matters: more specific terms first (e.g. "science fiction" before "fiction")
 const GENRE_MAP = {
-  'roman':'Roman','skjønnlitteratur':'Roman','novelle':'Roman','fortelling':'Roman',
-  'krim':'Krim','detektiv':'Krim','kriminallitteratur':'Krim',
-  'spenning':'Thriller','thriller':'Thriller',
-  'science fiction':'Sci-Fi','sci-fi':'Sci-Fi','fantasy':'Fantasy',
-  'biografi':'Biografi','selvbiografi':'Biografi','memoar':'Biografi','livshistorie':'Biografi',
-  'humor':'Humor','satire':'Humor',
-  'sakprosa':'Sakprosa','historie':'Sakprosa','vitenskap':'Sakprosa',
-  'filosofi':'Sakprosa','økonomi':'Sakprosa','politikk':'Sakprosa','religion':'Sakprosa',
-  'fiction':'Roman','novel':'Roman','romance':'Roman',
-  'mystery':'Krim','crime':'Krim',
-  'biography':'Biografi','nonfiction':'Sakprosa','history':'Sakprosa',
+  // Krim & mystery (sjekkes før Thriller for å fange "krim-thriller")
+  'kriminalroman':'Krim','kriminallitteratur':'Krim','krimroman':'Krim','krim':'Krim',
+  'detektiv':'Krim','detective':'Krim','mystery':'Krim','crime':'Krim','whodunit':'Krim','politiroman':'Krim',
+  // Thriller / spenning
+  'psykologisk thriller':'Thriller','thriller':'Thriller','spenningsroman':'Thriller','spenning':'Thriller','suspense':'Thriller',
+  // Sci-Fi (sjekkes før Fantasy)
+  'science fiction':'Sci-Fi','sci-fi':'Sci-Fi','sci fi':'Sci-Fi','science-fiction':'Sci-Fi','vitenskapsfiksjon':'Sci-Fi','dystopi':'Sci-Fi','dystopian':'Sci-Fi',
+  // Fantasy
+  'høy-fantasy':'Fantasy','high fantasy':'Fantasy','urban fantasy':'Fantasy','fantasy':'Fantasy','eventyr':'Fantasy','fairy tale':'Fantasy','myth':'Fantasy','mytologi':'Fantasy',
+  // Biografi / memoar
+  'selvbiografi':'Biografi','autobiograph':'Biografi','memoar':'Biografi','memoir':'Biografi','livshistori':'Biografi','biografi':'Biografi','biograph':'Biografi',
+  // Humor
+  'humor':'Humor','satir':'Humor','komedi':'Humor','comedy':'Humor',
+  // Sakprosa-paraply
+  'sakprosa':'Sakprosa','non-fiction':'Sakprosa','nonfiction':'Sakprosa',
+  'historie':'Sakprosa','history':'Sakprosa',
+  'vitenskap':'Sakprosa','science':'Sakprosa','populærvitenskap':'Sakprosa',
+  'filosofi':'Sakprosa','philosophy':'Sakprosa',
+  'økonomi':'Sakprosa','economics':'Sakprosa','business':'Sakprosa',
+  'politikk':'Sakprosa','politics':'Sakprosa',
+  'religion':'Sakprosa','teologi':'Sakprosa',
+  'psykologi':'Sakprosa','psychology':'Sakprosa','selvhjelp':'Sakprosa','self-help':'Sakprosa','self help':'Sakprosa',
+  'samfunn':'Sakprosa','society':'Sakprosa','sociology':'Sakprosa',
+  'kokebok':'Sakprosa','cookbook':'Sakprosa','mat og drikke':'Sakprosa','food':'Sakprosa',
+  'reise':'Sakprosa','travel':'Sakprosa','reiseskildring':'Sakprosa',
+  'dokumentar':'Sakprosa','documentary':'Sakprosa',
+  'helse':'Sakprosa','health':'Sakprosa',
+  'natur':'Sakprosa','nature':'Sakprosa',
+  // Roman / skjønnlitteratur (kommer sist for å ikke overstyre mer spesifikke)
+  'historisk roman':'Roman','historical fiction':'Roman',
+  'kjærlighetsroman':'Roman','romance':'Roman','romanse':'Roman',
+  'erotikk':'Roman','erotic':'Roman',
+  'novelle':'Roman','noveller':'Roman','short stori':'Roman','fortelling':'Roman',
+  'samtidsroman':'Roman','contemporary':'Roman',
+  'norsk skjønnlitteratur':'Roman','oversatt skjønnlitteratur':'Roman','skjønnlitteratur':'Roman','skjonnlitteratur':'Roman','litterature':'Roman','litteratur':'Roman',
+  'roman':'Roman','novel':'Roman','fiction':'Roman',
+  'barnebok':'Roman','barnebøker':'Roman','barne- og ungdomslitteratur':'Roman','ungdomsbok':'Roman','ungdomsbøker':'Roman','young adult':'Roman','children':'Roman',
 };
 function mapGenre(texts) {
   for (const txt of texts.map(s => (s||'').toLowerCase())) {
@@ -30275,6 +30303,7 @@ async function parseEpub(file) {
   const lang      = dc('language');
   const dateStr   = dc('date');
   const year      = dateStr ? (parseInt(dateStr.match(/[12][0-9]{3}/)?.[0]) || null) : null;
+  const subjects  = [...opfText.matchAll(/<dc:subject\b[^>]*>([^<]+)<\/dc:subject>/gi)].map(m => m[1].trim()).filter(Boolean);
 
   // EPUB 3 collection metadata — series name + position
   let series = null, seriesNum = null;
@@ -30360,7 +30389,7 @@ async function parseEpub(file) {
     }
   }
 
-  return { title, author, publisher, desc, lang, year, epubIsbn, coverDataUrl, series, seriesNum };
+  return { title, author, publisher, desc, lang, year, epubIsbn, coverDataUrl, series, seriesNum, subjects };
 }
 
 // ── FILE HANDLING ──
@@ -30433,9 +30462,9 @@ async function processFile(file) {
           }
         }
 
-        // Genre from description
-        if (epubMeta.desc) {
-          const g = mapGenre([epubMeta.desc, epubMeta.title]);
+        // Genre fra subjects + description + title
+        {
+          const g = mapGenre([...(epubMeta.subjects||[]), epubMeta.desc||'', epubMeta.title||'']);
           if (g !== 'Annet') document.getElementById('fGenre').value = g;
         }
         // Series + nummer direkte fra EPUB-metadata hvis tilgjengelig
@@ -30447,10 +30476,8 @@ async function processFile(file) {
           const snEl = document.getElementById('fSeriesNum');
           if (snEl && !snEl.value) snEl.value = epubMeta.seriesNum;
         }
-        // Series + genre fra NB/ebok.no (async, don't block) — kjør kun hvis vi mangler nummer
-        if (!epubMeta.seriesNum) {
-          autoFillSeries(epubMeta.title, epubMeta.author || '');
-        }
+        // Alltid kjør autoFillSeries — fyller kun tomme felter, og henter sjanger fra NB/ebok.no
+        autoFillSeries(epubMeta.title, epubMeta.author || '');
 
         const isbn = epubMeta.epubIsbn || extractISBN(file.name);
         const extras = [
@@ -31565,13 +31592,17 @@ async function processBatchMetadata() {
       }
 
       if (meta?.title) {
-        // Try to auto-fill series info
-        if (meta.title && !meta.series) {
-          try {
-            const sInfo = await fetchSeriesInfo(meta.title, meta.author || '');
-            if (sInfo?.series) { meta.series = sInfo.series; meta.seriesNum = sInfo.seriesNum; }
-          } catch(e) {}
+        // Genre fra EPUB subjects + desc + title
+        if (!meta.mappedGenre || meta.mappedGenre === 'Annet') {
+          const g = mapGenre([...(meta.subjects||[]), meta.desc||'', meta.title||'']);
+          if (g !== 'Annet') meta.mappedGenre = g;
         }
+        // Auto-fill series + sjanger fra NB/ebok.no
+        try {
+          const sInfo = await fetchSeriesInfo(meta.title, meta.author || '');
+          if (sInfo?.series && !meta.series) { meta.series = sInfo.series; meta.seriesNum = meta.seriesNum || sInfo.seriesNum; }
+          if (sInfo?.genre && (!meta.mappedGenre || meta.mappedGenre === 'Annet')) meta.mappedGenre = sInfo.genre;
+        } catch(e) {}
         item.meta   = meta;
         item.status = 'ready';
       } else {

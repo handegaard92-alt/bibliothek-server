@@ -329,12 +329,29 @@ app.get('/series-proxy', async (req, res) => {
     const searchUrl = `https://ebok.no/search/?q=${q}`;
     const searchHtml = await fetch(searchUrl, { headers, redirect: 'follow' }).then(r => r.text());
 
-    const linkMatches = [...searchHtml.matchAll(/href="(\/(?:eboker|lydboker)\/[a-z0-9\-]+\/[a-z0-9\-]+\/)"/gi)];
+    // Map ebok.no URL category slugs → app-genre buckets
+    const slugToGenre = (slug) => {
+      const s = (slug || '').toLowerCase();
+      if (/krim|detektiv|mystikk|whodunit/.test(s)) return 'Krim';
+      if (/thriller|spenning|suspense/.test(s))     return 'Thriller';
+      if (/science[- ]?fiction|sci[- ]?fi|dystopi/.test(s)) return 'Sci-Fi';
+      if (/fantasy|eventyr/.test(s))                return 'Fantasy';
+      if (/biografi|memoar|selvbiografi/.test(s))   return 'Biografi';
+      if (/humor|satir|komedi/.test(s))             return 'Humor';
+      if (/sakprosa|historie|filosofi|samfunn|politikk|religion|psykologi|selvhjelp|kokebok|mat|reise|dokumentar|natur|helse|vitenskap|okonomi|business/.test(s)) return 'Sakprosa';
+      if (/roman|skjonn|skjønn|novelle|fortelling|barn|ungdom|kjaerlighet|kjærlighet|romantikk|romanse/.test(s)) return 'Roman';
+      return null;
+    };
+
+    const linkMatches = [...searchHtml.matchAll(/href="(\/(?:eboker|lydboker)\/([a-z0-9\-]+)\/[a-z0-9\-]+\/)"/gi)];
     const seenPaths = new Set();
+    let firstGenre = null;
     for (const lm of linkMatches) {
       const path = lm[1];
+      const categorySlug = lm[2];
       if (seenPaths.has(path)) continue;
       seenPaths.add(path);
+      if (!firstGenre) firstGenre = slugToGenre(categorySlug);
       if (seenPaths.size > 4) break;
 
       try {
@@ -368,10 +385,11 @@ app.get('/series-proxy', async (req, res) => {
           pageHtml.match(/<th[^>]*>Nummer i serie<\/th>\s*<td[^>]*>\s*(\d+)/i);
         if (numMatch) seriesNum = parseInt(numMatch[1]);
 
-        return res.json({ ok: true, series, seriesNum });
+        const pageGenre = slugToGenre(path.split('/')[2]);
+        return res.json({ ok: true, series, seriesNum, genre: pageGenre || firstGenre || null });
       } catch(e) { continue; }
     }
-    res.json({ ok: true, series: null });
+    res.json({ ok: true, series: null, genre: firstGenre || null });
   } catch(e) { res.json({ ok: false, error: e.message }); }
 });
 
