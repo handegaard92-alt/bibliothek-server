@@ -32381,12 +32381,12 @@ function renderRecMessages() {
   const escHtml = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   el.innerHTML = recMessages.map(m => {
     let html = m.text;
-    // Detekter [BOOK:Tittel|Forfatter] og lag "+ Ønskeliste" + søke-knapper til norske bokhandlere
-    html = html.replace(/🛒\s*\[BOOK:\s*([^|\]]+)\s*\|\s*([^\]]+)\s*\]/g, (_, t, a) => {
+    // Detekter [BOOK:Tittel|Forfatter] og lag inline-lenker til norske bokhandlere + ønskeliste-knapp
+    html = html.replace(/🛒\s*\[BOOK:\s*([^|\]]+)\s*\|\s*([^\]]+)\s*\]/gi, (_, t, a) => {
       const ttl = t.trim(), aut = a.trim();
       const q = encodeURIComponent(ttl + ' ' + aut);
       const wishBtn = window._readOnly
-        ? '<span class="rec-add-disabled" title="Logg inn med din egen PIN for å lagre">🔒</span>'
+        ? '<span class="rec-add-disabled" title="Logg inn med din egen PIN for å lagre">🔒 Lås opp som eier</span>'
         : `<button class="rec-add-wishlist" onclick="addRecToWishlist('${escAttr(ttl)}','${escAttr(aut)}')">+ Ønskeliste</button>`;
       const stores = [
         { name: 'ARK',      url: 'https://www.ark.no/search?text=' + q },
@@ -32394,10 +32394,11 @@ function renderRecMessages() {
         { name: 'Adlibris', url: 'https://www.adlibris.com/no/sok?q=' + q },
         { name: 'ebok.no',  url: 'https://ebok.no/search/?q=' + q },
       ];
-      const storeBtns = stores.map(s =>
-        `<a class="rec-search-link" href="${s.url}" target="_blank" rel="noopener">🔎 ${s.name}</a>`
-      ).join('');
-      return `🛒 <strong>${escHtml(ttl)}</strong> av ${escHtml(aut)} ${wishBtn} ${storeBtns}`;
+      const storeLinks = stores.map(s =>
+        `<a href="${s.url}" target="_blank" rel="noopener" style="color:var(--gold);text-decoration:underline;">${s.name}</a>`
+      ).join(' · ');
+      return `🛒 <strong>${escHtml(ttl)}</strong> av ${escHtml(aut)}<br>` +
+             `<span style="font-size:12.5px;color:var(--muted);">🔎 Søk hos: ${storeLinks}</span> ${wishBtn}`;
     });
     html = html
       .split('\n').join('<br>')
