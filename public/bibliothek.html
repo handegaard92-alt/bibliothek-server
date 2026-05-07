@@ -874,6 +874,19 @@ body {
 }
 .as-cancel:hover { color:var(--text); }
 
+/* ── REC ADD-TO-WISHLIST BUTTON ── */
+.rec-add-wishlist {
+  display:inline-flex; align-items:center; gap:4px;
+  padding:3px 10px; margin-left:6px;
+  background:var(--gold-dim); border:1px solid rgba(200,169,110,0.45);
+  color:var(--gold); border-radius:999px;
+  font-family:'Outfit',sans-serif; font-size:11.5px; font-weight:500;
+  cursor:pointer; vertical-align:middle;
+  transition:background 0.15s, border-color 0.15s;
+}
+.rec-add-wishlist:hover { background:rgba(200,169,110,0.18); border-color:var(--gold); }
+.rec-add-disabled { font-size:12px; opacity:0.6; margin-left:6px; }
+
 /* ── QUICK PROGRESS EDIT ── */
 .prog-quick-clickable {
   cursor:pointer;
@@ -29544,6 +29557,18 @@ font-family: 'Source Sans Pro'
       <span class="as-ico">📈</span>
       <span class="as-lbl">Oppdater fremgang<span class="as-hint" id="asProgressHint"></span></span>
     </button>
+    <button class="as-btn" id="asGuestDoneBtn" onclick="pickAction('guest-done')" style="display:none;">
+      <span class="as-ico">✅</span>
+      <span class="as-lbl">Marker som lest<span class="as-hint">Lagres lokalt for deg</span></span>
+    </button>
+    <button class="as-btn" id="asGuestReadingBtn" onclick="pickAction('guest-reading')" style="display:none;">
+      <span class="as-ico">📖</span>
+      <span class="as-lbl">Marker som leser nå<span class="as-hint">Lagres lokalt for deg</span></span>
+    </button>
+    <button class="as-btn" id="asGuestUnreadBtn" onclick="pickAction('guest-unread')" style="display:none;">
+      <span class="as-ico">↩️</span>
+      <span class="as-lbl">Fjern markering<span class="as-hint">Sett tilbake til ulest</span></span>
+    </button>
     <button class="as-btn" id="asEditBtn" onclick="pickAction('edit')">
       <span class="as-ico">✏️</span>
       <span class="as-lbl">Rediger bok<span class="as-hint">Endre tittel, omslag, fremgang m.m.</span></span>
@@ -29652,6 +29677,44 @@ async function saveBooks() {
   if (!window._readOnly && window._pinKey) {
     pushToPin().catch(() => {});
   }
+}
+
+// ── GUEST READ OVERLAY (lokal pr. gjeste-PIN, synker ikke til server) ──
+let _guestReads = {};
+function guestReadsKey() { return 'guestReads_' + (window._pinKey || 'anon'); }
+function loadGuestReads() {
+  if (!window._readOnly) { _guestReads = {}; return; }
+  try { _guestReads = JSON.parse(localStorage.getItem(guestReadsKey())) || {}; }
+  catch(_) { _guestReads = {}; }
+}
+function saveGuestReads() {
+  if (!window._readOnly) return;
+  try { localStorage.setItem(guestReadsKey(), JSON.stringify(_guestReads)); } catch(_) {}
+}
+function setGuestRead(id, partial) {
+  if (!window._readOnly) return;
+  _guestReads[id] = Object.assign({}, _guestReads[id], partial);
+  saveGuestReads();
+}
+function effectiveStatus(b) {
+  if (window._readOnly) {
+    const r = _guestReads[b.id];
+    if (r && r.status) return r.status;
+    return 'unread'; // gjest har ikke markert → vises som ulest for denne gjesten
+  }
+  return b.status;
+}
+function effectiveProgress(b) {
+  if (window._readOnly) {
+    const r = _guestReads[b.id];
+    if (r && typeof r.progress === 'number') return r.progress;
+    return 0;
+  }
+  return b.progress || 0;
+}
+function effectiveFinishedDate(b) {
+  if (window._readOnly) return _guestReads[b.id]?.finishedDate || null;
+  return b.finishedDate || null;
 }
 
 async function loadServerUrl() {
@@ -29790,6 +29853,14 @@ function debounceCoverSearch() {
   const title = document.getElementById('fTitle').value.trim();
   const author = document.getElementById('fAuthor').value.trim();
   if (title.length < 2) return;
+  // Ved redigering av eksisterende bok: ikke auto-søk omslag — det fjerner det eksisterende coveret
+  // Tomme felter fra autoFillSeries fylles, men cover beholdes
+  if (editingId !== null) {
+    coverDebounceTimer = setTimeout(() => {
+      autoFillSeries(title, author);
+    }, 700);
+    return;
+  }
   coverDebounceTimer = setTimeout(() => {
     searchCover(title, author);
     autoFillSeries(title, author);
@@ -30642,24 +30713,41 @@ let pendingActionId = null;
 function openBookActions(id) {
   const b = books.find(x => x.id === id);
   if (!b) return;
-  if (window._readOnly) {
-    // Read-only guests: gå direkte til Kindle hvis fil finnes, ellers ingenting
-    if (b.fileData || b.r2Key) openKindleModal(id);
-    return;
-  }
   pendingActionId = id;
   document.getElementById('asTitle').textContent = b.title || 'Bok';
   document.getElementById('asSub').textContent = b.author || '';
-  const kBtn = document.getElementById('asKindleBtn');
+
   const hasFile = !!(b.fileData || b.r2Key);
+  const kBtn = document.getElementById('asKindleBtn');
   kBtn.disabled = !hasFile;
+  kBtn.style.display = hasFile ? '' : 'none';
   document.getElementById('asKindleHint').textContent = hasFile
     ? 'Send filen til en av dine Kindle-enheter'
-    : 'Last opp en fil først for å sende';
+    : '';
+
+  const editBtn = document.getElementById('asEditBtn');
   const pBtn = document.getElementById('asProgressBtn');
-  const showProg = b.status === 'reading';
-  pBtn.style.display = showProg ? '' : 'none';
-  document.getElementById('asProgressHint').textContent = 'Nå: ' + (b.progress || 0) + '%';
+  const gDone = document.getElementById('asGuestDoneBtn');
+  const gReading = document.getElementById('asGuestReadingBtn');
+  const gUnread = document.getElementById('asGuestUnreadBtn');
+
+  if (window._readOnly) {
+    // Gjest: vis kun status-knapper + Kindle
+    editBtn.style.display = 'none';
+    pBtn.style.display = 'none';
+    const es = effectiveStatus(b);
+    gDone.style.display = es === 'done' ? 'none' : '';
+    gReading.style.display = es === 'reading' ? 'none' : '';
+    gUnread.style.display = (es === 'done' || es === 'reading') ? '' : 'none';
+  } else {
+    editBtn.style.display = '';
+    gDone.style.display = 'none';
+    gReading.style.display = 'none';
+    gUnread.style.display = 'none';
+    pBtn.style.display = b.status === 'reading' ? '' : 'none';
+    document.getElementById('asProgressHint').textContent = 'Nå: ' + (b.progress || 0) + '%';
+  }
+
   document.getElementById('bookActionsModal').classList.add('open');
 }
 function closeBookActions() {
@@ -30673,6 +30761,16 @@ function pickAction(action) {
   if (action === 'edit') openEditModal(id);
   else if (action === 'kindle') openKindleModal(id);
   else if (action === 'progress') openQuickProgress(id);
+  else if (action === 'guest-done') {
+    setGuestRead(id, { status: 'done', progress: 100, finishedDate: new Date().toISOString().slice(0,10) });
+    render(); showToast('✓ Markert som lest');
+  } else if (action === 'guest-reading') {
+    setGuestRead(id, { status: 'reading' });
+    render(); showToast('✓ Markert som leser nå');
+  } else if (action === 'guest-unread') {
+    setGuestRead(id, { status: 'unread', progress: 0, finishedDate: null });
+    render(); showToast('✓ Markering fjernet');
+  }
 }
 
 // ── COVER ZOOM ──
@@ -30696,13 +30794,12 @@ function zoomCoverFromThumb(thumb) {
 let pendingProgressId = null;
 function openQuickProgress(id, ev) {
   if (ev) ev.stopPropagation();
-  if (window._readOnly) return;
   const b = books.find(x => x.id === id);
   if (!b) return;
   pendingProgressId = id;
   document.getElementById('pqTitle').textContent = b.title || 'Oppdater fremgang';
   document.getElementById('pqSub').textContent = b.author || '';
-  const v = b.progress || 0;
+  const v = effectiveProgress(b);
   document.getElementById('pqRange').value = v;
   document.getElementById('pqNum').value = v;
   document.getElementById('progQuickModal').classList.add('open');
@@ -30718,6 +30815,20 @@ async function saveQuickProgress() {
   let v = parseInt(document.getElementById('pqNum').value);
   if (!Number.isFinite(v)) v = 0;
   v = Math.max(0, Math.min(100, v));
+
+  if (window._readOnly) {
+    // Gjest: lagrer kun lokalt overlay
+    const partial = { progress: v };
+    if (v === 100) { partial.status = 'done'; partial.finishedDate = new Date().toISOString().slice(0,10); }
+    else if (v > 0) partial.status = 'reading';
+    else partial.status = 'unread';
+    setGuestRead(id, partial);
+    closeQuickProgress();
+    render();
+    showToast('✓ Fremgang oppdatert (lokalt)');
+    return;
+  }
+
   const idx = books.findIndex(b => b.id === id);
   if (idx === -1) { closeQuickProgress(); return; }
   books[idx].progress = v;
@@ -31152,10 +31263,10 @@ function openMailForKindle() {
 function getFiltered() {
   let f = [...books];
   const q = document.getElementById('searchInput')?.value.toLowerCase() || '';
-  if (view === 'reading') f = f.filter(b => b.status === 'reading');
-  else if (view === 'done') f = f.filter(b => b.status === 'done');
-  else if (view === 'wishlist') f = f.filter(b => b.status === 'wishlist');
-  else if (view === 'unread') f = f.filter(b => b.status === 'unread');
+  if (view === 'reading') f = f.filter(b => effectiveStatus(b) === 'reading');
+  else if (view === 'done') f = f.filter(b => effectiveStatus(b) === 'done');
+  else if (view === 'wishlist') f = f.filter(b => effectiveStatus(b) === 'wishlist');
+  else if (view === 'unread') f = f.filter(b => effectiveStatus(b) === 'unread');
   if (genreFilter) f = f.filter(b => b.genre === genreFilter);
   if (seriesFilter) f = f.filter(b => b.series === seriesFilter);
   if (authorFilter) f = f.filter(b => b.author === authorFilter);
@@ -31165,17 +31276,27 @@ function getFiltered() {
     (b.genre||'').toLowerCase().includes(q)
   );
   const sel = _activeSort || 'added';
-  if (sel === 'title')  f.sort((a,b) => a.title.localeCompare(b.title,'no'));
-  else if (sel === 'author')   f.sort((a,b) => (a.author||'').localeCompare(b.author||'','no'));
-  else if (sel === 'year')     f.sort((a,b) => (b.year||0)-(a.year||0));
-  else if (sel === 'rating')   f.sort((a,b) => (b.rating||0)-(a.rating||0));
-  else if (sel === 'added')    f.sort((a,b) => (b.added||0)-(a.added||0));
-  else if (sel === 'finished') f.sort((a,b) => (b.finishedDate||'').localeCompare(a.finishedDate||''));
-  else if (sel === 'series')   f.sort((a,b) => {
+  let baseCmp;
+  if (sel === 'title')         baseCmp = (a,b) => a.title.localeCompare(b.title,'no');
+  else if (sel === 'author')   baseCmp = (a,b) => (a.author||'').localeCompare(b.author||'','no');
+  else if (sel === 'year')     baseCmp = (a,b) => (b.year||0)-(a.year||0);
+  else if (sel === 'rating')   baseCmp = (a,b) => (b.rating||0)-(a.rating||0);
+  else if (sel === 'finished') baseCmp = (a,b) => (b.finishedDate||'').localeCompare(a.finishedDate||'');
+  else if (sel === 'series')   baseCmp = (a,b) => {
     const sa = a.series||''; const sb = b.series||'';
     if (sa && !sb) return -1; if (!sa && sb) return 1;
     const sc = sa.localeCompare(sb,'no');
     return sc !== 0 ? sc : ((a.seriesNum||0)-(b.seriesNum||0));
+  };
+  else baseCmp = (a,b) => (b.added||0)-(a.added||0);
+
+  // Innen samme serie: bok #1 alltid øverst, så #2, #3 osv. — uansett valgt sortering
+  f.sort((a,b) => {
+    if (a.series && a.series === b.series) {
+      const sn = (a.seriesNum||9999) - (b.seriesNum||9999);
+      if (sn !== 0) return sn;
+    }
+    return baseCmp(a, b);
   });
   return f;
 }
@@ -31212,12 +31333,12 @@ function genreBg(b) {
 function render() {
   const filtered = getFiltered();
 
-  // Counts
+  // Counts (bruker effectiveStatus så gjester får sine egne tall)
   document.getElementById('cnt-all').textContent = books.length;
-  document.getElementById('cnt-reading').textContent = books.filter(b=>b.status==='reading').length;
-  document.getElementById('cnt-done').textContent = books.filter(b=>b.status==='done').length;
-  document.getElementById('cnt-wishlist').textContent = books.filter(b=>b.status==='wishlist').length;
-  document.getElementById('cnt-unread').textContent = books.filter(b=>b.status==='unread').length;
+  document.getElementById('cnt-reading').textContent = books.filter(b=>effectiveStatus(b)==='reading').length;
+  document.getElementById('cnt-done').textContent = books.filter(b=>effectiveStatus(b)==='done').length;
+  document.getElementById('cnt-wishlist').textContent = books.filter(b=>effectiveStatus(b)==='wishlist').length;
+  document.getElementById('cnt-unread').textContent = books.filter(b=>effectiveStatus(b)==='unread').length;
 
   var btnAdd = document.getElementById('btnAddBook');
   var btnBatch = document.getElementById('btnBatchUpload');
@@ -31225,20 +31346,26 @@ function render() {
   if (btnBatch) btnBatch.style.display = window._readOnly ? 'none' : '';
 
   // Stats
-  const reading = books.filter(b=>b.status==='reading').length;
-  const done = books.filter(b=>b.status==='done').length;
-  const wish = books.filter(b=>b.status==='wishlist').length;
+  const reading = books.filter(b=>effectiveStatus(b)==='reading').length;
+  const done = books.filter(b=>effectiveStatus(b)==='done').length;
+  const wish = books.filter(b=>effectiveStatus(b)==='wishlist').length;
   const withFile = books.filter(function(b){return b.fileData||b.r2Key;}).length;
+  const totalLabel = window._readOnly ? 'Bøker (eier)' : 'Bøker totalt';
+  const readingLabel = window._readOnly ? 'Du leser nå' : 'Leser nå';
+  const doneLabel = window._readOnly ? 'Du har lest' : 'Fullført';
+  const fourthBlock = window._readOnly
+    ? '<div class="stat"><div class="stat-v">'+(books.length-done)+'</div><div class="stat-l">Du kan lese</div></div>'
+    : '<div class="stat"><div class="stat-v">'+withFile+'</div><div class="stat-l">Filer lastet opp</div></div>';
   document.getElementById('statsRow').innerHTML = `
-    <div class="stat"><div class="stat-v">${books.length}</div><div class="stat-l">Bøker totalt</div></div>
-    <div class="stat"><div class="stat-v">${reading}</div><div class="stat-l">Leser nå</div></div>
-    <div class="stat"><div class="stat-v">${done}</div><div class="stat-l">Fullført</div></div>
-    <div class="stat"><div class="stat-v">${withFile}</div><div class="stat-l">Filer lastet opp</div></div>
+    <div class="stat"><div class="stat-v">${books.length}</div><div class="stat-l">${totalLabel}</div></div>
+    <div class="stat"><div class="stat-v">${reading}</div><div class="stat-l">${readingLabel}</div></div>
+    <div class="stat"><div class="stat-v">${done}</div><div class="stat-l">${doneLabel}</div></div>
+    ${fourthBlock}
   `;
 
   // Hero
   const hero = document.getElementById('heroWrap');
-  const readingBooks = books.filter(b=>b.status==='reading');
+  const readingBooks = books.filter(b=>effectiveStatus(b)==='reading');
   if (readingBooks.length && view==='all' && !genreFilter && !document.getElementById('searchInput').value) {
     const b = readingBooks[0];
     hero.innerHTML = `
@@ -31249,8 +31376,8 @@ function render() {
           <div class="hero-tag">📖 Leser nå</div>
           <div class="hero-t">${b.title}</div>
           <div class="hero-a">${b.author}${b.genre?' · '+b.genre:''}${b.year?' · '+b.year:''}</div>
-          <div class="prog-label"><span>Fremgang</span><span class="prog-quick-clickable" title="Klikk for å oppdatere fremgang" onclick="openQuickProgress(${b.id}, event)">${b.progress||0}%</span></div>
-          <div class="prog-bar" title="Klikk for å oppdatere fremgang" style="cursor:pointer;" onclick="openQuickProgress(${b.id}, event)"><div class="prog-fill" style="width:${b.progress||0}%"></div></div>
+          <div class="prog-label"><span>Fremgang</span><span class="prog-quick-clickable" title="Klikk for å oppdatere fremgang" onclick="openQuickProgress(${b.id}, event)">${effectiveProgress(b)}%</span></div>
+          <div class="prog-bar" title="Klikk for å oppdatere fremgang" style="cursor:pointer;" onclick="openQuickProgress(${b.id}, event)"><div class="prog-fill" style="width:${effectiveProgress(b)}%"></div></div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
             <button class="btn-read" onclick="event.stopPropagation()">▶ Fortsett</button>
             ${(b.fileData||b.r2Key)?`<button style="padding:9px 16px;background:transparent;border:1px solid var(--border2);color:var(--text);font-family:'Outfit',sans-serif;font-size:13px;border-radius:var(--r2);cursor:pointer;" onclick="event.stopPropagation();openKindleModal(${b.id})">📤 Send til Kindle</button>`:''}
@@ -31315,7 +31442,7 @@ function render() {
         <div class="lv-meta">
           ${b.genre?`<span class="lv-tag">${b.genre}</span>`:''}
           ${b.year?`<span style="font-size:12px;color:var(--muted)">${b.year}</span>`:''}
-          ${b.status==='reading'?`<span class="lv-prog prog-quick-clickable" title="Klikk for å oppdatere fremgang" onclick="openQuickProgress(${b.id}, event)">${b.progress||0}%</span>`:''}
+          ${effectiveStatus(b)==='reading'?`<span class="lv-prog prog-quick-clickable" title="Klikk for å oppdatere fremgang" onclick="openQuickProgress(${b.id}, event)">${effectiveProgress(b)}%</span>`:''}
           <div class="lv-btns">
             ${window._readOnly?'':'<button class="lv-ic-btn" onclick="openEditModal('+b.id+')">✏️ Rediger</button>'}
             ${(b.fileData||b.r2Key)?`<button class="lv-ic-btn" onclick="openKindleModal(${b.id})">📤 Kindle</button>`:''}
@@ -31330,12 +31457,12 @@ function render() {
       <div class="bk" style="animation-delay:${i*0.04}s" onclick="openBookActions(${b.id})">
         <div class="bk-cover-wrap">
           ${coverHtml(b)}
-          ${blbl[b.status]?`<span class="bk-badge ${bmap[b.status]}">${blbl[b.status]}</span>`:''}
+          ${(()=>{ const es = effectiveStatus(b); return blbl[es]?`<span class="bk-badge ${bmap[es]}">${blbl[es]}</span>`:''; })()}
           <div class="bk-overlay">
             <button class="ov-btn ov-kindle" onclick="event.stopPropagation();openKindleModal(${b.id})" ${(!b.fileData&&!b.r2Key)?'style="opacity:0.5;cursor:default"':''}>📤 Send til Kindle</button>
             ${window._readOnly?'':'<button class="ov-btn ov-edit" onclick="event.stopPropagation();openEditModal('+b.id+')">✏️ Rediger</button>'}
           </div>
-          ${b.status==='reading'?`<div class="prog-mini" title="Klikk for å oppdatere fremgang" style="cursor:pointer;" onclick="event.stopPropagation();openQuickProgress(${b.id}, event)"><div class="prog-mini-fill" style="width:${b.progress||0}%"></div></div>`:''}
+          ${effectiveStatus(b)==='reading'?`<div class="prog-mini" title="Klikk for å oppdatere fremgang" style="cursor:pointer;" onclick="event.stopPropagation();openQuickProgress(${b.id}, event)"><div class="prog-mini-fill" style="width:${effectiveProgress(b)}%"></div></div>`:''}
         </div>
         <div class="bk-t">${b.title}</div>
         <div class="bk-a">${b.author}</div>
@@ -32022,10 +32149,13 @@ function buildLibraryContext() {
   parts.push(
     "INSTRUKSJONER:",
     "- Gi anbefalinger for bøker brukeren ALLEREDE EIER (les disse neste!) OG nye kjøp",
-    "- Marker alltid: 📚 Allerede i biblioteket | 🛒 Ny bok å kjøpe",
+    "- For nye bokanbefalinger (ikke i biblioteket), bruk ALLTID dette nøyaktige formatet på en egen linje:",
+    "  🛒 [BOOK:Tittel|Forfatter]",
+    "  Eksempel: 🛒 [BOOK:Sofies verden|Jostein Gaarder]",
+    "  Brukerens app legger til en knapp som lar dem legge boken i ønskelisten.",
+    "- For bøker brukeren allerede eier, bruk: 📚 \"Tittel\" av Forfatter",
     "- For serier: finn neste del og sjekk om den er i biblioteket eller må kjøpes",
     "- Forklar HVORFOR du anbefaler — knytt det til bøker de har likt",
-    "- Foreslå kjøpslenker slik: https://www.bokus.com/bok/ eller https://www.ark.no/search?q=TITTEL",
     "- Anbefal gjerne norske forfattere",
     "- Maks 3-4 anbefalinger om gangen",
     "- Spør om smaken hvis biblioteket er lite eller du trenger mer info"
@@ -32095,8 +32225,19 @@ function addRecMessage(role, text) {
 function renderRecMessages() {
   const el = document.getElementById('recMessages');
   if (!el) return;
+  const escAttr = s => String(s).replace(/&/g,'&amp;').replace(/'/g,"&#39;").replace(/"/g,'&quot;');
+  const escHtml = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   el.innerHTML = recMessages.map(m => {
-    const html = m.text
+    let html = m.text;
+    // Detekter [BOOK:Tittel|Forfatter] og lag en "+ Ønskeliste"-knapp
+    html = html.replace(/🛒\s*\[BOOK:\s*([^|\]]+)\s*\|\s*([^\]]+)\s*\]/g, (_, t, a) => {
+      const ttl = t.trim(), aut = a.trim();
+      const btn = window._readOnly
+        ? '<span class="rec-add-disabled" title="Logg inn med din egen PIN for å lagre">🔒</span>'
+        : `<button class="rec-add-wishlist" onclick="addRecToWishlist('${escAttr(ttl)}','${escAttr(aut)}')">+ Ønskeliste</button>`;
+      return `🛒 <strong>${escHtml(ttl)}</strong> av ${escHtml(aut)} ${btn}`;
+    });
+    html = html
       .split('\n').join('<br>')
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*([^*]+?)\*/g, '<em>$1</em>')
@@ -32108,6 +32249,49 @@ function renderRecMessages() {
   }).join('');
   // Scroll to bottom
   el.scrollTop = el.scrollHeight;
+}
+
+async function addRecToWishlist(title, author) {
+  if (window._readOnly) { showToast('🔒 Du må logge inn med din egen PIN for å legge til'); return; }
+  if (!title) return;
+  // Sjekk om boken allerede finnes
+  const existing = books.find(b => (b.title||'').trim().toLowerCase() === title.trim().toLowerCase()
+    && (b.author||'').trim().toLowerCase() === (author||'').trim().toLowerCase());
+  if (existing) {
+    if (existing.status === 'wishlist') { showToast('Allerede på ønskelisten'); return; }
+    existing.status = 'wishlist';
+    try { await saveBooks(); } catch(_) {}
+    showToast('✓ Flyttet til ønskelisten');
+    return;
+  }
+  const book = {
+    id: Date.now() + Math.random(),
+    title: title.trim(),
+    author: (author || '').trim(),
+    genre: 'Annet',
+    year: null,
+    status: 'wishlist',
+    progress: 0,
+    rating: 0,
+    coverUrl: null,
+    added: Date.now(),
+  };
+  books.push(book);
+  try { await saveBooks(); } catch(e) { showToast('⚠️ Lagringsfeil'); return; }
+  // Forsøk å hente cover + sjanger i bakgrunnen
+  (async () => {
+    try {
+      const sInfo = await fetchSeriesInfo(book.title, book.author);
+      let changed = false;
+      if (sInfo?.series) { book.series = sInfo.series; changed = true; }
+      if (sInfo?.seriesNum) { book.seriesNum = sInfo.seriesNum; changed = true; }
+      if (sInfo?.genre) { book.genre = sInfo.genre; changed = true; }
+      const alts = await fetchCover(book.title, book.author);
+      if (alts && alts[0]?.url) { book.coverUrl = alts[0].url; changed = true; }
+      if (changed) { await saveBooks(); render(); }
+    } catch(_) {}
+  })();
+  showToast('✓ Lagt til på ønskelisten');
 }
 
 function showTyping() {
@@ -32366,6 +32550,7 @@ async function loginConnect() {
     if (!resp.ok) { setLoginStatus('✗ Feil: ' + resp.status, 'var(--red)'); window._pinKey = null; return; }
     var json = await resp.json();
     window._readOnly = !!json.readOnly;
+    loadGuestReads();
     localStorage.setItem('bibliothek_pin', raw);
     var pinEl = document.getElementById('pinInput');
     if (pinEl) pinEl.value = raw;
@@ -32411,6 +32596,7 @@ async function connectPin() {
     if (resp.ok) {
       var json = await resp.json();
       if (json.readOnly) { window._readOnly = true; } else { window._readOnly = false; }
+      loadGuestReads();
       var serverTs = json.updatedAt ? new Date(json.updatedAt).getTime() : 0;
       var localTs = parseInt(localStorage.getItem('bibliothek_ts') || '0');
       if (serverTs > localTs) {
