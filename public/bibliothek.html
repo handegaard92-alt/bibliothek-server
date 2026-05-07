@@ -31400,6 +31400,7 @@ function getFiltered() {
   else if (view === 'done') f = f.filter(b => effectiveStatus(b) === 'done');
   else if (view === 'wishlist') f = f.filter(b => effectiveStatus(b) === 'wishlist');
   else if (view === 'unread') f = f.filter(b => effectiveStatus(b) === 'unread');
+  else f = f.filter(b => effectiveStatus(b) !== 'wishlist'); // alle andre visninger: skjul ønskeliste
   if (genreFilter) f = f.filter(b => b.genre === genreFilter);
   if (seriesFilter) f = f.filter(b => b.series === seriesFilter);
   if (authorFilter) f = f.filter(b => b.author === authorFilter);
@@ -31466,8 +31467,8 @@ function genreBg(b) {
 function render() {
   const filtered = getFiltered();
 
-  // Counts (bruker effectiveStatus så gjester får sine egne tall)
-  document.getElementById('cnt-all').textContent = books.length;
+  // Counts (bruker effectiveStatus så gjester får sine egne tall) — "Alle bøker" ekskluderer ønskeliste
+  document.getElementById('cnt-all').textContent = books.filter(b=>effectiveStatus(b)!=='wishlist').length;
   document.getElementById('cnt-reading').textContent = books.filter(b=>effectiveStatus(b)==='reading').length;
   document.getElementById('cnt-done').textContent = books.filter(b=>effectiveStatus(b)==='done').length;
   document.getElementById('cnt-wishlist').textContent = books.filter(b=>effectiveStatus(b)==='wishlist').length;
@@ -31478,19 +31479,20 @@ function render() {
   if (btnAdd) btnAdd.style.display = window._readOnly ? 'none' : '';
   if (btnBatch) btnBatch.style.display = window._readOnly ? 'none' : '';
 
-  // Stats
+  // Stats — totalen ekskluderer ønskeliste (telles separat i sidemenyen)
+  const ownedBooks = books.filter(b => effectiveStatus(b) !== 'wishlist');
   const reading = books.filter(b=>effectiveStatus(b)==='reading').length;
   const done = books.filter(b=>effectiveStatus(b)==='done').length;
   const wish = books.filter(b=>effectiveStatus(b)==='wishlist').length;
-  const withFile = books.filter(function(b){return b.fileData||b.r2Key;}).length;
+  const withFile = ownedBooks.filter(function(b){return b.fileData||b.r2Key;}).length;
   const totalLabel = window._readOnly ? 'Bøker (eier)' : 'Bøker totalt';
   const readingLabel = window._readOnly ? 'Du leser nå' : 'Leser nå';
   const doneLabel = window._readOnly ? 'Du har lest' : 'Fullført';
   const fourthBlock = window._readOnly
-    ? '<div class="stat"><div class="stat-v">'+(books.length-done)+'</div><div class="stat-l">Du kan lese</div></div>'
+    ? '<div class="stat"><div class="stat-v">'+(ownedBooks.length-done)+'</div><div class="stat-l">Du kan lese</div></div>'
     : '<div class="stat"><div class="stat-v">'+withFile+'</div><div class="stat-l">Filer lastet opp</div></div>';
   document.getElementById('statsRow').innerHTML = `
-    <div class="stat"><div class="stat-v">${books.length}</div><div class="stat-l">${totalLabel}</div></div>
+    <div class="stat"><div class="stat-v">${ownedBooks.length}</div><div class="stat-l">${totalLabel}</div></div>
     <div class="stat"><div class="stat-v">${reading}</div><div class="stat-l">${readingLabel}</div></div>
     <div class="stat"><div class="stat-v">${done}</div><div class="stat-l">${doneLabel}</div></div>
     ${fourthBlock}
@@ -31521,9 +31523,13 @@ function render() {
   } else { hero.innerHTML = ''; }
 
   // Pills – sjanger, serie og forfatter
-  const genres   = [...new Set(books.map(b=>b.genre).filter(Boolean))].sort();
-  const allSeries = [...new Set(books.map(b=>b.series).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'no'));
-  const authors  = [...new Set(books.map(b=>b.author).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'no'));
+  // Pills bygges fra bøker som hører til gjeldende visning (skjul ønskeliste i alle andre)
+  const pillBase = view === 'wishlist'
+    ? books.filter(b => effectiveStatus(b) === 'wishlist')
+    : books.filter(b => effectiveStatus(b) !== 'wishlist');
+  const genres   = [...new Set(pillBase.map(b=>b.genre).filter(Boolean))].sort();
+  const allSeries = [...new Set(pillBase.map(b=>b.series).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'no'));
+  const authors  = [...new Set(pillBase.map(b=>b.author).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'no'));
 
   const anyFilter = genreFilter || seriesFilter || authorFilter;
   let pillsHtml = `<div class="pills-row">`;
