@@ -342,16 +342,24 @@ app.post('/ai-chat-stream', async (req, res) => {
       return;
     }
 
-    // Pipe upstream SSE bytes til klient med en gang
-    upstream.body.on('data', chunk => {
-      try { res.write(chunk); } catch(_) {}
-    });
-    upstream.body.on('end', () => res.end());
-    upstream.body.on('error', e => {
+    // upstream.body er Web ReadableStream i Node 18+ — bruk getReader-loop
+    const reader = upstream.body.getReader();
+    let aborted = false;
+    req.on('close', () => { aborted = true; try { reader.cancel(); } catch(_) {} });
+
+    try {
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        if (aborted) break;
+        res.write(Buffer.from(value));
+        if (typeof res.flush === 'function') res.flush();
+      }
+    } catch (e) {
       try { res.write('event: error\ndata: ' + JSON.stringify({ error: e.message }) + '\n\n'); } catch(_) {}
+    } finally {
       res.end();
-    });
-    req.on('close', () => { try { upstream.body.destroy(); } catch(_) {} });
+    }
   } catch (err) {
     try {
       res.write('event: error\ndata: ' + JSON.stringify({ error: err.message }) + '\n\n');
