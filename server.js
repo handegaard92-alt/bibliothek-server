@@ -150,10 +150,27 @@ async function loadLibrary(key) {
 
 async function saveLibrary(key, books, updatedAt) {
   if (!r2) return;
+  const body = JSON.stringify({ books, updatedAt });
   await r2.send(new PutObjectCommand({
     Bucket: BUCKET, Key: `${key}/library.json`,
-    Body: JSON.stringify({ books, updatedAt }), ContentType: 'application/json',
+    Body: body, ContentType: 'application/json',
   })).catch(e => console.warn('R2 library save failed:', e.message));
+  // Daglig snapshot (skriver bare hvis dagens ikke finnes — én pr. dag)
+  try {
+    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const snapKey = `${key}/snapshots/library-${today}.json`;
+    let exists = false;
+    try {
+      await r2.send(new GetObjectCommand({ Bucket: BUCKET, Key: snapKey }));
+      exists = true;
+    } catch(_) {}
+    if (!exists) {
+      await r2.send(new PutObjectCommand({
+        Bucket: BUCKET, Key: snapKey,
+        Body: body, ContentType: 'application/json',
+      }));
+    }
+  } catch(e) { console.warn('snapshot failed:', e.message); }
 }
 
 app.get('/library/:pin', async (req, res) => {
@@ -179,12 +196,81 @@ app.get('/library/:pin', async (req, res) => {
 
 app.put('/library/:pin', async (req, res) => {
   const key = req.params.pin;
-  const { books } = req.body;
+  const { books, force } = req.body;
   if (!Array.isArray(books)) return res.status(400).json({ ok: false, error: 'books must be array' });
+  // Beskyttelse: avvis tom oppdatering hvis det allerede ligger bøker lagret
+  if (books.length === 0 && !force) {
+    let existing = pinStore.get(key);
+    if (!existing) existing = await loadLibrary(key);
+    const existingCount = existing?.books?.length || 0;
+    if (existingCount > 0) {
+      return res.status(409).json({
+        ok: false, error: 'refusing_empty_overwrite',
+        message: `Avviser tom lagring — eksisterende bibliotek har ${existingCount} bøker. Send force=true for å overskrive.`,
+        existingCount,
+      });
+    }
+  }
+  // Beskyttelse: advar hvis bok-antall faller drastisk (50%+)
+  if (!force && books.length > 0) {
+    let existing = pinStore.get(key);
+    if (!existing) existing = await loadLibrary(key);
+    const existingCount = existing?.books?.length || 0;
+    if (existingCount >= 5 && books.length < existingCount / 2) {
+      return res.status(409).json({
+        ok: false, error: 'refusing_drastic_shrink',
+        message: `Avviser stor reduksjon (${existingCount} → ${books.length}). Send force=true for å overskrive.`,
+        existingCount, newCount: books.length,
+      });
+    }
+  }
   const updatedAt = new Date().toISOString();
   pinStore.set(key, { books, updatedAt });
   await saveLibrary(key, books, updatedAt);
   res.json({ ok: true, updatedAt });
+});
+
+// List backups for a PIN
+app.get('/backups/:pin', async (req, res) => {
+  if (!r2) return res.status(503).json({ ok: false, error: 'R2 not configured' });
+  const key = req.params.pin;
+  const { ListObjectsV2Command } = require('@aws-sdk/client-s3');
+  try {
+    const list = await r2.send(new ListObjectsV2Command({
+      Bucket: BUCKET, Prefix: `${key}/snapshots/`, MaxKeys: 100,
+    }));
+    const items = (list.Contents || []).map(o => ({
+      key: o.Key,
+      date: o.Key.match(/library-(\d{4}-\d{2}-\d{2})\.json$/)?.[1] || null,
+      size: o.Size,
+      updatedAt: o.LastModified,
+    })).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    res.json({ ok: true, backups: items });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// Restore a backup as the active library
+app.post('/library/:pin/restore', async (req, res) => {
+  if (!r2) return res.status(503).json({ ok: false, error: 'R2 not configured' });
+  const key = req.params.pin;
+  const { snapshotKey } = req.body;
+  if (!snapshotKey || !snapshotKey.startsWith(`${key}/snapshots/`)) {
+    return res.status(400).json({ ok: false, error: 'invalid snapshotKey' });
+  }
+  try {
+    const data = await r2.send(new GetObjectCommand({ Bucket: BUCKET, Key: snapshotKey }));
+    const chunks = [];
+    for await (const chunk of data.Body) chunks.push(chunk);
+    const snap = JSON.parse(Buffer.concat(chunks).toString());
+    const updatedAt = new Date().toISOString();
+    pinStore.set(key, { books: snap.books || [], updatedAt });
+    await saveLibrary(key, snap.books || [], updatedAt);
+    res.json({ ok: true, restored: (snap.books || []).length, updatedAt });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
 });
 
 // R2 File upload - lagre epub permanent

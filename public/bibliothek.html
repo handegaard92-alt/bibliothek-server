@@ -29150,6 +29150,10 @@ font-family: 'Source Sans Pro'
         <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
         Eksport CSV
       </div>
+      <div class="nav-item" onclick="openBackupModal()">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9"/><path d="M3 4v5h5"/><circle cx="12" cy="12" r="2"/></svg>
+        Sikkerhetskopi
+      </div>
       <div class="nav-item" onclick="openKindleDeviceModal()">
         <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2v-4M9 21H5a2 2 0 01-2-2v-4m0 0h18"></path></svg>
         Kindle-enheter
@@ -29594,6 +29598,25 @@ font-family: 'Source Sans Pro'
 <!-- Cover zoom -->
 <div class="backdrop" id="coverZoomModal" style="cursor:zoom-out;" onclick="closeCoverZoom()">
   <img id="coverZoomImg" class="cover-zoom-img" alt="">
+</div>
+
+<!-- Backup / gjenopprett -->
+<div class="backdrop" id="backupModal" onclick="if(event.target===this)closeBackupModal()">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-hdr">
+      <h2>Sikkerhetskopi</h2>
+      <button class="modal-close" onclick="closeBackupModal()">✕</button>
+    </div>
+    <div style="margin-bottom:18px;">
+      <button class="btn-save" onclick="downloadBackup()" style="width:100%;margin-bottom:8px;">⬇ Last ned JSON-sikkerhetskopi nå</button>
+      <button class="btn-cancel" onclick="document.getElementById('restoreFileInput').click()" style="width:100%;">⬆ Gjenopprett fra JSON-fil</button>
+      <input type="file" accept=".json" id="restoreFileInput" style="display:none" onchange="restoreFromFile(this)">
+    </div>
+    <div style="border-top:1px solid var(--border);padding-top:14px;">
+      <div style="font-size:13px;color:var(--muted);margin-bottom:8px;">Server-snapshots (én pr. dag, holdes 60 dager):</div>
+      <div id="backupList" style="max-height:300px;overflow-y:auto;font-size:13px;">Laster…</div>
+    </div>
+  </div>
 </div>
 
 <!-- Generisk bekreftelsesdialog (brukes for duplikater m.m.) -->
@@ -32211,6 +32234,121 @@ function renderStatsView() {
   grid.style.display = 'block';
 }
 
+// ── BACKUP / RESTORE ──
+async function openBackupModal() {
+  document.getElementById('backupModal').classList.add('open');
+  const listEl = document.getElementById('backupList');
+  listEl.textContent = 'Laster…';
+  const server = getServerUrl();
+  if (!server || !window._pinKey) { listEl.innerHTML = '<em style="color:var(--muted2);">Trenger server-URL og innlogget PIN</em>'; return; }
+  try {
+    const r = await fetch(server + '/backups/' + encodeURIComponent(window._pinKey));
+    const j = await r.json();
+    if (!j.ok || !j.backups?.length) { listEl.innerHTML = '<em style="color:var(--muted2);">Ingen snapshots ennå (lages automatisk når du gjør endringer)</em>'; return; }
+    listEl.innerHTML = j.backups.map(b => {
+      const date = b.date || (b.updatedAt ? new Date(b.updatedAt).toISOString().slice(0,10) : '?');
+      const sizeKb = b.size ? (b.size/1024).toFixed(1) + ' KB' : '';
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
+        <div><strong>${date}</strong> <span style="color:var(--muted);font-size:11.5px;">${sizeKb}</span></div>
+        <button class="btn-cancel" style="font-size:12px;padding:5px 10px;" onclick="restoreFromSnapshot('${b.key.replace(/'/g,"\\'")}', '${date}')">Gjenopprett</button>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    listEl.innerHTML = '<em style="color:var(--red);">Feil: ' + (e.message || e) + '</em>';
+  }
+}
+function closeBackupModal() {
+  document.getElementById('backupModal').classList.remove('open');
+}
+function downloadBackup() {
+  const blob = new Blob([JSON.stringify({
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    pinHash: window._pinKey || null,
+    books,
+    kindleDevices,
+  }, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'bibliothek-backup-' + new Date().toISOString().slice(0,10) + '.json';
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 0);
+  showToast('💾 Sikkerhetskopi lastet ned');
+}
+async function restoreFromFile(input) {
+  const f = input.files?.[0];
+  if (!f) return;
+  let data;
+  try { data = JSON.parse(await f.text()); } catch(e) { showToast('⚠️ Ugyldig JSON-fil'); return; }
+  const incoming = Array.isArray(data.books) ? data.books : (Array.isArray(data) ? data : null);
+  if (!incoming) { showToast('⚠️ Fant ingen books-array i filen'); return; }
+  const choice = await askConfirm({
+    title: 'Gjenopprett fra fil',
+    body: 'Filen inneholder ' + incoming.length + ' bok' + (incoming.length !== 1 ? 'er' : '') + '. Du har akkurat nå ' + books.length + ' bok' + (books.length !== 1 ? 'er' : '') + ' lokalt.\n\nVil du erstatte bibliotek (lokalt + server) med innholdet i filen?',
+    options: [
+      { key: 'replace', label: '🔁 Erstatt bibliotek med fil-innholdet', primary: true },
+      { key: 'cancel',  label: 'Avbryt' },
+    ],
+  });
+  if (choice !== 'replace') { input.value = ''; return; }
+  books = incoming;
+  if (Array.isArray(data.kindleDevices)) {
+    kindleDevices = data.kindleDevices;
+    await saveKindleDevices();
+  }
+  // saveBooks pusher til server (med force=true for å bypass beskyttelse)
+  try {
+    await storageSet(STORAGE_KEY, JSON.stringify(books));
+    if (window._pinKey && !window._readOnly) {
+      const server = getServerUrl();
+      if (server) {
+        await fetch(server + '/library/' + encodeURIComponent(window._pinKey), {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ books, force: true }),
+        });
+      }
+    }
+  } catch(e) { console.warn('restore save failed', e); }
+  closeBackupModal();
+  render();
+  showToast('✓ Gjenopprettet ' + books.length + ' bok' + (books.length !== 1 ? 'er' : ''));
+  input.value = '';
+}
+async function restoreFromSnapshot(snapshotKey, date) {
+  const server = getServerUrl();
+  if (!server || !window._pinKey) { showToast('⚠️ Trenger server + PIN'); return; }
+  const choice = await askConfirm({
+    title: 'Gjenopprett snapshot fra ' + date,
+    body: 'Vil du erstatte gjeldende bibliotek med snapshot fra ' + date + '? Dette vil overskrive både server og lokal kopi.',
+    options: [
+      { key: 'restore', label: '🔁 Gjenopprett snapshot', primary: true },
+      { key: 'cancel',  label: 'Avbryt' },
+    ],
+  });
+  if (choice !== 'restore') return;
+  try {
+    const r = await fetch(server + '/library/' + encodeURIComponent(window._pinKey) + '/restore', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ snapshotKey }),
+    });
+    const j = await r.json();
+    if (!j.ok) throw new Error(j.error || 'Feil');
+    // Reload books fra server
+    const r2 = await fetch(server + '/library/' + encodeURIComponent(window._pinKey));
+    const j2 = await r2.json();
+    if (j2.books) {
+      books = j2.books;
+      await storageSet(STORAGE_KEY, JSON.stringify(books));
+    }
+    closeBackupModal();
+    render();
+    showToast('✓ Gjenopprettet ' + (j.restored || books.length) + ' bok' + (j.restored !== 1 ? 'er' : '') + ' fra ' + date);
+  } catch(e) {
+    showToast('⚠️ Feil: ' + (e.message || e));
+  }
+}
+
 // ── EXPORT ──
 function exportLibrary() {
   const rows = [['Tittel','Forfatter','Sjanger','År','Status','Fremgang','Karakter','Forlag','ISBN']];
@@ -32669,10 +32807,41 @@ async function pushToPin() {
     return o;
   });
   try {
-    await fetch(server + '/library/' + encodeURIComponent(key), {
+    const r = await fetch(server + '/library/' + encodeURIComponent(key), {
       method: 'PUT', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ books: slim, updatedAt: Date.now() })
     });
+    if (r.status === 409) {
+      // Server avviste skriving — sannsynlig empty/drastic-shrink-beskyttelse
+      const j = await r.json().catch(() => ({}));
+      console.warn('pushToPin avvist av server:', j);
+      const choice = await askConfirm({
+        title: 'Server avviste lagring',
+        body: (j.message || 'Endringen virket mistenkelig (mange færre bøker enn tidligere).') + '\n\nDette er en sikkerhetsmekanisme mot at all data forsvinner ved en feil.\n\nHvis du faktisk har slettet bøkene med vilje: bekreft for å overskrive serveren.',
+        options: [
+          { key: 'force',  label: '⚠️ Ja, overskriv likevel', danger: true },
+          { key: 'cancel', label: 'Avbryt — behold serverens versjon' },
+        ],
+      });
+      if (choice === 'force') {
+        await fetch(server + '/library/' + encodeURIComponent(key), {
+          method: 'PUT', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ books: slim, updatedAt: Date.now(), force: true })
+        });
+      } else {
+        // Hent serverens versjon tilbake til lokal
+        try {
+          const r2 = await fetch(server + '/library/' + encodeURIComponent(key));
+          const j2 = await r2.json();
+          if (Array.isArray(j2.books)) {
+            books = j2.books;
+            await storageSet(STORAGE_KEY, JSON.stringify(books));
+            render();
+            showToast('↩ Hentet tilbake serverens versjon');
+          }
+        } catch(_) {}
+      }
+    }
     localStorage.setItem('bibliothek_ts', String(Date.now()));
   } catch(e) { console.warn('pushToPin failed:', e); }
 }
