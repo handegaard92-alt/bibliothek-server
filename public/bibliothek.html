@@ -29138,6 +29138,15 @@ font-family: 'Source Sans Pro'
     </div>
     <div class="nav-group">
       <div class="nav-label">Verktøy</div>
+      <div class="nav-item" onclick="pickRandomBook()">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1" fill="currentColor"/><circle cx="15.5" cy="8.5" r="1" fill="currentColor"/><circle cx="8.5" cy="15.5" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>
+        Tilfeldig bok 🎲
+      </div>
+      <div class="nav-item" onclick="openReadingGoalModal()">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>
+        Lesemål 🎯
+        <span id="goalProgressMini" style="margin-left:auto;font-size:11px;color:var(--gold);"></span>
+      </div>
       <div class="nav-item" data-view="stats" onclick="setView(this,'stats')">
         <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
         Statistikk
@@ -29598,6 +29607,23 @@ font-family: 'Source Sans Pro'
 <!-- Cover zoom -->
 <div class="backdrop" id="coverZoomModal" style="cursor:zoom-out;" onclick="closeCoverZoom()">
   <img id="coverZoomImg" class="cover-zoom-img" alt="">
+</div>
+
+<!-- Lesemål -->
+<div class="backdrop" id="goalModal" onclick="if(event.target===this)closeReadingGoalModal()">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-hdr"><h2>Lesemål 🎯</h2><button class="modal-close" onclick="closeReadingGoalModal()">✕</button></div>
+    <div class="fg">
+      <label class="fl">Mål for året</label>
+      <input class="fi" type="number" id="goalInput" min="0" max="500" placeholder="F.eks. 30">
+      <div style="font-size:11.5px;color:var(--muted);margin-top:6px;">Sett til 0 for å skru av</div>
+    </div>
+    <div id="goalSummary" style="background:var(--surface2);border-radius:10px;padding:14px;margin:14px 0;"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button class="btn-cancel" onclick="closeReadingGoalModal()">Avbryt</button>
+      <button class="btn-save" onclick="saveReadingGoal()">Lagre</button>
+    </div>
+  </div>
 </div>
 
 <!-- Backup / gjenopprett -->
@@ -30805,9 +30831,11 @@ function pickAction(action) {
   else if (action === 'progress') openQuickProgress(id);
   else if (action === 'guest-done') {
     setGuestRead(id, { status: 'done', progress: 100, finishedDate: new Date().toISOString().slice(0,10) });
+    logReadingActivity();
     render(); showToast('✓ Markert som lest');
   } else if (action === 'guest-reading') {
     setGuestRead(id, { status: 'reading' });
+    logReadingActivity();
     render(); showToast('✓ Markert som leser nå');
   } else if (action === 'guest-unread') {
     setGuestRead(id, { status: 'unread', progress: 0, finishedDate: null });
@@ -30954,6 +30982,7 @@ async function saveQuickProgress() {
     else if (v > 0) partial.status = 'reading';
     else partial.status = 'unread';
     setGuestRead(id, partial);
+    if (v > 0) logReadingActivity();
     closeQuickProgress();
     render();
     showToast('✓ Fremgang oppdatert (lokalt)');
@@ -30971,6 +31000,7 @@ async function saveQuickProgress() {
   }
   closeQuickProgress();
   try { await saveBooks(); } catch(e) { console.warn('saveBooks failed', e); }
+  if (v > 0) logReadingActivity();
   render();
   showToast('✓ Fremgang oppdatert');
 }
@@ -31208,6 +31238,7 @@ async function saveBook() {
     var _fileDataCopy = pendingFileData ? Object.assign({}, pendingFileData) : null;
     if (_fileDataCopy && pendingCoverUrl && pendingCoverUrl.startsWith('data:')) _fileDataCopy.coverDataUrl = pendingCoverUrl;
     var _bidCopy = editingId !== null ? editingId : books[books.length-1].id;
+    if (data.status === 'done' || data.status === 'reading') logReadingActivity();
     closeModal();
     render();
     localStorage.setItem('bibliothek_ts', String(Date.now()));
@@ -31489,6 +31520,7 @@ function genreBg(b) {
 
 function render() {
   const filtered = getFiltered();
+  updateGoalMini();
 
   // Counts (bruker effectiveStatus så gjester får sine egne tall) — "Alle bøker" ekskluderer ønskeliste
   document.getElementById('cnt-all').textContent = books.filter(b=>effectiveStatus(b)!=='wishlist').length;
@@ -32232,6 +32264,103 @@ function renderStatsView() {
     ${renderReadingTimeline()}
   `;
   grid.style.display = 'block';
+}
+
+// ── TILFELDIG BOK ──
+function pickRandomBook() {
+  const candidates = books.filter(b => effectiveStatus(b) === 'unread');
+  if (!candidates.length) {
+    showToast('🎲 Ingen uleste bøker — på tide å fylle på!');
+    return;
+  }
+  const pick = candidates[Math.floor(Math.random() * candidates.length)];
+  closeSidebar();
+  openBookActions(pick.id);
+}
+
+// ── LESEMÅL + STREAK ──
+function goalKey() { return 'readingGoal_' + (window._pinKey || 'local'); }
+function activityKey() { return 'readingActivity_' + (window._pinKey || 'local'); }
+function getReadingGoal() {
+  return parseInt(localStorage.getItem(goalKey()) || '0') || 0;
+}
+function setReadingGoal(n) {
+  localStorage.setItem(goalKey(), String(n));
+  updateGoalMini();
+}
+function getReadingActivity() {
+  try { return JSON.parse(localStorage.getItem(activityKey()) || '{}'); }
+  catch(_) { return {}; }
+}
+function logReadingActivity() {
+  // Kalles når en bok markeres som lest eller fremgang oppdateres
+  const today = new Date().toISOString().slice(0, 10);
+  const map = getReadingActivity();
+  map[today] = (map[today] || 0) + 1;
+  localStorage.setItem(activityKey(), JSON.stringify(map));
+  updateGoalMini();
+}
+function calcStreak() {
+  const map = getReadingActivity();
+  let streak = 0;
+  const d = new Date();
+  // Tillat at man enten leste i dag eller i går (slik at man ikke mister streaken før klokken passerer midnatt)
+  const today = d.toISOString().slice(0,10);
+  if (!map[today]) {
+    d.setDate(d.getDate() - 1);
+    if (!map[d.toISOString().slice(0,10)]) return 0;
+  }
+  while (true) {
+    const k = d.toISOString().slice(0, 10);
+    if (map[k]) { streak++; d.setDate(d.getDate() - 1); }
+    else break;
+  }
+  return streak;
+}
+function booksDoneThisYear() {
+  const yr = new Date().getFullYear();
+  return books.filter(b => {
+    if (effectiveStatus(b) !== 'done') return false;
+    const fd = effectiveFinishedDate(b);
+    return fd && fd.startsWith(String(yr));
+  }).length;
+}
+function updateGoalMini() {
+  const el = document.getElementById('goalProgressMini');
+  if (!el) return;
+  const goal = getReadingGoal();
+  if (!goal) { el.textContent = ''; return; }
+  el.textContent = booksDoneThisYear() + '/' + goal;
+}
+function openReadingGoalModal() {
+  closeSidebar();
+  const goal = getReadingGoal();
+  document.getElementById('goalInput').value = goal || '';
+  const done = booksDoneThisYear();
+  const streak = calcStreak();
+  const yr = new Date().getFullYear();
+  const pct = goal ? Math.min(100, Math.round(done/goal*100)) : 0;
+  document.getElementById('goalSummary').innerHTML = `
+    <div style="font-size:13px;color:var(--muted);margin-bottom:8px;">${yr}-status</div>
+    <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:10px;">
+      <div style="font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:700;color:var(--gold);">${done}</div>
+      <div style="font-size:13px;color:var(--muted);">lest${goal?(' av ' + goal):''}</div>
+    </div>
+    ${goal?`<div class="prog-bar" style="margin-bottom:14px;"><div class="prog-fill" style="width:${pct}%"></div></div>`:''}
+    <div style="display:flex;justify-content:space-between;font-size:13px;">
+      <span>🔥 Lese-streak</span><span style="color:var(--gold);font-weight:600;">${streak} dag${streak!==1?'er':''}</span>
+    </div>
+  `;
+  document.getElementById('goalModal').classList.add('open');
+}
+function closeReadingGoalModal() {
+  document.getElementById('goalModal').classList.remove('open');
+}
+function saveReadingGoal() {
+  const v = parseInt(document.getElementById('goalInput').value) || 0;
+  setReadingGoal(Math.max(0, Math.min(500, v)));
+  closeReadingGoalModal();
+  showToast(v > 0 ? '🎯 Lesemål satt: ' + v + ' bøker' : '🎯 Lesemål skrudd av');
 }
 
 // ── BACKUP / RESTORE ──
