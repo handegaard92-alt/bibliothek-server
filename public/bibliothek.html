@@ -32553,22 +32553,69 @@ async function sendRecMessage(preset) {
       const server = getServerUrl();
       if (!server) throw new Error('no_server');
 
-      const res = await fetch(server + '/ai-chat', {
+      // Streaming først — viser svaret mens det genereres for raskere oppfattet hastighet
+      const res = await fetch(server + '/ai-chat-stream', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
         body: JSON.stringify({ systemPrompt, messages: apiMessages })
       });
 
-      let data;
-      try { data = await res.json(); } catch(e) { throw new Error('Ugyldig svar fra server'); }
-
-      hideTyping();
-
-      if (!res.ok || !data.ok)
-        throw new Error(data?.error || 'Serverfeil ' + res.status);
-
-      if (!data.text) throw new Error('empty_response');
-      addRecMessage('ai', data.text);
+      if (!res.ok || !res.body) {
+        // Fallback til non-streaming
+        const fb = await fetch(server + '/ai-chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ systemPrompt, messages: apiMessages })
+        });
+        const data = await fb.json();
+        hideTyping();
+        if (!fb.ok || !data.ok) throw new Error(data?.error || 'Serverfeil ' + fb.status);
+        if (!data.text) throw new Error('empty_response');
+        addRecMessage('ai', data.text);
+      } else {
+        // Parse SSE-strømmen og oppdater bobla live
+        hideTyping();
+        const aiIdx = recMessages.length;
+        addRecMessage('ai', '');
+        const reader  = res.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let buf = '';
+        let acc = '';
+        let streamErr = null;
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          // Splitt på SSE-meldingsgrense
+          const events = buf.split('\n\n');
+          buf = events.pop(); // siste kan være ufullstendig
+          for (const ev of events) {
+            const lines = ev.split('\n');
+            let evtName = 'message';
+            let dataLines = [];
+            for (const line of lines) {
+              if (line.startsWith('event:')) evtName = line.slice(6).trim();
+              else if (line.startsWith('data:')) dataLines.push(line.slice(5).trim());
+            }
+            const dataStr = dataLines.join('\n');
+            if (!dataStr) continue;
+            if (evtName === 'error') { streamErr = dataStr; continue; }
+            try {
+              const obj = JSON.parse(dataStr);
+              // Anthropic SSE: content_block_delta -> {delta: {type:'text_delta', text:'...'}}
+              if (obj.type === 'content_block_delta' && obj.delta?.type === 'text_delta') {
+                acc += obj.delta.text || '';
+                recMessages[aiIdx] = { role: 'ai', text: acc };
+                renderRecMessages();
+              } else if (obj.type === 'message_stop') {
+                // ferdig
+              }
+            } catch(_) {}
+          }
+        }
+        if (streamErr) throw new Error('Streaming-feil: ' + streamErr.slice(0, 120));
+        if (!acc) throw new Error('empty_response');
+      }
 
     } catch(e) {
       hideTyping();

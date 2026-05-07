@@ -292,7 +292,7 @@ app.post('/send-to-kindle', upload.single('file'), async (req, res) => {
   }
 });
 
-// AI chat proxy
+// AI chat proxy (non-streaming fallback)
 app.post('/ai-chat', async (req, res) => {
   try {
     const { systemPrompt, messages } = req.body;
@@ -300,7 +300,7 @@ app.post('/ai-chat', async (req, res) => {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-5', max_tokens: 1024, system: systemPrompt, messages })
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 1024, system: systemPrompt, messages })
     });
     const data = await response.json();
     if (!response.ok) return res.status(response.status).json({ ok: false, error: data.error?.message || 'API error' });
@@ -309,6 +309,54 @@ app.post('/ai-chat', async (req, res) => {
     res.json({ ok: true, text });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// AI chat — streaming versjon (Server-Sent Events) for raskere oppfattet hastighet
+app.post('/ai-chat-stream', async (req, res) => {
+  try {
+    const { systemPrompt, messages } = req.body;
+    if (!process.env.ANTHROPIC_API_KEY) return res.status(503).json({ ok: false, error: 'No API key' });
+    res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+    res.flushHeaders?.();
+
+    const upstream = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1024,
+        system: systemPrompt,
+        messages,
+        stream: true
+      })
+    });
+
+    if (!upstream.ok) {
+      const errBody = await upstream.text().catch(() => '');
+      res.write('event: error\ndata: ' + JSON.stringify({ status: upstream.status, body: errBody.slice(0, 500) }) + '\n\n');
+      res.end();
+      return;
+    }
+
+    // Pipe upstream SSE bytes til klient med en gang
+    upstream.body.on('data', chunk => {
+      try { res.write(chunk); } catch(_) {}
+    });
+    upstream.body.on('end', () => res.end());
+    upstream.body.on('error', e => {
+      try { res.write('event: error\ndata: ' + JSON.stringify({ error: e.message }) + '\n\n'); } catch(_) {}
+      res.end();
+    });
+    req.on('close', () => { try { upstream.body.destroy(); } catch(_) {} });
+  } catch (err) {
+    try {
+      res.write('event: error\ndata: ' + JSON.stringify({ error: err.message }) + '\n\n');
+    } catch(_) {}
+    res.end();
   }
 });
 
