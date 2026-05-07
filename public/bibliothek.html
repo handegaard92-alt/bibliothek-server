@@ -313,19 +313,39 @@ body {
 /* Genre pills */
 .pills { display:flex; gap:7px; flex-wrap:wrap; margin-bottom:24px; }
 .pills-row { display:flex; flex-direction:column; gap:6px; }
+.filter-mobile-btn { display: none; }
 @media (max-width: 700px) {
-  /* På mobil: hver rad scroller horisontalt i stedet for å bryte til mange linjer */
-  .pills-row > div {
-    flex-wrap: nowrap !important;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    padding-bottom: 4px;
-    scrollbar-width: none;
+  /* På mobil: skjul vanlige piller helt og vis en kompakt "Filtrer"-knapp */
+  .pills-row { display: none !important; }
+  .filter-mobile-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 999px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
   }
-  .pills-row > div::-webkit-scrollbar { display: none; }
-  .pills-row .pill { flex-shrink: 0; white-space: nowrap; }
-  .pills-row .filter-label { flex-shrink: 0; white-space: nowrap; }
-  .pills { margin-bottom: 14px; }
+  .filter-mobile-btn.has-filter {
+    background: var(--gold-dim);
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+  .filter-mobile-chip {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 2px 8px;
+    background: var(--gold);
+    color: #0a0a0c;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .pills { margin-bottom: 14px; gap: 6px; flex-wrap: wrap; }
 }
 .filter-label { font-size:10px; font-weight:600; letter-spacing:0.15em; text-transform:uppercase; color:var(--muted2); padding:0 4px; }
 .pill {
@@ -29660,6 +29680,17 @@ font-family: 'Source Sans Pro'
   <img id="coverZoomImg" class="cover-zoom-img" alt="">
 </div>
 
+<!-- Filter-modal for mobil -->
+<div class="backdrop" id="filterModal" onclick="if(event.target===this)closeFilterModal()">
+  <div class="modal" style="max-width:420px;max-height:85vh;">
+    <div class="modal-hdr">
+      <h2>Filtrer</h2>
+      <button class="modal-close" onclick="closeFilterModal()">✕</button>
+    </div>
+    <div id="filterModalBody"></div>
+  </div>
+</div>
+
 <!-- Sortering popup (anchored under sort-button) -->
 <div id="sortPopup" style="display:none;position:fixed;z-index:400;background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:6px;box-shadow:0 12px 36px rgba(0,0,0,0.5);min-width:180px;font-family:'Outfit',sans-serif;font-size:14px;"></div>
 
@@ -31728,7 +31759,13 @@ function render() {
   const authorsSorted = authors.slice().sort((a,b) => (authorCount[b]||0)-(authorCount[a]||0));
   const COMPACT_LIMIT = 8;
 
-  let pillsHtml = `<div class="pills-row">`;
+  // Mobil-knapp: vises kun under 700px via CSS
+  const activeLabel = seriesFilter || authorFilter || genreFilter;
+  let pillsHtml = `<button class="filter-mobile-btn ${anyFilter?'has-filter':''}" onclick="openFilterModal()">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+    Filtrer${activeLabel ? ` <span class="filter-mobile-chip">${activeLabel}</span>` : ''}
+  </button>`;
+  pillsHtml += `<div class="pills-row">`;
   // Sjanger-rad
   pillsHtml += `<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">`;
   pillsHtml += `<button class="pill ${!anyFilter?'active':''}" onclick="clearFilters()">Alle</button>`;
@@ -32602,6 +32639,49 @@ function renderYearInReview() {
       </div>
     </div>
   </div>`;
+}
+
+// ── FILTER-MODAL (mobil) ──
+function openFilterModal() {
+  const pillBase = view === 'wishlist'
+    ? books.filter(b => effectiveStatus(b) === 'wishlist')
+    : books.filter(b => effectiveStatus(b) !== 'wishlist');
+  const genres = [...new Set(pillBase.map(b=>b.genre).filter(Boolean))].sort();
+  const seriesCount = {}, authorCount = {};
+  pillBase.forEach(b => {
+    if (b.series) seriesCount[b.series] = (seriesCount[b.series]||0)+1;
+    if (b.author) authorCount[b.author] = (authorCount[b.author]||0)+1;
+  });
+  const seriesAll = Object.keys(seriesCount).sort((a,b) => seriesCount[b]-seriesCount[a]);
+  const authorsAll = Object.keys(authorCount).sort((a,b) => authorCount[b]-authorCount[a]);
+
+  const section = (title, items, current, onClick, formatter) => {
+    if (!items.length) return '';
+    return `<div style="margin-bottom:18px;">
+      <div style="font-size:11px;color:var(--muted);letter-spacing:0.12em;text-transform:uppercase;font-weight:600;margin-bottom:8px;">${title}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        ${items.map(v => {
+          const active = current === v;
+          const lbl = formatter ? formatter(v) : v;
+          return `<button class="pill ${active?'active':''}" onclick="${onClick}('${String(v).replace(/'/g,"\\'")}');closeFilterModal()">${lbl}</button>`;
+        }).join('')}
+      </div>
+    </div>`;
+  };
+
+  const body = document.getElementById('filterModalBody');
+  body.innerHTML =
+    `<div style="margin-bottom:14px;">
+      <button class="pill ${!genreFilter && !seriesFilter && !authorFilter?'active':''}" onclick="clearFilters();closeFilterModal()">Alle bøker</button>
+    </div>` +
+    section('Sjanger', genres, genreFilter, 'setGenre') +
+    section('Serie', seriesAll, seriesFilter, 'setSeries', s => '📚 ' + s + ' (' + seriesCount[s] + ')') +
+    section('Forfatter', authorsAll, authorFilter, 'setAuthor', a => '✍️ ' + a + ' (' + authorCount[a] + ')');
+
+  document.getElementById('filterModal').classList.add('open');
+}
+function closeFilterModal() {
+  document.getElementById('filterModal').classList.remove('open');
 }
 
 // ── HENT MANGLENDE OMSLAG ──
