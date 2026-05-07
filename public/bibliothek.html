@@ -29178,8 +29178,31 @@ font-family: 'Source Sans Pro'
       <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg>
       Last opp flere bøker
     </button>
+    <button class="btn-add" onclick="openIsbnScanner()" id="btnScanIsbn" style="margin-top:4px;">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="1"/><path d="M7 6v12M11 6v12M14 6v12M17 6v12"/></svg>
+      Skann ISBN
+    </button>
   </div>
 </aside>
+
+<!-- ISBN-scanner modal -->
+<div class="backdrop" id="isbnScanModal" onclick="if(event.target===this)closeIsbnScanner()">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-hdr">
+      <h2>📷 Skann ISBN</h2>
+      <button class="modal-close" onclick="closeIsbnScanner()">✕</button>
+    </div>
+    <div id="isbnScanStatus" style="font-size:13px;color:var(--muted);margin-bottom:10px;">Pek kameraet på strekkoden bak på boken.</div>
+    <div id="isbnScanContainer" style="position:relative;width:100%;aspect-ratio:4/3;background:#000;border-radius:10px;overflow:hidden;"></div>
+    <div style="margin-top:14px;">
+      <label class="fl">Eller skriv inn ISBN manuelt</label>
+      <div style="display:flex;gap:8px;">
+        <input class="fi" id="isbnManualInput" type="text" placeholder="9788234567890" inputmode="numeric" style="flex:1;">
+        <button class="btn-save" onclick="useIsbnManual()" style="white-space:nowrap;">Søk</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- ── MAIN ── -->
 <div class="main">
@@ -32410,6 +32433,141 @@ function renderYearInReview() {
       </div>
     </div>
   </div>`;
+}
+
+// ── #12: ISBN-STREKKODELESER ──
+let _quaggaLoaded = false;
+let _quaggaActive = false;
+async function loadQuagga() {
+  if (_quaggaLoaded || window.Quagga) { _quaggaLoaded = true; return; }
+  await new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/@ericblade/quagga2@1.8.4/dist/quagga.min.js';
+    s.onload = res;
+    s.onerror = () => rej(new Error('Kunne ikke laste skanneren'));
+    document.head.appendChild(s);
+  });
+  _quaggaLoaded = true;
+}
+async function openIsbnScanner() {
+  if (window._readOnly) return;
+  closeSidebar();
+  document.getElementById('isbnScanStatus').textContent = 'Laster skanner…';
+  document.getElementById('isbnScanContainer').innerHTML = '';
+  document.getElementById('isbnManualInput').value = '';
+  document.getElementById('isbnScanModal').classList.add('open');
+
+  if (!navigator.mediaDevices?.getUserMedia) {
+    document.getElementById('isbnScanStatus').textContent = '⚠️ Kamera ikke støttet i denne nettleseren — bruk manuell ISBN nedenfor.';
+    return;
+  }
+
+  try {
+    await loadQuagga();
+  } catch(e) {
+    document.getElementById('isbnScanStatus').textContent = '⚠️ ' + e.message + ' — bruk manuell ISBN.';
+    return;
+  }
+
+  document.getElementById('isbnScanStatus').textContent = 'Pek kameraet på strekkoden…';
+  try {
+    Quagga.init({
+      inputStream: {
+        type: 'LiveStream',
+        target: document.getElementById('isbnScanContainer'),
+        constraints: {
+          facingMode: 'environment',
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+      },
+      decoder: { readers: ['ean_reader', 'ean_8_reader'] },
+      locate: true,
+    }, (err) => {
+      if (err) {
+        document.getElementById('isbnScanStatus').textContent = '⚠️ Klarte ikke starte kamera: ' + err.message;
+        return;
+      }
+      Quagga.start();
+      _quaggaActive = true;
+    });
+
+    Quagga.onDetected(handleIsbnDetected);
+  } catch(e) {
+    document.getElementById('isbnScanStatus').textContent = '⚠️ Feil: ' + (e.message || e);
+  }
+}
+function handleIsbnDetected(result) {
+  const code = result?.codeResult?.code;
+  if (!code) return;
+  // Filtrer kun gyldige ISBN-formater
+  const clean = code.replace(/[^0-9X]/gi, '');
+  if (clean.length !== 13 && clean.length !== 10) return;
+  if (clean.length === 13 && !clean.startsWith('978') && !clean.startsWith('979')) return;
+  // Stop og bruk
+  closeIsbnScanner();
+  fillBookFromIsbn(clean);
+}
+function closeIsbnScanner() {
+  document.getElementById('isbnScanModal').classList.remove('open');
+  if (_quaggaActive && window.Quagga) {
+    try { Quagga.offDetected(handleIsbnDetected); } catch(_) {}
+    try { Quagga.stop(); } catch(_) {}
+    _quaggaActive = false;
+  }
+}
+async function useIsbnManual() {
+  const v = document.getElementById('isbnManualInput').value.trim().replace(/[^0-9X]/gi, '');
+  if (!v || (v.length !== 10 && v.length !== 13)) {
+    showToast('⚠️ Ugyldig ISBN');
+    return;
+  }
+  closeIsbnScanner();
+  fillBookFromIsbn(v);
+}
+async function fillBookFromIsbn(isbn) {
+  showToast('📚 Søker ISBN ' + isbn + '…');
+  const info = await fetchBookByISBN(isbn);
+  if (!info?.title) {
+    showToast('⚠️ Fant ikke boken — du må fylle inn manuelt');
+    openAddModal();
+    document.getElementById('fTitle').value = '';
+    pendingFileData = pendingFileData || {};
+    pendingFileData.isbn = isbn;
+    return;
+  }
+  // Sjekk duplikat
+  const dup = findDuplicate({ title: info.title, author: info.authors, isbn });
+  if (dup) {
+    const choice = await askConfirm({
+      title: 'Boken finnes allerede',
+      body: '«' + (dup.title||'') + '» av ' + (dup.author||'?') + ' er allerede i biblioteket.',
+      options: [
+        { key: 'open', label: '👁 Åpne eksisterende', primary: true },
+        { key: 'cancel', label: 'Avbryt' },
+      ],
+    });
+    if (choice === 'open') openEditModal(dup.id);
+    return;
+  }
+  openAddModal();
+  document.getElementById('fTitle').value = info.title;
+  document.getElementById('fAuthor').value = info.authors || '';
+  if (info.year) document.getElementById('fYear').value = info.year;
+  if (info.mappedGenre && info.mappedGenre !== 'Annet') document.getElementById('fGenre').value = info.mappedGenre;
+  if (info.coverUrl) {
+    pendingCoverUrl = info.coverUrl;
+    document.getElementById('coverThumb').innerHTML = '<img src="' + info.coverUrl + '" style="width:100%;height:100%;object-fit:cover;border-radius:5px;">';
+    document.getElementById('coverStatus').textContent = 'Omslag funnet ✓';
+    document.getElementById('coverStatus').style.color = 'var(--green)';
+  }
+  pendingFileData = pendingFileData || {};
+  pendingFileData.isbn = isbn;
+  if (info.publisher) pendingFileData.publisher = info.publisher;
+  if (info.desc) pendingFileData.desc = info.desc;
+  // Hent serie
+  autoFillSeries(info.title, info.authors || '');
+  showToast('✓ Hentet info — sjekk og lagre');
 }
 
 // ── AI-HJELPERE ──
