@@ -313,6 +313,20 @@ body {
 /* Genre pills */
 .pills { display:flex; gap:7px; flex-wrap:wrap; margin-bottom:24px; }
 .pills-row { display:flex; flex-direction:column; gap:6px; }
+@media (max-width: 700px) {
+  /* På mobil: hver rad scroller horisontalt i stedet for å bryte til mange linjer */
+  .pills-row > div {
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+  .pills-row > div::-webkit-scrollbar { display: none; }
+  .pills-row .pill { flex-shrink: 0; white-space: nowrap; }
+  .pills-row .filter-label { flex-shrink: 0; white-space: nowrap; }
+  .pills { margin-bottom: 14px; }
+}
 .filter-label { font-size:10px; font-weight:600; letter-spacing:0.15em; text-transform:uppercase; color:var(--muted2); padding:0 4px; }
 .pill {
   padding:5px 15px; border-radius:20px;
@@ -29602,6 +29616,10 @@ font-family: 'Source Sans Pro'
 <!-- Action sheet: Rediger eller Send til Kindle -->
 <div class="backdrop" id="bookActionsModal" onclick="if(event.target===this)closeBookActions()">
   <div class="action-sheet">
+    <div id="asCoverWrap" style="display:none;text-align:center;margin:-8px 0 14px;">
+      <div id="asCoverBadge" style="font-size:11px;color:var(--gold);letter-spacing:0.16em;text-transform:uppercase;font-weight:600;margin-bottom:10px;display:none;">🎲 Tilfeldig valg</div>
+      <img id="asCoverImg" alt="" style="max-width:140px;max-height:210px;border-radius:8px;box-shadow:0 12px 32px rgba(0,0,0,0.5);cursor:zoom-in;" onclick="zoomCoverFromAS(this)">
+    </div>
     <h3 id="asTitle">Hva vil du gjøre?</h3>
     <div class="as-sub" id="asSub"></div>
     <button class="as-btn" id="asProgressBtn" onclick="pickAction('progress')" style="display:none;">
@@ -30850,12 +30868,27 @@ function openAddModal() {
 
 // ── BOOK ACTION SHEET ──
 let pendingActionId = null;
+let _asRandomPick = false;
 function openBookActions(id) {
   const b = books.find(x => x.id === id);
   if (!b) return;
   pendingActionId = id;
   document.getElementById('asTitle').textContent = b.title || 'Bok';
   document.getElementById('asSub').textContent = b.author || '';
+
+  // Cover-bilde øverst (alltid hvis tilgjengelig — viktig spesielt for "Tilfeldig bok")
+  const coverWrap = document.getElementById('asCoverWrap');
+  const coverImg = document.getElementById('asCoverImg');
+  const coverBadge = document.getElementById('asCoverBadge');
+  if (b.coverUrl) {
+    coverImg.src = b.coverUrl;
+    coverImg.alt = b.title || '';
+    coverWrap.style.display = '';
+  } else {
+    coverWrap.style.display = 'none';
+  }
+  coverBadge.style.display = _asRandomPick ? '' : 'none';
+  _asRandomPick = false; // reset etter visning
 
   const hasFile = !!(b.fileData || b.r2Key);
   const kBtn = document.getElementById('asKindleBtn');
@@ -32527,17 +32560,49 @@ function _isLikelyBrokenCover(url) {
   if (/covers\.openlibrary\.org\/b\/isbn\//.test(url) && !/default=false/.test(url)) return true;
   return false;
 }
+// Sjekker faktisk bilde-dimensjon — kjent forlagsplassholder er ofte 120-200 px bred
+async function _isImagePlaceholder(url) {
+  if (!url) return true;
+  return new Promise(resolve => {
+    const img = new Image();
+    let timer = setTimeout(() => resolve(true), 6000); // timeout = behandle som ødelagt
+    img.onload = () => {
+      clearTimeout(timer);
+      const w = img.naturalWidth, h = img.naturalHeight;
+      if (!w || !h) return resolve(true);
+      // For lite til å være ekte cover (kjente plassholdere er ~120x150)
+      if (w < 110 || h < 140) return resolve(true);
+      // Aspekt utenfor "bok"-området (bok: ~0.6-0.8)
+      const ar = w / h;
+      if (ar < 0.4 || ar > 1.2) return resolve(true);
+      resolve(false);
+    };
+    img.onerror = () => { clearTimeout(timer); resolve(true); };
+    img.src = url;
+  });
+}
 async function refreshMissingCovers() {
   if (window._readOnly) { showToast('🔒 Krever eier-PIN'); return; }
   closeSidebar();
-  const candidates = books.filter(b => !b.coverUrl || _isLikelyBrokenCover(b.coverUrl));
+
+  showToast('🔍 Sjekker hvilke omslag som mangler…');
+  // Test hver bok med faktisk bilde-load — fanger forlagsplassholdere som ikke har 404
+  const candidates = [];
+  for (const b of books) {
+    if (!b.coverUrl) { candidates.push(b); continue; }
+    if (_isLikelyBrokenCover(b.coverUrl)) { candidates.push(b); continue; }
+    if (b.coverUrl.startsWith('data:')) continue; // EPUB-cover er pålitelig
+    const isBad = await _isImagePlaceholder(b.coverUrl);
+    if (isBad) candidates.push(b);
+  }
+
   if (!candidates.length) {
-    showToast('✓ Alle bøker har allerede omslag');
+    showToast('✓ Alle bøker har gode omslag');
     return;
   }
   const choice = await askConfirm({
     title: 'Hent manglende omslag',
-    body: candidates.length + ' bok' + (candidates.length !== 1 ? 'er' : '') + ' mangler ordentlig omslag.\n\nDette vil søke Google Books og Open Library for hver bok. Tar typisk 1-2 sekunder per bok.',
+    body: candidates.length + ' bok' + (candidates.length !== 1 ? 'er' : '') + ' har manglende eller dårlige omslag (forlagsplassholder).\n\nSøker Google Books og Open Library for hver bok. Tar typisk 1-2 sekunder per bok.',
     options: [
       { key: 'go', label: '🔎 Start henting', primary: true },
       { key: 'cancel', label: 'Avbryt' },
@@ -32548,16 +32613,19 @@ async function refreshMissingCovers() {
   let done = 0, found = 0;
   for (const b of candidates) {
     done++;
+    let bestUrl = null;
     try {
       const alts = await fetchCover(b.title, b.author || '');
-      if (alts && alts[0]?.url) {
-        b.coverUrl = alts[0].url;
-        found++;
-      } else {
-        // Hvis ingenting funnet, sett null så vi viser fallback-tile
-        b.coverUrl = null;
+      if (alts && alts.length) {
+        // Velg første alternativ som ikke er plassholder
+        for (const a of alts) {
+          const bad = await _isImagePlaceholder(a.url);
+          if (!bad) { bestUrl = a.url; break; }
+        }
       }
-    } catch(_) { b.coverUrl = null; }
+    } catch(_) {}
+    if (bestUrl) { b.coverUrl = bestUrl; found++; }
+    else b.coverUrl = null;
     if (done % 5 === 0) {
       render();
       try { await saveBooks(); } catch(_) {}
@@ -32565,7 +32633,7 @@ async function refreshMissingCovers() {
   }
   render();
   try { await saveBooks(); } catch(_) {}
-  showToast('✓ Ferdig — fant ' + found + ' av ' + candidates.length + ' omslag');
+  showToast('✓ Ferdig — fant ' + found + ' av ' + candidates.length + ' nye omslag');
 }
 
 // ── #12: ISBN-STREKKODELESER ──
@@ -32835,7 +32903,11 @@ function pickRandomBook() {
   }
   const pick = candidates[Math.floor(Math.random() * candidates.length)];
   closeSidebar();
+  _asRandomPick = true;
   openBookActions(pick.id);
+}
+function zoomCoverFromAS(img) {
+  if (img && img.src) showCoverZoom(img.src);
 }
 
 // ── LESEMÅL + STREAK ──
