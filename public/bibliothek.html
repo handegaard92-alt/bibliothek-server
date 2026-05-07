@@ -886,6 +886,16 @@ body {
 }
 .rec-add-wishlist:hover { background:rgba(200,169,110,0.18); border-color:var(--gold); }
 .rec-add-disabled { font-size:12px; opacity:0.6; margin-left:6px; }
+.rec-search-link {
+  display:inline-flex; align-items:center; gap:4px;
+  padding:3px 10px; margin-left:4px;
+  background:transparent; border:1px solid var(--border2);
+  color:var(--text); border-radius:999px;
+  font-family:'Outfit',sans-serif; font-size:11.5px; font-weight:500;
+  text-decoration:none; vertical-align:middle;
+  transition:border-color 0.15s, color 0.15s;
+}
+.rec-search-link:hover { border-color:var(--gold); color:var(--gold); }
 
 /* ── QUICK PROGRESS EDIT ── */
 .prog-quick-clickable {
@@ -32152,8 +32162,9 @@ function buildLibraryContext() {
     "- For nye bokanbefalinger (ikke i biblioteket), bruk ALLTID dette nøyaktige formatet på en egen linje:",
     "  🛒 [BOOK:Tittel|Forfatter]",
     "  Eksempel: 🛒 [BOOK:Sofies verden|Jostein Gaarder]",
-    "  Brukerens app legger til en knapp som lar dem legge boken i ønskelisten.",
+    "  Brukerens app legger automatisk til en knapp for ønskelisten OG en søkelenke til ARK.",
     "- For bøker brukeren allerede eier, bruk: 📚 \"Tittel\" av Forfatter",
+    "- IKKE skriv ut URL-er, kjøpslenker eller nettadresser i svaret. Appen lager lenkene selv basert på [BOOK:...]-formatet.",
     "- For serier: finn neste del og sjekk om den er i biblioteket eller må kjøpes",
     "- Forklar HVORFOR du anbefaler — knytt det til bøker de har likt",
     "- Anbefal gjerne norske forfattere",
@@ -32229,19 +32240,30 @@ function renderRecMessages() {
   const escHtml = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   el.innerHTML = recMessages.map(m => {
     let html = m.text;
-    // Detekter [BOOK:Tittel|Forfatter] og lag en "+ Ønskeliste"-knapp
+    // Detekter [BOOK:Tittel|Forfatter] og lag "+ Ønskeliste" + "Søk ARK"-knapper
     html = html.replace(/🛒\s*\[BOOK:\s*([^|\]]+)\s*\|\s*([^\]]+)\s*\]/g, (_, t, a) => {
       const ttl = t.trim(), aut = a.trim();
-      const btn = window._readOnly
+      const wishBtn = window._readOnly
         ? '<span class="rec-add-disabled" title="Logg inn med din egen PIN for å lagre">🔒</span>'
         : `<button class="rec-add-wishlist" onclick="addRecToWishlist('${escAttr(ttl)}','${escAttr(aut)}')">+ Ønskeliste</button>`;
-      return `🛒 <strong>${escHtml(ttl)}</strong> av ${escHtml(aut)} ${btn}`;
+      const arkUrl = 'https://www.ark.no/search?text=' + encodeURIComponent(ttl + ' ' + aut);
+      const arkBtn = `<a class="rec-search-link" href="${arkUrl}" target="_blank" rel="noopener">🔎 ARK</a>`;
+      return `🛒 <strong>${escHtml(ttl)}</strong> av ${escHtml(aut)} ${wishBtn} ${arkBtn}`;
     });
     html = html
       .split('\n').join('<br>')
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*([^*]+?)\*/g, '<em>$1</em>')
-      .replace(/(https?:\/\/[\w./?=&%+#-]+)/g, '<a href="$1" target="_blank" style="color:var(--gold);text-decoration:underline;">$1</a>');
+      // Bredere URL-matching: tillat alle ikke-mellomroms-tegn, fjern siste tegn hvis tegnsetting
+      .replace(/(https?:\/\/[^\s<>"'`]+)/g, (m) => {
+        // Fjern hengende tegnsetting fra URL-enden
+        let url = m;
+        let trail = '';
+        const trailingPunct = /[.,!?;:)\]}'"]+$/;
+        const tm = url.match(trailingPunct);
+        if (tm) { trail = tm[0]; url = url.slice(0, -trail.length); }
+        return `<a href="${url}" target="_blank" rel="noopener" style="color:var(--gold);text-decoration:underline;word-break:break-all;">${url}</a>${trail}`;
+      });
     const isUser = m.role === 'user';
     return '<div class="msg ' + (isUser?'user':'ai') + '">' +
       '<div class="msg-avatar">' + (isUser?'👤':'📚') + '</div>' +
