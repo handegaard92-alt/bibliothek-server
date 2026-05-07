@@ -30877,6 +30877,7 @@ function openBookActions(id) {
   document.getElementById('asSub').textContent = b.author || '';
 
   // Cover-bilde øverst (alltid hvis tilgjengelig — viktig spesielt for "Tilfeldig bok")
+  const isRandom = _asRandomPick;
   const coverWrap = document.getElementById('asCoverWrap');
   const coverImg = document.getElementById('asCoverImg');
   const coverBadge = document.getElementById('asCoverBadge');
@@ -30887,7 +30888,7 @@ function openBookActions(id) {
   } else {
     coverWrap.style.display = 'none';
   }
-  coverBadge.style.display = _asRandomPick ? '' : 'none';
+  coverBadge.style.display = isRandom ? '' : 'none';
   _asRandomPick = false; // reset etter visning
 
   const hasFile = !!(b.fileData || b.r2Key);
@@ -30905,7 +30906,15 @@ function openBookActions(id) {
   const gUnread = document.getElementById('asGuestUnreadBtn');
 
   const simBtn = document.getElementById('asSimilarBtn');
-  if (window._readOnly) {
+  if (isRandom) {
+    // Tilfeldig bok: vis kun "Send til Kindle"
+    editBtn.style.display = 'none';
+    pBtn.style.display = 'none';
+    if (simBtn) simBtn.style.display = 'none';
+    gDone.style.display = 'none';
+    gReading.style.display = 'none';
+    gUnread.style.display = 'none';
+  } else if (window._readOnly) {
     // Gjest: vis kun status-knapper + Kindle
     editBtn.style.display = 'none';
     pBtn.style.display = 'none';
@@ -31698,21 +31707,52 @@ function render() {
   const authors  = [...new Set(pillBase.map(b=>b.author).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'no'));
 
   const anyFilter = genreFilter || seriesFilter || authorFilter;
+  // Sorter serier og forfattere etter antall bøker (mest brukt først)
+  const seriesCount = {}, authorCount = {};
+  pillBase.forEach(b => {
+    if (b.series) seriesCount[b.series] = (seriesCount[b.series]||0)+1;
+    if (b.author) authorCount[b.author] = (authorCount[b.author]||0)+1;
+  });
+  const seriesSorted = allSeries.slice().sort((a,b) => (seriesCount[b]||0)-(seriesCount[a]||0));
+  const authorsSorted = authors.slice().sort((a,b) => (authorCount[b]||0)-(authorCount[a]||0));
+  const COMPACT_LIMIT = 8;
+
   let pillsHtml = `<div class="pills-row">`;
+  // Sjanger-rad
   pillsHtml += `<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">`;
   pillsHtml += `<button class="pill ${!anyFilter?'active':''}" onclick="clearFilters()">Alle</button>`;
   pillsHtml += genres.map(g=>`<button class="pill ${genreFilter===g?'active':''}" onclick="setGenre('${g}')">${g}</button>`).join('');
   pillsHtml += `</div>`;
-  if (allSeries.length) {
+
+  // Serie-rad — compact eller full
+  if (seriesSorted.length) {
+    const showAll = window._showAllSeries || seriesSorted.length <= COMPACT_LIMIT || seriesFilter;
+    const visibleSeries = showAll ? seriesSorted : seriesSorted.slice(0, COMPACT_LIMIT);
     pillsHtml += `<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">`;
     pillsHtml += `<span class="filter-label">Serie</span>`;
-    pillsHtml += allSeries.map(s=>`<button class="pill ${seriesFilter===s?'active':''}" onclick="setSeries('${s.replace(/'/g,"\\'")}')">📚 ${s}</button>`).join('');
+    pillsHtml += visibleSeries.map(s=>`<button class="pill ${seriesFilter===s?'active':''}" onclick="setSeries('${s.replace(/'/g,"\\'")}')">📚 ${s}</button>`).join('');
+    if (!showAll) {
+      const remaining = seriesSorted.length - COMPACT_LIMIT;
+      pillsHtml += `<button class="pill" style="background:transparent;color:var(--muted);" onclick="window._showAllSeries=true;render()">+${remaining} til</button>`;
+    } else if (seriesSorted.length > COMPACT_LIMIT && !seriesFilter) {
+      pillsHtml += `<button class="pill" style="background:transparent;color:var(--muted);" onclick="window._showAllSeries=false;render()">Vis færre</button>`;
+    }
     pillsHtml += `</div>`;
   }
-  if (authors.length > 1) {
+
+  // Forfatter-rad — compact eller full
+  if (authorsSorted.length > 1) {
+    const showAll = window._showAllAuthors || authorsSorted.length <= COMPACT_LIMIT || authorFilter;
+    const visibleAuthors = showAll ? authorsSorted : authorsSorted.slice(0, COMPACT_LIMIT);
     pillsHtml += `<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">`;
     pillsHtml += `<span class="filter-label">Forfatter</span>`;
-    pillsHtml += authors.map(a=>`<button class="pill ${authorFilter===a?'active':''}" onclick="setAuthor('${a.replace(/'/g,"\\'")}')">✍️ ${a}</button>`).join('');
+    pillsHtml += visibleAuthors.map(a=>`<button class="pill ${authorFilter===a?'active':''}" onclick="setAuthor('${a.replace(/'/g,"\\'")}')">✍️ ${a}</button>`).join('');
+    if (!showAll) {
+      const remaining = authorsSorted.length - COMPACT_LIMIT;
+      pillsHtml += `<button class="pill" style="background:transparent;color:var(--muted);" onclick="window._showAllAuthors=true;render()">+${remaining} til</button>`;
+    } else if (authorsSorted.length > COMPACT_LIMIT && !authorFilter) {
+      pillsHtml += `<button class="pill" style="background:transparent;color:var(--muted);" onclick="window._showAllAuthors=false;render()">Vis færre</button>`;
+    }
     pillsHtml += `</div>`;
   }
   pillsHtml += `</div>`;
