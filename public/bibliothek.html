@@ -30238,13 +30238,74 @@ async function parseEpub(file) {
     const m = opfText.match(new RegExp('<dc:' + tag + '[^>]*>([^<]+)<\\/dc:' + tag + '>', 'i'));
     return m ? m[1].trim() : '';
   };
-  const title     = dc('title');
+
+  // Title — handle EPUB 3 with multiple <dc:title> + title-type refines (main/subtitle)
+  const titleEls = [...opfText.matchAll(/<dc:title\b([^>]*)>([^<]*)<\/dc:title>/gi)];
+  let title = '';
+  if (titleEls.length === 1) {
+    title = titleEls[0][2].trim();
+  } else if (titleEls.length > 1) {
+    const titlesById = {};
+    const allTexts = [];
+    for (const m of titleEls) {
+      const id = m[1].match(/\bid="([^"]+)"/)?.[1];
+      const text = m[2].trim();
+      if (text) allTexts.push(text);
+      if (id) titlesById[id] = text;
+    }
+    let mainTitle = null, subTitle = null;
+    const refines = [...opfText.matchAll(/<meta\s+[^>]*refines="#([^"]+)"[^>]*property="title-type"[^>]*>([^<]+)<\/meta>/gi)];
+    for (const r of refines) {
+      const v = r[2].trim().toLowerCase();
+      if (v === 'main' && titlesById[r[1]]) mainTitle = titlesById[r[1]];
+      else if (v === 'subtitle' && titlesById[r[1]]) subTitle = titlesById[r[1]];
+    }
+    if (mainTitle && subTitle) title = mainTitle + ': ' + subTitle;
+    else if (mainTitle) title = mainTitle;
+    else title = allTexts[0] || '';
+    // Some publishers put two distinct dc:title without refines — combine if they differ
+    if (!mainTitle && allTexts.length >= 2 && allTexts[0] !== allTexts[1]) {
+      title = allTexts[0] + ': ' + allTexts[1];
+    }
+  }
+
   const author    = dc('creator');
   const publisher = dc('publisher');
   const desc      = dc('description');
   const lang      = dc('language');
   const dateStr   = dc('date');
   const year      = dateStr ? (parseInt(dateStr.match(/[12][0-9]{3}/)?.[0]) || null) : null;
+
+  // EPUB 3 collection metadata — series name + position
+  let series = null, seriesNum = null;
+  const collMatches = [...opfText.matchAll(/<meta\s+[^>]*property="belongs-to-collection"[^>]*(?:id="([^"]+)")?[^>]*>([^<]+)<\/meta>/gi)];
+  for (const cm of collMatches) {
+    const cid = cm[1];
+    const cname = cm[2].trim();
+    if (!cname) continue;
+    let collType = 'series';
+    let pos = null;
+    if (cid) {
+      const typeMatch = opfText.match(new RegExp('<meta\\s+[^>]*refines="#' + cid + '"[^>]*property="collection-type"[^>]*>([^<]+)<\\/meta>', 'i'));
+      if (typeMatch) collType = typeMatch[1].trim().toLowerCase();
+      const posMatch = opfText.match(new RegExp('<meta\\s+[^>]*refines="#' + cid + '"[^>]*property="group-position"[^>]*>([^<]+)<\\/meta>', 'i'));
+      if (posMatch) pos = parseInt(posMatch[1].trim()) || null;
+    }
+    if (collType === 'series') {
+      series = cname;
+      seriesNum = pos;
+      break;
+    }
+  }
+  // Calibre fallback: <meta name="calibre:series" content="..."/> + calibre:series_index
+  if (!series) {
+    const cs = opfText.match(/<meta\s+[^>]*name="calibre:series"[^>]*content="([^"]+)"/i);
+    if (cs) {
+      series = cs[1].trim();
+      const ci = opfText.match(/<meta\s+[^>]*name="calibre:series_index"[^>]*content="([^"]+)"/i);
+      if (ci) seriesNum = parseFloat(ci[1]) || null;
+    }
+  }
 
   // 5. ISBN
   const isbnMatch =
@@ -30299,7 +30360,7 @@ async function parseEpub(file) {
     }
   }
 
-  return { title, author, publisher, desc, lang, year, epubIsbn, coverDataUrl };
+  return { title, author, publisher, desc, lang, year, epubIsbn, coverDataUrl, series, seriesNum };
 }
 
 // ── FILE HANDLING ──
@@ -30377,8 +30438,19 @@ async function processFile(file) {
           const g = mapGenre([epubMeta.desc, epubMeta.title]);
           if (g !== 'Annet') document.getElementById('fGenre').value = g;
         }
-        // Series + genre from NB/ebok.no (async, don't block)
-        autoFillSeries(epubMeta.title, epubMeta.author || '');
+        // Series + nummer direkte fra EPUB-metadata hvis tilgjengelig
+        if (epubMeta.series) {
+          const sfEl = document.getElementById('fSeries');
+          if (sfEl && !sfEl.value.trim()) sfEl.value = epubMeta.series;
+        }
+        if (epubMeta.seriesNum) {
+          const snEl = document.getElementById('fSeriesNum');
+          if (snEl && !snEl.value) snEl.value = epubMeta.seriesNum;
+        }
+        // Series + genre fra NB/ebok.no (async, don't block) — kjør kun hvis vi mangler nummer
+        if (!epubMeta.seriesNum) {
+          autoFillSeries(epubMeta.title, epubMeta.author || '');
+        }
 
         const isbn = epubMeta.epubIsbn || extractISBN(file.name);
         const extras = [
