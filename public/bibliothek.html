@@ -29225,16 +29225,10 @@ font-family: 'Source Sans Pro'
       </button>
     </div>
     <div style="display:flex;align-items:center;gap:2px;flex-shrink:0;">
-      <select class="sort-sel" id="sortSel" onchange="onSortChange(this)">
-        <option value="">Sortering</option>
-        <option value="title">Tittel A–Å</option>
-        <option value="author">Forfatter</option>
-        <option value="series">Serie</option>
-        <option value="year">Nyeste</option>
-        <option value="rating">Beste vurdering</option>
-        <option value="added">Sist lagt til</option>
-        <option value="finished">Sist lest</option>
-      </select>
+      <button class="sort-sel" id="sortBtn" onclick="openSortPopup(event)" type="button" style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+        <span id="sortBtnLabel">Sortering</span>
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
       <button id="clearSortBtn" onclick="clearSort()" title="Fjern sortering" style="display:none;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:var(--r2);padding:5px 8px;font-size:13px;cursor:pointer;line-height:1;">×</button>
     </div>
     <button id="themeToggle" onclick="toggleTheme()" title="Bytt mellom mørk og lys modus" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:var(--r2);padding:6px 10px;font-size:15px;cursor:pointer;line-height:1;flex-shrink:0;">🌙</button>
@@ -29646,6 +29640,9 @@ font-family: 'Source Sans Pro'
 <div class="backdrop" id="coverZoomModal" style="cursor:zoom-out;" onclick="closeCoverZoom()">
   <img id="coverZoomImg" class="cover-zoom-img" alt="">
 </div>
+
+<!-- Sortering popup (anchored under sort-button) -->
+<div id="sortPopup" style="display:none;position:fixed;z-index:400;background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:6px;box-shadow:0 12px 36px rgba(0,0,0,0.5);min-width:180px;font-family:'Outfit',sans-serif;font-size:14px;"></div>
 
 <!-- Lesemål -->
 <div class="backdrop" id="goalModal" onclick="if(event.target===this)closeReadingGoalModal()">
@@ -31824,20 +31821,67 @@ function clearFilters() {
 }
 
 var _activeSort = '';
-function onSortChange(sel) {
-  _activeSort = sel.value;
-  var btn = document.getElementById('clearSortBtn');
-  if (btn) btn.style.display = sel.value ? 'inline-block' : 'none';
+const SORT_OPTIONS = [
+  { value: 'title',    label: 'Tittel A–Å' },
+  { value: 'author',   label: 'Forfatter' },
+  { value: 'series',   label: 'Serie' },
+  { value: 'year',     label: 'Nyeste' },
+  { value: 'rating',   label: 'Beste vurdering' },
+  { value: 'added',    label: 'Sist lagt til' },
+  { value: 'finished', label: 'Sist lest' },
+];
+function openSortPopup(ev) {
+  ev?.stopPropagation();
+  const popup = document.getElementById('sortPopup');
+  const btn = document.getElementById('sortBtn');
+  if (!popup || !btn) return;
+  if (popup.style.display === 'block') { closeSortPopup(); return; }
+
+  popup.innerHTML = SORT_OPTIONS.map(o =>
+    `<button onclick="setSort('${o.value}')" style="display:flex;align-items:center;gap:8px;width:100%;padding:9px 12px;background:${_activeSort===o.value?'var(--gold-dim)':'transparent'};border:none;color:${_activeSort===o.value?'var(--gold)':'var(--text)'};font-family:'Outfit',sans-serif;font-size:13.5px;font-weight:${_activeSort===o.value?'600':'400'};border-radius:8px;cursor:pointer;text-align:left;">
+      ${_activeSort===o.value?'●':' '} ${o.label}
+    </button>`
+  ).join('') + (
+    _activeSort
+      ? `<div style="border-top:1px solid var(--border);margin-top:4px;padding-top:4px;"><button onclick="setSort('')" style="display:flex;align-items:center;gap:8px;width:100%;padding:9px 12px;background:transparent;border:none;color:var(--muted);font-family:'Outfit',sans-serif;font-size:13.5px;border-radius:8px;cursor:pointer;text-align:left;">× Fjern sortering</button></div>`
+      : ''
+  );
+
+  // Plasser popupen rett under knappen
+  const r = btn.getBoundingClientRect();
+  popup.style.display = 'block';
+  popup.style.top = (r.bottom + 6) + 'px';
+  popup.style.right = Math.max(8, window.innerWidth - r.right) + 'px';
+  popup.style.left = '';
+  popup.style.maxWidth = (window.innerWidth - 16) + 'px';
+
+  // Lukk ved klikk utenfor
+  setTimeout(() => document.addEventListener('click', closeSortPopupOnce, { once: true }), 0);
+}
+function closeSortPopup() {
+  const popup = document.getElementById('sortPopup');
+  if (popup) popup.style.display = 'none';
+}
+function closeSortPopupOnce(ev) {
+  const popup = document.getElementById('sortPopup');
+  if (popup && !popup.contains(ev.target) && ev.target.id !== 'sortBtn') {
+    closeSortPopup();
+  } else {
+    setTimeout(() => document.addEventListener('click', closeSortPopupOnce, { once: true }), 0);
+  }
+}
+function setSort(value) {
+  _activeSort = value;
+  const lbl = document.getElementById('sortBtnLabel');
+  const opt = SORT_OPTIONS.find(o => o.value === value);
+  if (lbl) lbl.textContent = opt ? opt.label : 'Sortering';
+  const clearBtn = document.getElementById('clearSortBtn');
+  if (clearBtn) clearBtn.style.display = value ? 'inline-block' : 'none';
+  closeSortPopup();
   render();
 }
-function clearSort() {
-  _activeSort = '';
-  var sel = document.getElementById('sortSel');
-  if (sel) sel.value = '';
-  var btn = document.getElementById('clearSortBtn');
-  if (btn) btn.style.display = 'none';
-  render();
-}
+function onSortChange(sel) { setSort(sel.value || ''); }
+function clearSort() { setSort(''); }
 function setViewMode(m) {
   viewMode = m;
   document.getElementById('vbtnGrid').classList.toggle('active', m==='grid');
