@@ -792,6 +792,10 @@ body {
   .stats-row { grid-template-columns:repeat(2,1fr) !important; }
 
   .grid { grid-template-columns:repeat(auto-fill,minmax(110px,140px)) !important; gap:8px !important; justify-content:start !important; }
+  .grid.lv { grid-template-columns:1fr !important; }
+  .bk.lv-item { flex-wrap:wrap; padding:10px 12px !important; gap:10px !important; }
+  .bk.lv-item .lv-info { flex:1 1 calc(100% - 58px); min-width:0; }
+  .bk.lv-item .lv-meta { flex:1 1 100%; flex-wrap:wrap; gap:8px !important; }
 
   .rec-chat { height:calc(100vh - 180px) !important; }
 
