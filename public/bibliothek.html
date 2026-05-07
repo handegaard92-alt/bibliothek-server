@@ -29163,6 +29163,10 @@ font-family: 'Source Sans Pro'
         <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9"/><path d="M3 4v5h5"/><circle cx="12" cy="12" r="2"/></svg>
         Sikkerhetskopi
       </div>
+      <div class="nav-item" onclick="refreshMissingCovers()">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><circle cx="12" cy="10" r="3"/><path d="M12 13v4"/></svg>
+        Hent manglende omslag
+      </div>
       <div class="nav-item" onclick="openKindleDeviceModal()">
         <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2v-4M9 21H5a2 2 0 01-2-2v-4m0 0h18"></path></svg>
         Kindle-enheter
@@ -29936,18 +29940,54 @@ async function removeKindleDevice(idx) {
 
 // ── COVER SEARCH (Open Library) ──
 async function fetchCover(title, author) {
+  const out = [];
+  // 1. Google Books — bra på norske utgaver og spesielt på krimserier (Lee Child m.fl.)
+  try {
+    const q = encodeURIComponent(`intitle:${title} ${author ? 'inauthor:' + author : ''}`.trim());
+    const gb = await fetchJSON(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=5&printType=books&langRestrict=no`);
+    const items = (gb?.items || []).filter(it => it.volumeInfo?.imageLinks);
+    for (const it of items) {
+      const il = it.volumeInfo.imageLinks;
+      // Bytt http→https og bytt zoom-parameter for høyere oppløsning
+      let url = il.thumbnail || il.smallThumbnail || '';
+      if (!url) continue;
+      url = url.replace(/^http:/, 'https:').replace(/&zoom=\d+/, '&zoom=1').replace(/&edge=curl/, '');
+      out.push({ url, title: it.volumeInfo.title || title });
+    }
+    // Hvis ikke noe på norsk, prøv uten språkfilter
+    if (!out.length) {
+      const gb2 = await fetchJSON(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=5&printType=books`);
+      const items2 = (gb2?.items || []).filter(it => it.volumeInfo?.imageLinks);
+      for (const it of items2) {
+        const il = it.volumeInfo.imageLinks;
+        let url = il.thumbnail || il.smallThumbnail || '';
+        if (!url) continue;
+        url = url.replace(/^http:/, 'https:').replace(/&zoom=\d+/, '&zoom=1').replace(/&edge=curl/, '');
+        out.push({ url, title: it.volumeInfo.title || title });
+      }
+    }
+  } catch(_) {}
+
+  // 2. Open Library
   try {
     const q = encodeURIComponent(`${title} ${author||''}`.trim());
     const url = `https://openlibrary.org/search.json?q=${q}&limit=5&fields=key,title,author_name,cover_i,isbn`;
     const data = await fetchJSON(url);
-    if (!data) return null;
-    const docs = (data.docs || []).filter(d => d.cover_i);
-    if (!docs.length) return null;
-    return docs.slice(0,4).map(d => ({
-      url: `https://covers.openlibrary.org/b/id/${d.cover_i}-L.jpg`,
-      title: d.title || title,
-    }));
-  } catch(e) { return null; }
+    if (data) {
+      const docs = (data.docs || []).filter(d => d.cover_i);
+      for (const d of docs.slice(0,4)) {
+        out.push({
+          url: `https://covers.openlibrary.org/b/id/${d.cover_i}-L.jpg`,
+          title: d.title || title,
+        });
+      }
+    }
+  } catch(_) {}
+
+  // Dedupliser på URL
+  const seen = new Set();
+  const uniq = out.filter(c => { if (seen.has(c.url)) return false; seen.add(c.url); return true; });
+  return uniq.length ? uniq.slice(0, 6) : null;
 }
 
 function debounceCoverSearch() {
@@ -30269,7 +30309,8 @@ async function fetchBookByISBN_NB(isbn) {
 
     const sesamid = item.id || '';
     // NB cover: use Open Library as primary since NB image resolver is also CORS-blocked
-    const coverUrl = `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg`;
+    // ?default=false → returnerer 404 i stedet for grå plassholder når coveret mangler
+    const coverUrl = `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg?default=false`;
 
     return {
       title, authors, year, desc, publisher, pages, coverUrl, isbn, lang,
@@ -30300,7 +30341,7 @@ async function fetchBookByISBN_OL(isbn) {
     const pages     = d.number_of_pages || null;
     const publisher = (d.publishers||[]).map(p=>p.name).filter(Boolean).join(', ');
     const coverUrl  = d.cover?.large || d.cover?.medium
-      || `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg`;
+      || `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg?default=false`;
 
     return {
       title, authors, year, desc, pages, publisher, coverUrl, isbn,
@@ -30325,7 +30366,7 @@ async function fetchBookByISBN(isbn) {
   // 3. Kun omslag som siste utvei
   return {
     title:'', authors:'', year:null, desc:'', publisher:'', pages:null,
-    coverUrl: `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg`,
+    coverUrl: `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg?default=false`,
     isbn, mappedGenre:'Annet', source:'Open Library Covers', _sourcePriority:3
   };
 }
@@ -32048,7 +32089,7 @@ async function saveBatchBooks() {
 
       const m = item.meta || {};
       let coverUrl = m.coverDataUrl || m.coverUrl ||
-        (m.epubIsbn ? 'https://covers.openlibrary.org/b/isbn/' + m.epubIsbn + '-L.jpg' : null);
+        (m.epubIsbn ? 'https://covers.openlibrary.org/b/isbn/' + m.epubIsbn + '-L.jpg?default=false' : null);
 
       let bookId, book;
       if (action === 'replace' && item.duplicateOfId) {
@@ -32433,6 +32474,54 @@ function renderYearInReview() {
       </div>
     </div>
   </div>`;
+}
+
+// ── HENT MANGLENDE OMSLAG ──
+function _isLikelyBrokenCover(url) {
+  if (!url) return true;
+  // Open Library ISBN-URL uten default=false → kan returnere grå plassholder
+  if (/covers\.openlibrary\.org\/b\/isbn\//.test(url) && !/default=false/.test(url)) return true;
+  return false;
+}
+async function refreshMissingCovers() {
+  if (window._readOnly) { showToast('🔒 Krever eier-PIN'); return; }
+  closeSidebar();
+  const candidates = books.filter(b => !b.coverUrl || _isLikelyBrokenCover(b.coverUrl));
+  if (!candidates.length) {
+    showToast('✓ Alle bøker har allerede omslag');
+    return;
+  }
+  const choice = await askConfirm({
+    title: 'Hent manglende omslag',
+    body: candidates.length + ' bok' + (candidates.length !== 1 ? 'er' : '') + ' mangler ordentlig omslag.\n\nDette vil søke Google Books og Open Library for hver bok. Tar typisk 1-2 sekunder per bok.',
+    options: [
+      { key: 'go', label: '🔎 Start henting', primary: true },
+      { key: 'cancel', label: 'Avbryt' },
+    ],
+  });
+  if (choice !== 'go') return;
+  showToast('🔎 Henter omslag for ' + candidates.length + ' bøker…');
+  let done = 0, found = 0;
+  for (const b of candidates) {
+    done++;
+    try {
+      const alts = await fetchCover(b.title, b.author || '');
+      if (alts && alts[0]?.url) {
+        b.coverUrl = alts[0].url;
+        found++;
+      } else {
+        // Hvis ingenting funnet, sett null så vi viser fallback-tile
+        b.coverUrl = null;
+      }
+    } catch(_) { b.coverUrl = null; }
+    if (done % 5 === 0) {
+      render();
+      try { await saveBooks(); } catch(_) {}
+    }
+  }
+  render();
+  try { await saveBooks(); } catch(_) {}
+  showToast('✓ Ferdig — fant ' + found + ' av ' + candidates.length + ' omslag');
 }
 
 // ── #12: ISBN-STREKKODELESER ──
