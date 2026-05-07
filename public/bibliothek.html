@@ -29596,6 +29596,15 @@ font-family: 'Source Sans Pro'
   <img id="coverZoomImg" class="cover-zoom-img" alt="">
 </div>
 
+<!-- Generisk bekreftelsesdialog (brukes for duplikater m.m.) -->
+<div class="backdrop" id="confirmModal" onclick="if(event.target===this)resolveConfirm(null)">
+  <div class="modal" style="max-width:440px;">
+    <h3 id="cfTitle" style="font-family:'Cormorant Garamond',serif;font-size:22px;margin-bottom:6px;"></h3>
+    <div id="cfBody" style="color:var(--muted);font-size:14px;line-height:1.5;margin-bottom:18px;white-space:pre-wrap;"></div>
+    <div id="cfButtons" style="display:flex;gap:8px;flex-direction:column;"></div>
+  </div>
+</div>
+
 <!-- Quick progress edit -->
 <div class="backdrop" id="progQuickModal" onclick="if(event.target===this)closeQuickProgress()">
   <div class="prog-quick">
@@ -30800,6 +30809,54 @@ function zoomCoverFromThumb(thumb) {
   if (img && img.src) showCoverZoom(img.src);
 }
 
+// ── GENERISK BEKREFTELSESDIALOG ──
+let _confirmResolve = null;
+function askConfirm(opts) {
+  // opts: {title, body, options: [{key, label, primary?, danger?}]}
+  return new Promise(resolve => {
+    document.getElementById('cfTitle').textContent = opts.title || 'Bekreft';
+    document.getElementById('cfBody').textContent  = opts.body  || '';
+    const btnsEl = document.getElementById('cfButtons');
+    btnsEl.innerHTML = '';
+    (opts.options || []).forEach((o, i) => {
+      const b = document.createElement('button');
+      b.textContent = o.label;
+      const cls = o.primary ? 'btn-save' : (o.danger ? 'btn-delete' : 'btn-cancel');
+      b.className = cls;
+      b.style.cssText = 'text-align:left;padding:11px 14px;';
+      b.onclick = () => {
+        document.getElementById('confirmModal').classList.remove('open');
+        if (_confirmResolve) { _confirmResolve(o.key); _confirmResolve = null; }
+      };
+      btnsEl.appendChild(b);
+    });
+    _confirmResolve = resolve;
+    document.getElementById('confirmModal').classList.add('open');
+  });
+}
+function resolveConfirm(val) {
+  document.getElementById('confirmModal').classList.remove('open');
+  if (_confirmResolve) { _confirmResolve(val); _confirmResolve = null; }
+}
+
+// ── DUPLIKAT-OPPDAGELSE ──
+function findDuplicate(meta, excludeId) {
+  if (!meta) return null;
+  const tgtTitle = (meta.title || '').trim().toLowerCase();
+  const tgtAuth  = (meta.author || meta.authors || '').trim().toLowerCase();
+  const tgtIsbn  = (meta.isbn || meta.epubIsbn || '').replace(/[^0-9Xx]/g, '');
+  if (!tgtTitle && !tgtIsbn) return null;
+  for (const b of books) {
+    if (excludeId != null && b.id === excludeId) continue;
+    const bIsbn = (b.isbn || '').replace(/[^0-9Xx]/g, '');
+    if (tgtIsbn && bIsbn && tgtIsbn === bIsbn) return b;
+    const bt = (b.title  || '').trim().toLowerCase();
+    const ba = (b.author || '').trim().toLowerCase();
+    if (tgtTitle && bt && bt === tgtTitle && (!tgtAuth || !ba || tgtAuth === ba)) return b;
+  }
+  return null;
+}
+
 // ── QUICK PROGRESS EDIT ──
 let pendingProgressId = null;
 function openQuickProgress(id, ev) {
@@ -30998,6 +31055,29 @@ async function saveBook() {
   const title = document.getElementById('fTitle').value.trim();
   const author = document.getElementById('fAuthor').value.trim();
   if (!title || !author) { showToast('⚠️ Tittel og forfatter er påkrevd.'); return; }
+
+  // Duplikat-sjekk: kun ved ny bok (ikke redigering)
+  if (editingId === null) {
+    const dup = findDuplicate({
+      title, author,
+      isbn: pendingFileData?.isbn || null,
+      epubIsbn: pendingFileData?.epubIsbn || null,
+    });
+    if (dup) {
+      const choice = await askConfirm({
+        title: 'Boken finnes allerede',
+        body: '«' + (dup.title||'') + '» av ' + (dup.author||'?') + ' er allerede i biblioteket.\n\nHva vil du gjøre?',
+        options: [
+          { key: 'replace', label: '🔁 Erstatt eksisterende bok (oppdater fil + omslag)', primary: true },
+          { key: 'new',     label: '➕ Legg til som ny bok likevel' },
+          { key: 'cancel',  label: 'Avbryt' },
+        ],
+      });
+      if (choice === 'cancel' || !choice) { return; }
+      if (choice === 'replace') { editingId = dup.id; }
+      // 'new' → fortsett som ny
+    }
+  }
 
   const bookId = editingId !== null ? editingId : Date.now();
 
@@ -31655,12 +31735,17 @@ function renderBatchQueue() {
 
   el.innerHTML = batchItems.map(item => {
     const statusClass = { ready:'ok', error:'err', pending:'pending', loading:'pending' }[item.status] || '';
-    const statusText  = {
+    let statusText  = {
       loading: '⏳ Leser metadata…',
       pending: '⏳ Venter…',
       ready:   '✓ Klar til lagring',
       error:   '⚠️ ' + (item.error || 'Ukjent feil'),
     }[item.status] || '';
+    if (item.duplicateOfId && item.status === 'ready') {
+      const action = item.duplicateAction || 'replace';
+      const actLabel = action === 'replace' ? 'erstatter eksisterende' : action === 'skip' ? 'hoppes over' : 'legges til som ny';
+      statusText = '🔁 Finnes allerede — ' + actLabel;
+    }
 
     const m    = item.meta;
     const title  = m?.title  || item.file.name.replace(/\.[^.]+$/, '');
@@ -31672,7 +31757,7 @@ function renderBatchQueue() {
       ? '<img src="' + m.coverDataUrl + '" style="width:100%;height:100%;object-fit:cover;">'
       : '📖';
 
-    return '<div class="batch-item ' + item.status + '" id="bi-' + item.id + '">' +
+    return '<div class="batch-item ' + item.status + (item.duplicateOfId ? ' dup' : '') + '" id="bi-' + item.id + '">' +
       '<div class="batch-cover">' + coverHtml + '</div>' +
       '<div class="batch-info">' +
         '<div class="batch-title">' + escHtml(title) + '</div>' +
@@ -31740,6 +31825,9 @@ async function processBatchMetadata() {
           if (sInfo?.series && !meta.series) { meta.series = sInfo.series; meta.seriesNum = meta.seriesNum || sInfo.seriesNum; }
           if (sInfo?.genre && (!meta.mappedGenre || meta.mappedGenre === 'Annet')) meta.mappedGenre = sInfo.genre;
         } catch(e) {}
+        // Duplikat-sjekk
+        const dup = findDuplicate({ title: meta.title, author: meta.author, isbn: meta.isbn || meta.epubIsbn });
+        if (dup) item.duplicateOfId = dup.id;
         item.meta   = meta;
         item.status = 'ready';
       } else {
@@ -31761,14 +31849,38 @@ async function saveBatchBooks() {
   const toSave = batchItems.filter(i => i.status === 'ready');
   if (!toSave.length) return;
 
+  // Spør én gang om hvordan duplikater skal håndteres
+  const dupItems = toSave.filter(i => i.duplicateOfId);
+  if (dupItems.length) {
+    const list = dupItems.slice(0, 5).map(i => '• ' + (i.meta?.title || i.file.name)).join('\n');
+    const more = dupItems.length > 5 ? '\n…og ' + (dupItems.length - 5) + ' til' : '';
+    const choice = await askConfirm({
+      title: dupItems.length + ' bok' + (dupItems.length !== 1 ? 'er' : '') + ' finnes allerede',
+      body: 'Disse bøkene finnes fra før i biblioteket:\n\n' + list + more + '\n\nHva vil du gjøre med duplikatene?',
+      options: [
+        { key: 'replace', label: '🔁 Erstatt eksisterende (oppdater fil + omslag)', primary: true },
+        { key: 'skip',    label: '⏭ Hopp over duplikatene' },
+        { key: 'new',     label: '➕ Legg til alle som nye bøker' },
+        { key: 'cancel',  label: 'Avbryt opplasting' },
+      ],
+    });
+    if (choice === 'cancel' || !choice) { return; }
+    dupItems.forEach(i => i.duplicateAction = choice);
+    renderBatchQueue();
+  }
+
   batchProcessing = true;
   const btn = document.getElementById('batchSaveBtn');
   if (btn) { btn.disabled = true; btn.textContent = 'Lagrer…'; }
 
   const pendingUploads = []; // {bookId, fileData}
+  let skippedCount = 0;
 
   for (const item of toSave) {
     try {
+      const action = item.duplicateOfId ? (item.duplicateAction || 'replace') : 'new';
+      if (action === 'skip') { skippedCount++; continue; }
+
       const dataUrl = await new Promise((res, rej) => {
         const fr = new FileReader();
         fr.onload  = e => res(e.target.result);
@@ -31780,29 +31892,54 @@ async function saveBatchBooks() {
       let coverUrl = m.coverDataUrl || m.coverUrl ||
         (m.epubIsbn ? 'https://covers.openlibrary.org/b/isbn/' + m.epubIsbn + '-L.jpg' : null);
 
-      const bookId = Date.now() + Math.random();
-      const book = {
-        id:          bookId,
-        title:       m.title || item.file.name.replace(/\.[^.]+$/, ''),
-        author:      m.author || '',
-        genre:       m.mappedGenre || 'Annet',
-        year:        m.year || null,
-        series:      m.series || null,
-        seriesNum:   m.seriesNum || null,
-        status:      'unread',
-        progress:    0,
-        rating:      0,
-        coverUrl,
-        isbn:        m.epubIsbn || extractISBN(item.file.name) || null,
-        publisher:   m.publisher || null,
-        description: m.desc || null,
-        fileName:    item.file.name,
-        fileType:    item.file.type || 'application/octet-stream',
-        fileData:    dataUrl,
-        added:       Date.now(),
-      };
-
-      books.push(book);
+      let bookId, book;
+      if (action === 'replace' && item.duplicateOfId) {
+        const idx = books.findIndex(b => b.id === item.duplicateOfId);
+        if (idx === -1) { skippedCount++; continue; }
+        bookId = item.duplicateOfId;
+        const existing = books[idx];
+        book = {
+          ...existing,
+          title:       m.title || existing.title,
+          author:      m.author || existing.author,
+          genre:       (m.mappedGenre && m.mappedGenre !== 'Annet') ? m.mappedGenre : existing.genre,
+          year:        m.year || existing.year,
+          series:      m.series || existing.series,
+          seriesNum:   m.seriesNum || existing.seriesNum,
+          coverUrl:    coverUrl || existing.coverUrl,
+          isbn:        m.epubIsbn || existing.isbn,
+          publisher:   m.publisher || existing.publisher,
+          description: m.desc || existing.description,
+          fileName:    item.file.name,
+          fileType:    item.file.type || 'application/octet-stream',
+          fileData:    dataUrl,
+          r2Key:       null, // tving ny opplasting
+        };
+        books[idx] = book;
+      } else {
+        bookId = Date.now() + Math.random();
+        book = {
+          id:          bookId,
+          title:       m.title || item.file.name.replace(/\.[^.]+$/, ''),
+          author:      m.author || '',
+          genre:       m.mappedGenre || 'Annet',
+          year:        m.year || null,
+          series:      m.series || null,
+          seriesNum:   m.seriesNum || null,
+          status:      'unread',
+          progress:    0,
+          rating:      0,
+          coverUrl,
+          isbn:        m.epubIsbn || extractISBN(item.file.name) || null,
+          publisher:   m.publisher || null,
+          description: m.desc || null,
+          fileName:    item.file.name,
+          fileType:    item.file.type || 'application/octet-stream',
+          fileData:    dataUrl,
+          added:       Date.now(),
+        };
+        books.push(book);
+      }
 
       if (window._pinKey && getServerUrl()) {
         pendingUploads.push({
@@ -31846,7 +31983,10 @@ async function saveBatchBooks() {
   batchProcessing = false;
   closeBatchModal();
   render();
-  showToast('✓ ' + toSave.length + ' bok' + (toSave.length !== 1 ? 'er' : '') + ' lagt til!');
+  const savedCount = toSave.length - skippedCount;
+  let msg = '✓ ' + savedCount + ' bok' + (savedCount !== 1 ? 'er' : '') + ' lagret!';
+  if (skippedCount) msg += ' (' + skippedCount + ' hoppet over)';
+  showToast(msg);
 }
 
 // Same as uploadToR2 but doesn't show per-file toast or call saveBooks/render
@@ -32164,7 +32304,8 @@ function buildLibraryContext() {
     "  Eksempel: 🛒 [BOOK:Sofies verden|Jostein Gaarder]",
     "  Brukerens app legger automatisk til en knapp for ønskelisten OG en søkelenke til ARK.",
     "- For bøker brukeren allerede eier, bruk: 📚 \"Tittel\" av Forfatter",
-    "- IKKE skriv ut URL-er, kjøpslenker eller nettadresser i svaret. Appen lager lenkene selv basert på [BOOK:...]-formatet.",
+    "- IKKE skriv ut URL-er, kjøpslenker eller nettadresser i svaret. Appen lager søkelenker selv (ARK, Norli, Adlibris, ebok.no) basert på [BOOK:...]-formatet.",
+    "- Anbefal kun bøker du er sikker på finnes i norsk handel (norske eller oversatte til norsk). Ikke fabriker titler.",
     "- For serier: finn neste del og sjekk om den er i biblioteket eller må kjøpes",
     "- Forklar HVORFOR du anbefaler — knytt det til bøker de har likt",
     "- Anbefal gjerne norske forfattere",
@@ -32240,15 +32381,23 @@ function renderRecMessages() {
   const escHtml = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   el.innerHTML = recMessages.map(m => {
     let html = m.text;
-    // Detekter [BOOK:Tittel|Forfatter] og lag "+ Ønskeliste" + "Søk ARK"-knapper
+    // Detekter [BOOK:Tittel|Forfatter] og lag "+ Ønskeliste" + søke-knapper til norske bokhandlere
     html = html.replace(/🛒\s*\[BOOK:\s*([^|\]]+)\s*\|\s*([^\]]+)\s*\]/g, (_, t, a) => {
       const ttl = t.trim(), aut = a.trim();
+      const q = encodeURIComponent(ttl + ' ' + aut);
       const wishBtn = window._readOnly
         ? '<span class="rec-add-disabled" title="Logg inn med din egen PIN for å lagre">🔒</span>'
         : `<button class="rec-add-wishlist" onclick="addRecToWishlist('${escAttr(ttl)}','${escAttr(aut)}')">+ Ønskeliste</button>`;
-      const arkUrl = 'https://www.ark.no/search?text=' + encodeURIComponent(ttl + ' ' + aut);
-      const arkBtn = `<a class="rec-search-link" href="${arkUrl}" target="_blank" rel="noopener">🔎 ARK</a>`;
-      return `🛒 <strong>${escHtml(ttl)}</strong> av ${escHtml(aut)} ${wishBtn} ${arkBtn}`;
+      const stores = [
+        { name: 'ARK',      url: 'https://www.ark.no/search?text=' + q },
+        { name: 'Norli',    url: 'https://www.norli.no/sok?q=' + q },
+        { name: 'Adlibris', url: 'https://www.adlibris.com/no/sok?q=' + q },
+        { name: 'ebok.no',  url: 'https://ebok.no/search/?q=' + q },
+      ];
+      const storeBtns = stores.map(s =>
+        `<a class="rec-search-link" href="${s.url}" target="_blank" rel="noopener">🔎 ${s.name}</a>`
+      ).join('');
+      return `🛒 <strong>${escHtml(ttl)}</strong> av ${escHtml(aut)} ${wishBtn} ${storeBtns}`;
     });
     html = html
       .split('\n').join('<br>')
