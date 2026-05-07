@@ -30863,23 +30863,37 @@ function findDuplicate(meta, excludeId) {
   const tgtTitle = _normTitle(meta.title);
   const tgtAuth  = _normAuthor(meta.author || meta.authors);
   const tgtIsbn  = (meta.isbn || meta.epubIsbn || '').replace(/[^0-9Xx]/g, '');
-  if (!tgtTitle && !tgtIsbn) return null;
-  for (const b of books) {
-    if (excludeId != null && b.id === excludeId) continue;
-    const bIsbn = (b.isbn || '').replace(/[^0-9Xx]/g, '');
-    if (tgtIsbn && bIsbn && tgtIsbn === bIsbn) return b;
-    const bt = _normTitle(b.title);
-    const ba = _normAuthor(b.author);
-    if (!tgtTitle || !bt) continue;
-    if (bt !== tgtTitle) continue;
-    // Tittel matcher. Sjekk forfatter løst — match hvis lik, eller én er tom
-    if (!tgtAuth || !ba || tgtAuth === ba) return b;
-    // Eller hvis ord-sett overlapper betydelig (etternavn-match)
-    const tw = new Set(tgtAuth.split(' ').filter(w => w.length > 1));
-    const bw = new Set(ba.split(' ').filter(w => w.length > 1));
-    let overlap = 0;
-    for (const w of tw) if (bw.has(w)) overlap++;
-    if (overlap >= 1) return b;
+  const tgtFile  = (meta.fileName || '').trim().toLowerCase();
+  if (!tgtTitle && !tgtIsbn && !tgtFile) return null;
+
+  // 1. ISBN-match (sterkest)
+  if (tgtIsbn) {
+    for (const b of books) {
+      if (excludeId != null && b.id === excludeId) continue;
+      const bIsbn = (b.isbn || '').replace(/[^0-9Xx]/g, '');
+      if (bIsbn && tgtIsbn === bIsbn) return b;
+    }
+  }
+  // 2. Filnavn-match (samme .epub-fil lastet opp på nytt)
+  if (tgtFile) {
+    for (const b of books) {
+      if (excludeId != null && b.id === excludeId) continue;
+      const bf = (b.fileName || '').trim().toLowerCase();
+      if (bf && bf === tgtFile) return b;
+    }
+  }
+  // 3. Tittel + forfatter (normalisert)
+  if (tgtTitle) {
+    for (const b of books) {
+      if (excludeId != null && b.id === excludeId) continue;
+      const bt = _normTitle(b.title);
+      if (bt !== tgtTitle) continue;
+      const ba = _normAuthor(b.author);
+      if (!tgtAuth || !ba || tgtAuth === ba) return b;
+      const tw = new Set(tgtAuth.split(' ').filter(w => w.length > 1));
+      const bw = new Set(ba.split(' ').filter(w => w.length > 1));
+      for (const w of tw) if (bw.has(w)) return b;
+    }
   }
   return null;
 }
@@ -31089,8 +31103,9 @@ async function saveBook() {
       title, author,
       isbn: pendingFileData?.isbn || null,
       epubIsbn: pendingFileData?.epubIsbn || null,
+      fileName: pendingFileData?.name || null,
     });
-    console.log('[duplicate-check single]', { title, author, isbn: pendingFileData?.isbn, found: dup?.title || null });
+    console.log('[duplicate-check single]', { title, author, isbn: pendingFileData?.isbn, fileName: pendingFileData?.name, found: dup?.title || null });
     if (dup) {
       const choice = await askConfirm({
         title: 'Boken finnes allerede',
@@ -31854,8 +31869,8 @@ async function processBatchMetadata() {
           if (sInfo?.genre && (!meta.mappedGenre || meta.mappedGenre === 'Annet')) meta.mappedGenre = sInfo.genre;
         } catch(e) {}
         // Duplikat-sjekk
-        const dup = findDuplicate({ title: meta.title, author: meta.author, isbn: meta.isbn || meta.epubIsbn });
-        console.log('[duplicate-check batch]', { title: meta.title, author: meta.author, isbn: meta.epubIsbn, found: dup?.title || null });
+        const dup = findDuplicate({ title: meta.title, author: meta.author, isbn: meta.isbn || meta.epubIsbn, fileName: item.file.name });
+        console.log('[duplicate-check batch]', { title: meta.title, author: meta.author, isbn: meta.epubIsbn, fileName: item.file.name, found: dup?.title || null });
         if (dup) item.duplicateOfId = dup.id;
         item.meta   = meta;
         item.status = 'ready';
