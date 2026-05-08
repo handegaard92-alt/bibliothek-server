@@ -407,6 +407,33 @@ body {
 .ov-btn:hover { opacity:0.85; }
 .ov-edit { background:rgba(255,255,255,0.18); color:#fff; }
 .ov-kindle { background:var(--gold); color:#0a0a0c; }
+/* Multi-select-modus */
+.bk.is-selected .bk-cover-wrap { box-shadow:0 0 0 3px var(--gold); }
+.bk-select-mark {
+  position:absolute; top:7px; left:7px;
+  width:24px; height:24px; border-radius:50%;
+  background:rgba(0,0,0,0.7); border:2px solid #fff;
+  display:flex; align-items:center; justify-content:center;
+  font-size:14px; color:#fff; font-weight:700;
+  z-index:2;
+}
+.bk.is-selected .bk-select-mark { background:var(--gold); border-color:var(--gold); color:#0a0a0c; }
+#selectModeBar {
+  display:none; position:sticky; top:0; z-index:30;
+  background:var(--gold); color:#0a0a0c;
+  padding:10px 14px; align-items:center; justify-content:space-between; gap:10px;
+  font-family:'Outfit',sans-serif; font-size:13.5px; font-weight:600;
+  border-radius:10px; margin-bottom:14px;
+}
+#selectModeBar.open { display:flex; }
+#selectModeBar button {
+  background:#0a0a0c; color:var(--gold);
+  border:none; border-radius:6px; padding:7px 14px;
+  font-family:'Outfit',sans-serif; font-size:13px; font-weight:600;
+  cursor:pointer;
+}
+#selectModeBar .smb-cancel { background:transparent; color:#0a0a0c; }
+
 .bk-badge {
   position:absolute; top:7px; right:7px;
   padding:3px 9px; border-radius:5px;
@@ -29236,6 +29263,10 @@ font-family: 'Source Sans Pro'
         <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><circle cx="12" cy="10" r="3"/><path d="M12 13v4"/></svg>
         Hent manglende omslag
       </div>
+      <div class="nav-item" onclick="normalizeAllAuthors()">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20 7l-7 7-3-3"/><path d="M4 17l3 3 9-9"/></svg>
+        Rydd forfatternavn
+      </div>
       <div class="nav-item" onclick="openKindleDeviceModal()">
         <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2v-4M9 21H5a2 2 0 01-2-2v-4m0 0h18"></path></svg>
         Kindle-enheter
@@ -29294,6 +29325,9 @@ font-family: 'Source Sans Pro'
       </button>
     </div>
     <div style="display:flex;align-items:center;gap:2px;flex-shrink:0;">
+      <button class="sort-sel" id="selectModeBtn" onclick="toggleSelectMode()" type="button" title="Velg flere" style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h9"/></svg>
+      </button>
       <button class="sort-sel" id="sortBtn" onclick="openSortPopup(event)" type="button" style="display:flex;align-items:center;gap:6px;cursor:pointer;">
         <span id="sortBtnLabel">Sortering</span>
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
@@ -29358,6 +29392,14 @@ font-family: 'Source Sans Pro'
     <div class="stat"><div class="stat-v">0</div><div class="stat-l">Fullført</div></div>
     <div class="stat"><div class="stat-v">2</div><div class="stat-l">Filer lastet opp</div></div>
   </div>
+    <div id="selectModeBar">
+      <span><span id="smbCount">0</span> bok(er) valgt</span>
+      <div style="display:flex;gap:8px;">
+        <button class="smb-cancel" onclick="cancelSelectMode()">Avbryt</button>
+        <button onclick="selectAll()">Velg alle</button>
+        <button onclick="deleteSelected()">🗑 Slett valgte</button>
+      </div>
+    </div>
     <div class="hero-wrap" id="heroWrap"></div>
     <div class="pills" id="pillsWrap"><button class="pill active" onclick="setGenre(null)">Alle</button><button class="pill " onclick="setGenre('Roman')">Roman</button></div>
     <div class="sec-hdr"><span class="sec-title" id="secTitle">Alle bøker</span><span class="sec-cnt" id="secCnt">2 bøker</span></div>
@@ -31343,8 +31385,10 @@ async function uploadCoverOnlyToR2(bookId, dataUrl) {
 
 async function saveBook() {
   const title = document.getElementById('fTitle').value.trim();
-  const author = document.getElementById('fAuthor').value.trim();
+  let author = document.getElementById('fAuthor').value.trim();
   if (!title || !author) { showToast('⚠️ Tittel og forfatter er påkrevd.'); return; }
+  // Normaliser til "Etternavn, Fornavn"
+  author = normalizeAuthorName(author);
 
   // Duplikat-sjekk: kun ved ny bok (ikke redigering)
   if (editingId === null) {
@@ -31895,9 +31939,9 @@ function render() {
 
   if (viewMode === 'list') {
     grid.innerHTML = filtered.map((b,i) => `
-      <div class="bk lv-item" style="animation-delay:${i*0.03}s">
-        <div class="bk-cover-wrap" onclick="openBookActions(${b.id})">${coverHtml(b)}</div>
-        <div class="lv-info" onclick="openBookActions(${b.id})">
+      <div class="bk lv-item ${_selectedIds.has(b.id)?'is-selected':''}" data-bookid="${b.id}" style="animation-delay:${i*0.03}s">
+        <div class="bk-cover-wrap" onclick="${_selectMode?'toggleBookSelection('+b.id+')':'openBookActions('+b.id+')'}">${_selectMode?`<span class="bk-select-mark">${_selectedIds.has(b.id)?'✓':''}</span>`:''}${coverHtml(b)}</div>
+        <div class="lv-info" onclick="${_selectMode?'toggleBookSelection('+b.id+')':'openBookActions('+b.id+')'}">
           <div class="lv-t">${b.title}</div>
           <div class="lv-a">${b.author}</div>
           ${b.series?`<div class="serie-badge" style="margin-top:3px;">📚 ${b.series}${b.seriesNum?' #'+b.seriesNum:''}</div>`:''}
@@ -31918,8 +31962,9 @@ function render() {
     const bmap = {reading:'b-reading',done:'b-done',wishlist:'b-wish',unread:''};
     const blbl = {reading:'Leser nå',done:'Lest',wishlist:'Ønskeliste',unread:''};
     grid.innerHTML = filtered.map((b,i) => `
-      <div class="bk" style="animation-delay:${i*0.04}s" onclick="openBookActions(${b.id})">
+      <div class="bk ${_selectedIds.has(b.id)?'is-selected':''}" data-bookid="${b.id}" style="animation-delay:${i*0.04}s" onclick="${_selectMode?'toggleBookSelection('+b.id+')':'openBookActions('+b.id+')'}">
         <div class="bk-cover-wrap${effectiveStatus(b)==='done'?' is-done':''}">
+          ${_selectMode?`<span class="bk-select-mark">${_selectedIds.has(b.id)?'✓':''}</span>`:''}
           ${coverHtml(b)}
           ${(()=>{ const es = effectiveStatus(b); return blbl[es]?`<span class="bk-badge ${bmap[es]}">${blbl[es]}</span>`:''; })()}
           <div class="bk-overlay">
@@ -33087,6 +33132,105 @@ function askAIAboutBook(bookId, action) {
   const navEl = document.querySelector('.nav-item[data-view="recommendations"]');
   if (navEl) setView(navEl, 'recommendations');
   setTimeout(() => sendRecMessage(q), 300);
+}
+
+// ── MULTI-SELECT ──
+let _selectMode = false;
+let _selectedIds = new Set();
+function toggleSelectMode() {
+  if (window._readOnly) { showToast('🔒 Krever eier-tilgang'); return; }
+  _selectMode = !_selectMode;
+  _selectedIds.clear();
+  document.getElementById('selectModeBar').classList.toggle('open', _selectMode);
+  document.getElementById('selectModeBtn')?.classList.toggle('active', _selectMode);
+  render();
+}
+function cancelSelectMode() {
+  _selectMode = false;
+  _selectedIds.clear();
+  document.getElementById('selectModeBar').classList.remove('open');
+  render();
+}
+function toggleBookSelection(id) {
+  if (_selectedIds.has(id)) _selectedIds.delete(id);
+  else _selectedIds.add(id);
+  document.getElementById('smbCount').textContent = _selectedIds.size;
+  // Oppdater visuell markering
+  document.querySelectorAll('.bk[data-bookid="' + id + '"]').forEach(el => el.classList.toggle('is-selected', _selectedIds.has(id)));
+}
+function selectAll() {
+  const filtered = getFiltered();
+  filtered.forEach(b => _selectedIds.add(b.id));
+  document.getElementById('smbCount').textContent = _selectedIds.size;
+  render();
+}
+async function deleteSelected() {
+  if (!_selectedIds.size) { showToast('Ingen bøker valgt'); return; }
+  const ids = [..._selectedIds];
+  const titles = ids.slice(0, 5).map(id => books.find(b => b.id === id)?.title || '?').filter(Boolean);
+  const more = ids.length > 5 ? '\n…og ' + (ids.length - 5) + ' til' : '';
+  const choice = await askConfirm({
+    title: 'Slett ' + ids.length + ' bok' + (ids.length !== 1 ? 'er' : '') + '?',
+    body: 'Følgende bøker vil slettes permanent:\n\n' + titles.map(t => '• ' + t).join('\n') + more + '\n\nDette kan ikke angres.',
+    options: [
+      { key: 'delete', label: '🗑 Slett ' + ids.length + ' bok' + (ids.length !== 1 ? 'er' : ''), danger: true },
+      { key: 'cancel', label: 'Avbryt' },
+    ],
+  });
+  if (choice !== 'delete') return;
+  books = books.filter(b => !_selectedIds.has(b.id));
+  _selectedIds.clear();
+  _selectMode = false;
+  document.getElementById('selectModeBar').classList.remove('open');
+  try { await saveBooks(); } catch(e) { showToast('⚠️ Lagringsfeil: ' + e.message); }
+  render();
+  showToast('🗑 ' + ids.length + ' bok' + (ids.length !== 1 ? 'er' : '') + ' slettet');
+}
+
+// ── FORFATTER-NORMALISERING ──
+function normalizeAuthorName(raw) {
+  if (!raw || typeof raw !== 'string') return raw;
+  let s = raw.trim();
+  if (!s) return s;
+  // Hvis det allerede er "Etternavn, Fornavn" → behold
+  if (/,/.test(s)) return s.replace(/\s*,\s*/, ', ');
+  const parts = s.split(/\s+/);
+  if (parts.length < 2) return s;
+  // Anta siste ord er etternavn
+  const last = parts[parts.length - 1];
+  const first = parts.slice(0, -1).join(' ');
+  return last + ', ' + first;
+}
+async function normalizeAllAuthors() {
+  if (window._readOnly) { showToast('🔒 Krever eier-tilgang'); return; }
+  closeSidebar();
+  // Bygg merge-kart: for hver bok, finn normalisert navn
+  const beforeAuthors = new Set(books.map(b => b.author).filter(Boolean));
+  let changed = 0;
+  for (const b of books) {
+    if (!b.author) continue;
+    const n = normalizeAuthorName(b.author);
+    if (n !== b.author) { b.author = n; changed++; }
+  }
+  // Slå sammen forfattere som er samme person etter normalisering (case-insensitive)
+  const canonical = {};
+  for (const b of books) {
+    if (!b.author) continue;
+    const k = b.author.toLowerCase();
+    if (!canonical[k]) canonical[k] = b.author;
+  }
+  for (const b of books) {
+    if (b.author) b.author = canonical[b.author.toLowerCase()];
+  }
+  const afterAuthors = new Set(books.map(b => b.author).filter(Boolean));
+  const reduced = beforeAuthors.size - afterAuthors.size;
+  if (changed === 0 && reduced === 0) {
+    showToast('✓ Alle forfattere er allerede normalisert');
+    return;
+  }
+  try { await saveBooks(); } catch(e) { showToast('⚠️ Lagringsfeil: ' + e.message); }
+  render();
+  showToast('✓ ' + changed + ' navn normalisert' + (reduced ? ', ' + reduced + ' duplikater slått sammen' : ''));
 }
 
 // ── TILFELDIG BOK ──
