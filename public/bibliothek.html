@@ -409,12 +409,23 @@ body {
 .ov-kindle { background:var(--gold); color:#0a0a0c; }
 .bk-badge {
   position:absolute; top:7px; right:7px;
-  padding:2px 7px; border-radius:4px;
-  font-size:10px; font-weight:600; letter-spacing:0.04em;
+  padding:3px 9px; border-radius:5px;
+  font-size:10.5px; font-weight:700; letter-spacing:0.04em;
+  display:inline-flex; align-items:center; gap:3px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.4);
 }
-.b-reading { background:rgba(91,155,213,0.9); color:#fff; }
-.b-done { background:rgba(91,181,120,0.9); color:#fff; }
-.b-wish { background:rgba(224,85,85,0.85); color:#fff; }
+.b-reading { background:rgba(91,155,213,0.95); color:#fff; }
+.b-reading::before { content:'📖'; font-size:11px; }
+.b-done { background:rgba(91,181,120,0.95); color:#fff; }
+.b-done::before { content:'✓'; font-weight:900; }
+.b-wish { background:rgba(224,85,85,0.9); color:#fff; }
+.b-wish::before { content:'❤'; }
+/* Diagonalt grønt "lest"-banner over coveret for ekstra synlighet */
+.bk-cover-wrap.is-done::after {
+  content:''; position:absolute; inset:0;
+  background:linear-gradient(135deg,transparent 70%,rgba(91,181,120,0.25) 70%);
+  pointer-events:none;
+}
 .prog-mini {
   position:absolute; bottom:0; left:0; right:0; height:3px;
   background:rgba(0,0,0,0.4);
@@ -825,11 +836,35 @@ body {
 
   .stats-row { grid-template-columns:repeat(2,1fr) !important; }
 
-  .grid { grid-template-columns:repeat(auto-fill,minmax(110px,140px)) !important; gap:8px !important; justify-content:start !important; }
+  .grid {
+    grid-template-columns:repeat(auto-fill,minmax(100px,1fr)) !important;
+    gap:8px !important;
+    justify-content:start !important;
+    width:100% !important;
+    box-sizing:border-box;
+  }
   .grid.lv { grid-template-columns:1fr !important; }
-  .bk.lv-item { flex-wrap:wrap; padding:10px 12px !important; gap:10px !important; }
-  .bk.lv-item .lv-info { flex:1 1 calc(100% - 58px); min-width:0; }
-  .bk.lv-item .lv-meta { flex:1 1 100%; flex-wrap:wrap; gap:8px !important; }
+  .bk.lv-item {
+    flex-wrap:wrap;
+    padding:10px 12px !important;
+    gap:10px !important;
+    box-sizing:border-box;
+    width:100%;
+    overflow:hidden;
+  }
+  .bk.lv-item .lv-info { flex:1 1 calc(100% - 58px); min-width:0; max-width:calc(100% - 58px); }
+  .bk.lv-item .lv-meta {
+    flex:1 1 100%;
+    flex-wrap:wrap;
+    gap:8px !important;
+    min-width:0;
+    max-width:100%;
+  }
+  .bk.lv-item .lv-btns { flex-wrap:wrap; gap:4px; }
+  .bk.lv-item .lv-ic-btn { font-size:11px !important; padding:5px 8px !important; }
+  .lv-tag { font-size:10px !important; padding:2px 6px !important; }
+  .content { box-sizing:border-box; max-width:100vw; overflow-x:hidden; }
+  .pills { max-width:100%; }
 
   .rec-chat { height:calc(100vh - 180px) !important; }
 
@@ -31613,12 +31648,18 @@ function getFiltered() {
   let f = [...books];
   const q = document.getElementById('searchInput')?.value.toLowerCase() || '';
   if (view === 'reading') f = f.filter(b => effectiveStatus(b) === 'reading');
-  else if (view === 'done') f = f.filter(b => effectiveStatus(b) === 'done');
+  else if (view === 'done') {
+    f = f.filter(b => effectiveStatus(b) === 'done');
+    if (window._yearFilter) {
+      f = f.filter(b => (effectiveFinishedDate(b) || '').startsWith(window._yearFilter));
+    }
+  }
   else if (view === 'wishlist') f = f.filter(b => effectiveStatus(b) === 'wishlist');
   else if (view === 'unread') f = f.filter(b => effectiveStatus(b) === 'unread');
   else f = f.filter(b => effectiveStatus(b) !== 'wishlist'); // alle andre visninger: skjul ønskeliste
   if (genreFilter) f = f.filter(b => b.genre === genreFilter);
-  if (seriesFilter) f = f.filter(b => b.series === seriesFilter);
+  if (seriesFilter === '__none__') f = f.filter(b => !b.series);
+  else if (seriesFilter) f = f.filter(b => b.series === seriesFilter);
   if (authorFilter) f = f.filter(b => b.author === authorFilter);
   if (q) f = f.filter(b =>
     b.title.toLowerCase().includes(q) ||
@@ -31765,6 +31806,18 @@ function render() {
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
     Filtrer${activeLabel ? ` <span class="filter-mobile-chip">${activeLabel}</span>` : ''}
   </button>`;
+  // År-rad i "Lest"-fanen
+  if (view === 'done') {
+    const allDone = books.filter(b => effectiveStatus(b) === 'done');
+    const years = [...new Set(allDone.map(b => (effectiveFinishedDate(b) || '').slice(0,4)).filter(Boolean))].sort((a,b)=>b.localeCompare(a));
+    if (years.length > 0) {
+      pillsHtml += `<div class="pills-row" style="margin-bottom:6px;"><div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">`;
+      pillsHtml += `<span class="filter-label">År</span>`;
+      pillsHtml += `<button class="pill ${!window._yearFilter?'active':''}" onclick="setYearFilter(null)">Alle</button>`;
+      pillsHtml += years.map(y => `<button class="pill ${window._yearFilter===y?'active':''}" onclick="setYearFilter('${y}')">${y}</button>`).join('');
+      pillsHtml += `</div></div>`;
+    }
+  }
   pillsHtml += `<div class="pills-row">`;
   // Sjanger-rad
   pillsHtml += `<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">`;
@@ -31772,13 +31825,17 @@ function render() {
   pillsHtml += genres.map(g=>`<button class="pill ${genreFilter===g?'active':''}" onclick="setGenre('${g}')">${g}</button>`).join('');
   pillsHtml += `</div>`;
 
-  // Serie-rad — compact eller full
-  if (seriesSorted.length) {
+  // Serie-rad — compact eller full + "Bøker uten serie"
+  const noSeriesCount = pillBase.filter(b => !b.series).length;
+  if (seriesSorted.length || noSeriesCount > 0) {
     const showAll = window._showAllSeries || seriesSorted.length <= COMPACT_LIMIT || seriesFilter;
     const visibleSeries = showAll ? seriesSorted : seriesSorted.slice(0, COMPACT_LIMIT);
     pillsHtml += `<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">`;
     pillsHtml += `<span class="filter-label">Serie</span>`;
     pillsHtml += visibleSeries.map(s=>`<button class="pill ${seriesFilter===s?'active':''}" onclick="setSeries('${s.replace(/'/g,"\\'")}')">📚 ${s}</button>`).join('');
+    if (noSeriesCount > 0) {
+      pillsHtml += `<button class="pill ${seriesFilter==='__none__'?'active':''}" onclick="setSeries('__none__')">📕 Bøker uten serie</button>`;
+    }
     if (!showAll) {
       const remaining = seriesSorted.length - COMPACT_LIMIT;
       pillsHtml += `<button class="pill" style="background:transparent;color:var(--muted);" onclick="window._showAllSeries=true;render()">+${remaining} til</button>`;
@@ -31821,7 +31878,8 @@ function render() {
 
   // Titles
   const viewNames = {all:'Alle bøker',reading:'Leser nå',done:'Lest',wishlist:'Ønskeliste',unread:'Ikke lest'};
-  const activeFilterLabel = seriesFilter || authorFilter || genreFilter;
+  const seriesFilterLabel = seriesFilter === '__none__' ? 'Bøker uten serie' : seriesFilter;
+  const activeFilterLabel = seriesFilterLabel || authorFilter || genreFilter;
   document.getElementById('secTitle').textContent = activeFilterLabel || viewNames[view] || 'Alle bøker';
   document.getElementById('secCnt').textContent = `${filtered.length} bøker`;
   document.getElementById('topbarTitle').textContent = activeFilterLabel || viewNames[view] || 'Alle bøker';
@@ -31861,7 +31919,7 @@ function render() {
     const blbl = {reading:'Leser nå',done:'Lest',wishlist:'Ønskeliste',unread:''};
     grid.innerHTML = filtered.map((b,i) => `
       <div class="bk" style="animation-delay:${i*0.04}s" onclick="openBookActions(${b.id})">
-        <div class="bk-cover-wrap">
+        <div class="bk-cover-wrap${effectiveStatus(b)==='done'?' is-done':''}">
           ${coverHtml(b)}
           ${(()=>{ const es = effectiveStatus(b); return blbl[es]?`<span class="bk-badge ${bmap[es]}">${blbl[es]}</span>`:''; })()}
           <div class="bk-overlay">
@@ -31900,6 +31958,7 @@ function setViewMobile(el, v) {
 function setView(el, v) {
   view = v;
   genreFilter = null; seriesFilter = null; authorFilter = null;
+  if (v !== 'done') window._yearFilter = null;
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   if (el) el.classList.add('active');
   if (v === 'stats') {
@@ -31920,6 +31979,11 @@ function updateCounts() {
   document.getElementById('cnt-done').textContent = books.filter(b=>b.status==='done').length;
   document.getElementById('cnt-wishlist').textContent = books.filter(b=>b.status==='wishlist').length;
   document.getElementById('cnt-unread').textContent = books.filter(b=>b.status==='unread').length;
+}
+
+function setYearFilter(year) {
+  window._yearFilter = year;
+  render();
 }
 
 function setGenre(g) {
@@ -33110,9 +33174,10 @@ function openReadingGoalModal() {
       <div style="font-size:13px;color:var(--muted);">lest${goal?(' av ' + goal):''}</div>
     </div>
     ${goal?`<div class="prog-bar" style="margin-bottom:14px;"><div class="prog-fill" style="width:${pct}%"></div></div>`:''}
-    <div style="display:flex;justify-content:space-between;font-size:13px;">
+    <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:12px;">
       <span>🔥 Lese-streak</span><span style="color:var(--gold);font-weight:600;">${streak} dag${streak!==1?'er':''}</span>
     </div>
+    <button class="btn-cancel" onclick="showGoalPeriodBooks()" style="width:100%;font-size:13px;">📚 Vis bøker lest i ${yr}</button>
   `;
   document.getElementById('goalModal').classList.add('open');
 }
@@ -33124,6 +33189,17 @@ function saveReadingGoal() {
   setReadingGoal(Math.max(0, Math.min(500, v)));
   closeReadingGoalModal();
   showToast(v > 0 ? '🎯 Lesemål satt: ' + v + ' bøker' : '🎯 Lesemål skrudd av');
+}
+function showGoalPeriodBooks() {
+  const yr = String(new Date().getFullYear());
+  closeReadingGoalModal();
+  // Bytt til "Lest"-fanen + sett år-filter til inneværende år
+  window._yearFilter = yr;
+  const navEl = document.querySelector('.nav-item[data-view="done"]');
+  if (navEl) setView(navEl, 'done');
+  else {
+    view = 'done'; render();
+  }
 }
 
 // ── BACKUP / RESTORE ──
