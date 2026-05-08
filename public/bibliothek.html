@@ -29205,7 +29205,7 @@ font-family: 'Source Sans Pro'
 
     <div id="loginTabs" style="display:flex;gap:4px;margin-bottom:14px;background:var(--surface2);padding:3px;border-radius:8px;">
       <button id="loginTabLogin" onclick="setLoginTab('login')" style="flex:1;padding:8px;background:var(--gold);color:#0a0a0c;border:none;border-radius:6px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">Logg inn</button>
-      <button id="loginTabRegister" onclick="setLoginTab('register')" style="flex:1;padding:8px;background:transparent;color:var(--muted);border:none;border-radius:6px;font-family:'Outfit',sans-serif;font-size:13px;cursor:pointer;">Lag ny bruker</button>
+      <button id="loginTabRegister" onclick="setLoginTab('register')" style="flex:1;padding:8px;background:transparent;color:var(--muted);border:none;border-radius:6px;font-family:'Outfit',sans-serif;font-size:13px;cursor:pointer;display:none;">Førstegangsoppsett</button>
     </div>
 
     <!-- Logg inn -->
@@ -29384,7 +29384,8 @@ font-family: 'Source Sans Pro'
     </div>
     <div id="upOwnerSection" style="display:none;">
       <div class="up-section">
-        <div class="up-section-label">Gjeste-tilgang</div>
+        <div class="up-section-label">Brukere</div>
+        <button onclick="openCreateUserModal()" style="padding:6px 12px;border-radius:6px;font-size:12px;font-family:'Outfit',sans-serif;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--text);width:100%;margin-bottom:6px;">+ Legg til ny full-tilgang-bruker</button>
         <button onclick="openCreateGuestModal()" style="padding:6px 12px;border-radius:6px;font-size:12px;font-family:'Outfit',sans-serif;cursor:pointer;border:1px solid var(--gold);background:var(--gold-dim);color:var(--gold);width:100%;margin-bottom:8px;">+ Lag gjeste-bruker</button>
         <div id="guestList" style="display:flex;flex-direction:column;gap:4px;"></div>
       </div>
@@ -29786,6 +29787,22 @@ font-family: 'Source Sans Pro'
 <!-- Cover zoom -->
 <div class="backdrop" id="coverZoomModal" style="cursor:zoom-out;" onclick="closeCoverZoom()">
   <img id="coverZoomImg" class="cover-zoom-img" alt="">
+</div>
+
+<!-- Lag ny full-tilgang-bruker (eier-tilsvarende) -->
+<div class="backdrop" id="createUserModal" onclick="if(event.target===this)closeCreateUserModal()">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-hdr"><h2>Legg til ny bruker</h2><button class="modal-close" onclick="closeCreateUserModal()">✕</button></div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:14px;">Den nye brukeren får et eget tomt bibliotek og full tilgang. Bruk gjeste-bruker hvis du vil dele <em>ditt</em> bibliotek skrivebeskyttet.</div>
+    <div class="fg"><label class="fl">Brukernavn</label><input class="fi" type="text" id="cuUsername" autocapitalize="off"></div>
+    <div class="fg"><label class="fl">Passord (minst 6 tegn)</label><input class="fi" type="password" id="cuPassword"></div>
+    <div class="fg"><label class="fl">Bekreft eier-passordet ditt</label><input class="fi" type="password" id="cuOwnerPassword" placeholder="Ditt passord" autocomplete="current-password" onkeydown="if(event.key==='Enter')doCreateUser()"></div>
+    <div id="cuStatus" style="font-size:12px;color:var(--muted);min-height:18px;margin-bottom:8px;"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button class="btn-cancel" onclick="closeCreateUserModal()">Avbryt</button>
+      <button class="btn-save" onclick="doCreateUser()">Opprett</button>
+    </div>
+  </div>
 </div>
 
 <!-- Lag gjeste-bruker -->
@@ -34081,6 +34098,42 @@ async function loadGuestLinks() {
   } catch(e) {}
 }
 
+// ── LAG NY FULL-TILGANG-BRUKER ──
+function openCreateUserModal() {
+  document.getElementById('cuUsername').value = '';
+  document.getElementById('cuPassword').value = '';
+  document.getElementById('cuOwnerPassword').value = '';
+  document.getElementById('cuStatus').textContent = '';
+  document.getElementById('createUserModal').classList.add('open');
+}
+function closeCreateUserModal() {
+  document.getElementById('createUserModal').classList.remove('open');
+}
+async function doCreateUser() {
+  if (!window._username) { showToast('Ikke innlogget'); return; }
+  const newUsername = document.getElementById('cuUsername').value.trim();
+  const newPassword = document.getElementById('cuPassword').value;
+  const ownerPassword = document.getElementById('cuOwnerPassword').value;
+  const status = document.getElementById('cuStatus');
+  if (!newUsername || !newPassword || !ownerPassword) { status.textContent = 'Fyll ut alle felter'; status.style.color = 'var(--red)'; return; }
+  if (newPassword.length < 6) { status.textContent = 'Passord må være minst 6 tegn'; status.style.color = 'var(--red)'; return; }
+  const server = getServerUrl();
+  status.textContent = 'Oppretter…'; status.style.color = 'var(--gold)';
+  try {
+    const r = await fetch(server + '/auth/create-user', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ ownerUsername: window._username, ownerPassword, newUsername, newPassword }),
+    });
+    const j = await r.json();
+    if (!r.ok || !j.ok) { status.textContent = j.error || 'Feil'; status.style.color = 'var(--red)'; return; }
+    closeCreateUserModal();
+    showToast('🎉 Bruker «' + newUsername + '» opprettet');
+  } catch(e) {
+    status.textContent = e.message || 'Feil';
+    status.style.color = 'var(--red)';
+  }
+}
+
 // ── LAG GJESTE-BRUKER ──
 function openCreateGuestModal() {
   document.getElementById('cgUsername').value = '';
@@ -34491,10 +34544,29 @@ async function serverAvailable(url) {
   } catch(e) { return false; }
 }
 
+async function checkRegistrationOpen() {
+  try {
+    const server = getServerUrl() || AUTO_SERVER_URL;
+    if (!server) return;
+    const r = await fetch(server + '/auth/registration-open');
+    const j = await r.json();
+    const tabBtn = document.getElementById('loginTabRegister');
+    const panel = document.getElementById('loginPanelRegister');
+    if (j?.open) {
+      if (tabBtn) tabBtn.style.display = '';
+    } else {
+      if (tabBtn) tabBtn.style.display = 'none';
+      // Hvis vi er på register-tab og den er stengt, bytt til login
+      if (panel && panel.style.display !== 'none') setLoginTab('login');
+    }
+  } catch(_) {}
+}
+
 async function init() {
   document.getElementById('vbtnList').classList.toggle('active', viewMode === 'list');
   document.getElementById('vbtnGrid').classList.toggle('active', viewMode === 'grid');
   await loadBooks();
+  checkRegistrationOpen();
   var savedPin = localStorage.getItem('bibliothek_pin');
   var savedAuthToken = localStorage.getItem('bibliothek_authToken');
   var savedAuthUser = localStorage.getItem('bibliothek_authUser');

@@ -92,9 +92,34 @@ function validateUsername(u) {
   return null;
 }
 
+// Sjekk om noen bruker finnes (for å avgjøre om registrering er åpen)
+async function anyUserExists() {
+  if (!r2) return false;
+  try {
+    const { ListObjectsV2Command } = require('@aws-sdk/client-s3');
+    const list = await r2.send(new ListObjectsV2Command({
+      Bucket: BUCKET, Prefix: 'users/', MaxKeys: 1,
+    }));
+    return (list.Contents || []).length > 0;
+  } catch(_) { return false; }
+}
+
+// GET /auth/registration-open — sier om åpen registrering er tillatt
+app.get('/auth/registration-open', async (req, res) => {
+  const blocked = await anyUserExists();
+  res.json({ ok: true, open: !blocked });
+});
+
 // POST /auth/register — body: {username, password, migratePinHash?}
+// Tillates KUN hvis det ikke finnes brukere (førstegangsoppsett)
 app.post('/auth/register', async (req, res) => {
   try {
+    if (await anyUserExists()) {
+      return res.status(403).json({
+        ok: false,
+        error: 'Registrering er stengt. Be eieren legge til kontoen din via brukerpanelet.',
+      });
+    }
     const { username, password, migratePinHash } = req.body || {};
     const err = validateUsername(username);
     if (err) return res.status(400).json({ ok: false, error: err });
@@ -103,7 +128,6 @@ app.post('/auth/register', async (req, res) => {
     const existing = await loadUser(lower);
     if (existing) return res.status(409).json({ ok: false, error: 'Brukernavnet er allerede tatt' });
     const { salt, hash } = hashPassword(password);
-    // libraryKey: bruk eksisterende pinHash for migrering, ellers nytt
     let libraryKey = (typeof migratePinHash === 'string' && /^[a-f0-9]{16,64}$/.test(migratePinHash))
       ? migratePinHash
       : crypto.randomBytes(16).toString('hex');
@@ -118,6 +142,43 @@ app.post('/auth/register', async (req, res) => {
     const token = makeToken();
     sessionStore.set(token, { username: user.username, libraryKey, expiresAt: Date.now() + SESSION_TTL_MS });
     res.json({ ok: true, token, username: user.username, libraryKey });
+  } catch(e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// POST /auth/create-user — eier oppretter ny full bruker (ikke gjest)
+// Body: {ownerUsername, ownerPassword, newUsername, newPassword}
+app.post('/auth/create-user', async (req, res) => {
+  try {
+    const { ownerUsername, ownerPassword, newUsername, newPassword } = req.body || {};
+    if (!ownerUsername || !ownerPassword) return res.status(400).json({ ok: false, error: 'Eier-credentials påkrevd' });
+    const owner = await loadUser(ownerUsername);
+    if (!owner || !verifyPassword(ownerPassword, owner.salt, owner.passwordHash)) {
+      return res.status(401).json({ ok: false, error: 'Feil eier-passord' });
+    }
+    // Eierroller: ingen gjester kan opprette nye brukere
+    if (owner.readOnlyForLibraryKey) {
+      return res.status(403).json({ ok: false, error: 'Kun eiere kan opprette nye brukere' });
+    }
+    const err = validateUsername(newUsername);
+    if (err) return res.status(400).json({ ok: false, error: err });
+    if (!newPassword || newPassword.length < 6) return res.status(400).json({ ok: false, error: 'Passord må være minst 6 tegn' });
+    const lower = newUsername.trim().toLowerCase();
+    if (lower === ownerUsername.trim().toLowerCase()) return res.status(400).json({ ok: false, error: 'Brukernavnet må være forskjellig fra ditt eget' });
+    const existing = await loadUser(lower);
+    if (existing) return res.status(409).json({ ok: false, error: 'Brukernavnet er allerede tatt' });
+    const { salt, hash } = hashPassword(newPassword);
+    const user = {
+      username: newUsername.trim(),
+      passwordHash: hash, salt,
+      libraryKey: crypto.randomBytes(16).toString('hex'),
+      createdBy: owner.username,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    await saveUser(user);
+    res.json({ ok: true, username: user.username });
   } catch(e) {
     res.status(500).json({ ok: false, error: e.message });
   }
