@@ -29206,7 +29206,6 @@ font-family: 'Source Sans Pro'
     <div id="loginTabs" style="display:flex;gap:4px;margin-bottom:14px;background:var(--surface2);padding:3px;border-radius:8px;">
       <button id="loginTabLogin" onclick="setLoginTab('login')" style="flex:1;padding:8px;background:var(--gold);color:#0a0a0c;border:none;border-radius:6px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">Logg inn</button>
       <button id="loginTabRegister" onclick="setLoginTab('register')" style="flex:1;padding:8px;background:transparent;color:var(--muted);border:none;border-radius:6px;font-family:'Outfit',sans-serif;font-size:13px;cursor:pointer;">Lag ny bruker</button>
-      <button id="loginTabLegacy" onclick="setLoginTab('legacy')" style="flex:1;padding:8px;background:transparent;color:var(--muted);border:none;border-radius:6px;font-family:'Outfit',sans-serif;font-size:13px;cursor:pointer;">PIN</button>
     </div>
 
     <!-- Logg inn -->
@@ -29221,19 +29220,7 @@ font-family: 'Source Sans Pro'
       <input class="login-input" id="regUsername" type="text" placeholder="Brukernavn (f.eks. Handegaard)" autocomplete="username" autocapitalize="off">
       <input class="login-input" id="regPassword" type="password" placeholder="Passord (minst 6 tegn)" autocomplete="new-password">
       <input class="login-input" id="regPasswordConfirm" type="password" placeholder="Bekreft passord" autocomplete="new-password" onkeydown="if(event.key==='Enter')doUserRegister()">
-      <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);margin:8px 0 12px;cursor:pointer;">
-        <input type="checkbox" id="regMigratePin" style="margin:0;">
-        <span>Overfør eksisterende PIN-bibliotek</span>
-      </label>
-      <input class="login-input" id="regMigratePinInput" type="password" placeholder="Eksisterende PIN" style="display:none;" maxlength="20">
       <button class="login-btn" onclick="doUserRegister()">Lag bruker</button>
-    </div>
-
-    <!-- Eldre PIN-innlogging -->
-    <div id="loginPanelLegacy" style="display:none;">
-      <input class="login-input" id="loginPinInput" type="password" placeholder="PIN-kode" maxlength="20" onkeydown="if(event.key==='Enter')loginConnect()">
-      <button class="login-btn" onclick="loginConnect()">Logg inn med PIN</button>
-      <div style="font-size:11.5px;color:var(--muted);margin-top:8px;text-align:center;">PIN er fortsatt støttet for å logge inn på eldre data</div>
     </div>
 
     <div id="loginStatus"></div>
@@ -29395,16 +29382,10 @@ font-family: 'Source Sans Pro'
       <button class="user-panel-switch-btn" onclick="openChangePasswordModal()">🔒 Endre passord</button>
       <button class="user-panel-switch-btn" onclick="logoutUser()">🚪 Logg ut</button>
     </div>
-    <button class="user-panel-switch-btn" onclick="switchUser()">🔄 Bytt bruker (PIN)</button>
     <div id="upOwnerSection" style="display:none;">
       <div class="up-section">
         <div class="up-section-label">Gjeste-tilgang</div>
-        <div class="up-guest-row">
-          <input class="kindle-input" id="guestLabelInput" placeholder="Navn (f.eks. Pappa)" maxlength="30" style="font-size:12px;flex:1;">
-          <input class="kindle-input" id="guestPinInput" placeholder="PIN" maxlength="20" style="font-size:12px;width:70px;">
-          <button onclick="createGuestPin()" style="padding:4px 10px;border-radius:5px;font-size:11px;font-family:'Outfit',sans-serif;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);white-space:nowrap;">+</button>
-        </div>
-        <div id="guestPinStatus" style="font-size:10px;color:var(--muted);margin-bottom:6px;min-height:14px;"></div>
+        <button onclick="openCreateGuestModal()" style="padding:6px 12px;border-radius:6px;font-size:12px;font-family:'Outfit',sans-serif;cursor:pointer;border:1px solid var(--gold);background:var(--gold-dim);color:var(--gold);width:100%;margin-bottom:8px;">+ Lag gjeste-bruker</button>
         <div id="guestList" style="display:flex;flex-direction:column;gap:4px;"></div>
       </div>
       <div class="up-section" style="margin-top:10px;">
@@ -29805,6 +29786,22 @@ font-family: 'Source Sans Pro'
 <!-- Cover zoom -->
 <div class="backdrop" id="coverZoomModal" style="cursor:zoom-out;" onclick="closeCoverZoom()">
   <img id="coverZoomImg" class="cover-zoom-img" alt="">
+</div>
+
+<!-- Lag gjeste-bruker -->
+<div class="backdrop" id="createGuestModal" onclick="if(event.target===this)closeCreateGuestModal()">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-hdr"><h2>Ny gjeste-bruker</h2><button class="modal-close" onclick="closeCreateGuestModal()">✕</button></div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:14px;">Gjesten får skrivebeskyttet tilgang til biblioteket ditt med eget brukernavn og passord.</div>
+    <div class="fg"><label class="fl">Brukernavn</label><input class="fi" type="text" id="cgUsername" placeholder="F.eks. mamma" autocapitalize="off"></div>
+    <div class="fg"><label class="fl">Passord (minst 6 tegn)</label><input class="fi" type="password" id="cgPassword"></div>
+    <div class="fg"><label class="fl">Bekreft eier-passordet ditt</label><input class="fi" type="password" id="cgOwnerPassword" placeholder="Ditt passord" autocomplete="current-password" onkeydown="if(event.key==='Enter')doCreateGuest()"></div>
+    <div id="cgStatus" style="font-size:12px;color:var(--muted);min-height:18px;margin-bottom:8px;"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button class="btn-cancel" onclick="closeCreateGuestModal()">Avbryt</button>
+      <button class="btn-save" onclick="doCreateGuest()">Opprett</button>
+    </div>
+  </div>
 </div>
 
 <!-- Endre passord -->
@@ -34063,22 +34060,93 @@ async function createGuestPin() {
 async function loadGuestLinks() {
   var server = getServerUrl();
   var el = document.getElementById('guestList');
-  if (!el || !window._pinKey || !server) return;
+  if (!el || !window._username || !server) return;
   try {
-    var resp = await fetch(server + '/guest-links/' + encodeURIComponent(window._pinKey));
-    if (!resp.ok) return;
-    var json = await resp.json();
-    var guests = json.guests || [];
-    if (!guests.length) { el.innerHTML = '<div style="font-size:10px;color:var(--muted);">Ingen gjester ennå.</div>'; return; }
-    el.innerHTML = guests.map(g => {
+    // Hent bruker-baserte gjester
+    var resp = await fetch(server + '/auth/guests/' + encodeURIComponent(window._username));
+    var userGuests = [];
+    if (resp.ok) { var json = await resp.json(); userGuests = json.guests || []; }
+    if (!userGuests.length) {
+      el.innerHTML = '<div style="font-size:10px;color:var(--muted);">Ingen gjester ennå.</div>';
+      return;
+    }
+    el.innerHTML = userGuests.map(g => {
       var date = g.created ? new Date(g.created).toLocaleDateString('no') : '';
       return '<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border);">' +
-        '<span style="flex:1;font-size:11px;color:var(--text);">' + (g.label || '—') + '</span>' +
+        '<span style="flex:1;font-size:11px;color:var(--text);">' + (g.label || g.username) + ' <span style="color:var(--muted);">(' + g.username + ')</span></span>' +
         '<span style="font-size:10px;color:var(--muted);">' + date + '</span>' +
-        '<button onclick="deleteGuestLink(\'' + g.guestKey + '\')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:13px;padding:0 2px;" title="Fjern gjest">✕</button>' +
+        '<button onclick="deleteGuestUser(\'' + g.username.replace(/'/g, "\\'") + '\')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:13px;padding:0 2px;" title="Fjern gjest">✕</button>' +
         '</div>';
     }).join('');
   } catch(e) {}
+}
+
+// ── LAG GJESTE-BRUKER ──
+function openCreateGuestModal() {
+  document.getElementById('cgUsername').value = '';
+  document.getElementById('cgPassword').value = '';
+  document.getElementById('cgOwnerPassword').value = '';
+  document.getElementById('cgStatus').textContent = '';
+  document.getElementById('createGuestModal').classList.add('open');
+}
+function closeCreateGuestModal() {
+  document.getElementById('createGuestModal').classList.remove('open');
+}
+async function doCreateGuest() {
+  if (!window._username) { showToast('Ikke innlogget'); return; }
+  const guestUsername = document.getElementById('cgUsername').value.trim();
+  const guestPassword = document.getElementById('cgPassword').value;
+  const ownerPassword = document.getElementById('cgOwnerPassword').value;
+  const status = document.getElementById('cgStatus');
+  if (!guestUsername || !guestPassword || !ownerPassword) { status.textContent = 'Fyll ut alle felter'; status.style.color = 'var(--red)'; return; }
+  if (guestPassword.length < 6) { status.textContent = 'Gjeste-passord må være minst 6 tegn'; status.style.color = 'var(--red)'; return; }
+  const server = getServerUrl();
+  status.textContent = 'Oppretter…'; status.style.color = 'var(--gold)';
+  try {
+    const r = await fetch(server + '/auth/create-guest', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        ownerUsername: window._username,
+        ownerPassword,
+        guestUsername,
+        guestPassword,
+        label: guestUsername,
+      }),
+    });
+    const j = await r.json();
+    if (!r.ok || !j.ok) { status.textContent = j.error || 'Feil'; status.style.color = 'var(--red)'; return; }
+    closeCreateGuestModal();
+    showToast('🎉 Gjeste-bruker «' + guestUsername + '» opprettet');
+    await loadGuestLinks();
+  } catch(e) {
+    status.textContent = e.message || 'Feil';
+    status.style.color = 'var(--red)';
+  }
+}
+async function deleteGuestUser(username) {
+  if (!window._username) return;
+  const ok = await askConfirm({
+    title: 'Fjerne gjest?',
+    body: 'Vil du fjerne gjeste-bruker «' + username + '»? Brukeren mister all tilgang.',
+    options: [
+      { key: 'yes', label: '🗑 Fjern gjest', danger: true },
+      { key: 'no',  label: 'Avbryt' },
+    ],
+  });
+  if (ok !== 'yes') return;
+  const ownerPassword = prompt('Skriv inn ditt eier-passord for å bekrefte:');
+  if (!ownerPassword) return;
+  const server = getServerUrl();
+  try {
+    const r = await fetch(server + '/auth/guest/' + encodeURIComponent(username), {
+      method: 'DELETE', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ ownerUsername: window._username, ownerPassword }),
+    });
+    const j = await r.json();
+    if (!r.ok || !j.ok) { showToast('⚠️ ' + (j.error || 'Feil')); return; }
+    showToast('🗑 Gjest fjernet');
+    await loadGuestLinks();
+  } catch(e) { showToast('⚠️ ' + (e.message || e)); }
 }
 
 async function deleteGuestLink(guestKey) {
@@ -34121,23 +34189,20 @@ function updateUserPanel() {
     ownerSec.style.display = 'none';
   } else if (window._readOnly) {
     dot.className = 'user-panel-status-dot guest';
-    txt.textContent = 'Gjest (lesetilgang)';
+    txt.textContent = window._username ? ('Gjest: ' + window._username) : 'Gjest (lesetilgang)';
     ownerSec.style.display = 'none';
   } else {
     dot.className = 'user-panel-status-dot';
-    txt.textContent = 'Tilkoblet som eier';
+    txt.textContent = window._username ? ('Tilkoblet som ' + window._username) : 'Tilkoblet som eier';
     ownerSec.style.display = '';
+    if (window._username) loadGuestLinks();
   }
+  updateUserDisplay();
 }
 function switchUser() {
+  // Beholdt for evt. eldre referanser — videresender til logoutUser()
   closeUserPanel();
-  window._pinKey = null;
-  window._readOnly = false;
-  localStorage.removeItem('bibliothek_pin');
-  document.getElementById('loginOverlay').classList.add('visible');
-  document.getElementById('loginPinInput').value = '';
-  setLoginStatus('');
-  render();
+  logoutUser();
 }
 
 // ── CONFLICT RESOLUTION ──
@@ -34158,8 +34223,9 @@ function resolveConflict(choice) {
 
 // ── LOGIN-TABS ──
 function setLoginTab(name) {
-  ['login','register','legacy'].forEach(t => {
-    document.getElementById('loginPanel' + t.charAt(0).toUpperCase() + t.slice(1)).style.display = (t === name) ? '' : 'none';
+  ['login','register'].forEach(t => {
+    const panel = document.getElementById('loginPanel' + t.charAt(0).toUpperCase() + t.slice(1));
+    if (panel) panel.style.display = (t === name) ? '' : 'none';
     const btn = document.getElementById('loginTab' + t.charAt(0).toUpperCase() + t.slice(1));
     if (btn) {
       const active = (t === name);
@@ -34227,14 +34293,15 @@ async function doUserRegister() {
 }
 
 async function applyAuthSession(j) {
-  // j: { token, username, libraryKey }
+  // j: { token, username, libraryKey, readOnly? }
   localStorage.setItem('bibliothek_authToken', j.token);
   localStorage.setItem('bibliothek_authUser', j.username);
   localStorage.setItem('bibliothek_authLibKey', j.libraryKey);
+  localStorage.setItem('bibliothek_authReadOnly', j.readOnly ? '1' : '0');
   window._authToken = j.token;
   window._username = j.username;
   window._pinKey = j.libraryKey; // gjenbruk eksisterende variabel for R2-paths
-  window._readOnly = false;
+  window._readOnly = !!j.readOnly;
 
   const server = getServerUrl();
   setLoginStatus('Henter bibliotek…', 'var(--gold)');
@@ -34439,6 +34506,7 @@ async function init() {
     window._authToken = savedAuthToken;
     window._username = savedAuthUser;
     window._pinKey = savedAuthLibKey;
+    window._readOnly = localStorage.getItem('bibliothek_authReadOnly') === '1';
     try {
       const r = await fetch(AUTO_SERVER_URL + '/library/' + encodeURIComponent(savedAuthLibKey));
       if (r.ok) {

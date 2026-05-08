@@ -133,9 +133,93 @@ app.post('/auth/login', async (req, res) => {
     if (!verifyPassword(password, user.salt, user.passwordHash)) {
       return res.status(401).json({ ok: false, error: 'Feil brukernavn eller passord' });
     }
+    // Gjester: libraryKey peker på eierens bibliotek + readOnly-flagg
+    const isGuest = !!user.readOnlyForLibraryKey;
+    const libraryKey = isGuest ? user.readOnlyForLibraryKey : user.libraryKey;
     const token = makeToken();
-    sessionStore.set(token, { username: user.username, libraryKey: user.libraryKey, expiresAt: Date.now() + SESSION_TTL_MS });
-    res.json({ ok: true, token, username: user.username, libraryKey: user.libraryKey });
+    sessionStore.set(token, { username: user.username, libraryKey, readOnly: isGuest, expiresAt: Date.now() + SESSION_TTL_MS });
+    res.json({ ok: true, token, username: user.username, libraryKey, readOnly: isGuest });
+  } catch(e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// POST /auth/create-guest — body: {ownerUsername, ownerPassword, guestUsername, guestPassword, label?}
+app.post('/auth/create-guest', async (req, res) => {
+  try {
+    const { ownerUsername, ownerPassword, guestUsername, guestPassword, label } = req.body || {};
+    if (!ownerUsername || !ownerPassword) return res.status(400).json({ ok: false, error: 'Eier-credentials påkrevd' });
+    const owner = await loadUser(ownerUsername);
+    if (!owner || !verifyPassword(ownerPassword, owner.salt, owner.passwordHash)) {
+      return res.status(401).json({ ok: false, error: 'Feil eier-passord' });
+    }
+    const err = validateUsername(guestUsername);
+    if (err) return res.status(400).json({ ok: false, error: err });
+    if (!guestPassword || guestPassword.length < 6) return res.status(400).json({ ok: false, error: 'Gjeste-passord må være minst 6 tegn' });
+    const lower = guestUsername.trim().toLowerCase();
+    if (lower === ownerUsername.trim().toLowerCase()) return res.status(400).json({ ok: false, error: 'Gjeste-brukernavn må være forskjellig fra eier' });
+    const existing = await loadUser(lower);
+    if (existing) return res.status(409).json({ ok: false, error: 'Brukernavnet er allerede tatt' });
+    const { salt, hash } = hashPassword(guestPassword);
+    const guest = {
+      username: guestUsername.trim(),
+      passwordHash: hash, salt,
+      libraryKey: crypto.randomBytes(8).toString('hex'),
+      readOnlyForLibraryKey: owner.libraryKey,
+      ownerUsername: owner.username,
+      label: label || guestUsername.trim(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    await saveUser(guest);
+    // Lagre i eierens gjesteliste i R2
+    try {
+      const list = await loadGuestList(owner.libraryKey);
+      list.push({ guestUsername: guest.username, label: guest.label, created: guest.createdAt });
+      await saveGuestList(owner.libraryKey, list);
+    } catch(_) {}
+    res.json({ ok: true, guest: { username: guest.username, label: guest.label } });
+  } catch(e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// GET /auth/guests/:ownerUsername — list guests for an owner
+app.get('/auth/guests/:ownerUsername', async (req, res) => {
+  try {
+    const owner = await loadUser(req.params.ownerUsername);
+    if (!owner) return res.status(404).json({ ok: false, error: 'Eier ikke funnet' });
+    const list = await loadGuestList(owner.libraryKey);
+    // Filtrer ut PIN-baserte og behold bare bruker-baserte
+    const guestUsers = list.filter(g => g.guestUsername).map(g => ({ username: g.guestUsername, label: g.label, created: g.created }));
+    res.json({ ok: true, guests: guestUsers });
+  } catch(e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// DELETE /auth/guest/:username — body: {ownerUsername, ownerPassword}
+app.delete('/auth/guest/:username', async (req, res) => {
+  try {
+    const { ownerUsername, ownerPassword } = req.body || {};
+    const owner = await loadUser(ownerUsername);
+    if (!owner || !verifyPassword(ownerPassword, owner.salt, owner.passwordHash)) {
+      return res.status(401).json({ ok: false, error: 'Feil eier-passord' });
+    }
+    const guest = await loadUser(req.params.username);
+    if (!guest || guest.readOnlyForLibraryKey !== owner.libraryKey) {
+      return res.status(404).json({ ok: false, error: 'Gjest ikke funnet' });
+    }
+    // Slett bruker
+    if (r2) {
+      try { await r2.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: userKey(guest.username.toLowerCase()) })); } catch(_) {}
+    }
+    // Fjern fra liste
+    try {
+      const list = await loadGuestList(owner.libraryKey);
+      await saveGuestList(owner.libraryKey, list.filter(g => g.guestUsername !== guest.username));
+    } catch(_) {}
+    res.json({ ok: true });
   } catch(e) {
     res.status(500).json({ ok: false, error: e.message });
   }
