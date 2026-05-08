@@ -29202,8 +29202,40 @@ font-family: 'Source Sans Pro'
   <div class="login-box">
     <div class="login-title">Bibliothek</div>
     <div class="login-subtitle">Norsk e-bokbibliotek</div>
-    <input class="login-input" id="loginPinInput" type="password" placeholder="PIN-kode" maxlength="20" onkeydown="if(event.key==='Enter')loginConnect()">
-    <button class="login-btn" onclick="loginConnect()">Logg inn</button>
+
+    <div id="loginTabs" style="display:flex;gap:4px;margin-bottom:14px;background:var(--surface2);padding:3px;border-radius:8px;">
+      <button id="loginTabLogin" onclick="setLoginTab('login')" style="flex:1;padding:8px;background:var(--gold);color:#0a0a0c;border:none;border-radius:6px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">Logg inn</button>
+      <button id="loginTabRegister" onclick="setLoginTab('register')" style="flex:1;padding:8px;background:transparent;color:var(--muted);border:none;border-radius:6px;font-family:'Outfit',sans-serif;font-size:13px;cursor:pointer;">Lag ny bruker</button>
+      <button id="loginTabLegacy" onclick="setLoginTab('legacy')" style="flex:1;padding:8px;background:transparent;color:var(--muted);border:none;border-radius:6px;font-family:'Outfit',sans-serif;font-size:13px;cursor:pointer;">PIN</button>
+    </div>
+
+    <!-- Logg inn -->
+    <div id="loginPanelLogin">
+      <input class="login-input" id="loginUsername" type="text" placeholder="Brukernavn" autocomplete="username" autocapitalize="off">
+      <input class="login-input" id="loginPassword" type="password" placeholder="Passord" autocomplete="current-password" onkeydown="if(event.key==='Enter')doUserLogin()">
+      <button class="login-btn" onclick="doUserLogin()">Logg inn</button>
+    </div>
+
+    <!-- Lag bruker -->
+    <div id="loginPanelRegister" style="display:none;">
+      <input class="login-input" id="regUsername" type="text" placeholder="Brukernavn (f.eks. Handegaard)" autocomplete="username" autocapitalize="off">
+      <input class="login-input" id="regPassword" type="password" placeholder="Passord (minst 6 tegn)" autocomplete="new-password">
+      <input class="login-input" id="regPasswordConfirm" type="password" placeholder="Bekreft passord" autocomplete="new-password" onkeydown="if(event.key==='Enter')doUserRegister()">
+      <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);margin:8px 0 12px;cursor:pointer;">
+        <input type="checkbox" id="regMigratePin" style="margin:0;">
+        <span>Overfør eksisterende PIN-bibliotek</span>
+      </label>
+      <input class="login-input" id="regMigratePinInput" type="password" placeholder="Eksisterende PIN" style="display:none;" maxlength="20">
+      <button class="login-btn" onclick="doUserRegister()">Lag bruker</button>
+    </div>
+
+    <!-- Eldre PIN-innlogging -->
+    <div id="loginPanelLegacy" style="display:none;">
+      <input class="login-input" id="loginPinInput" type="password" placeholder="PIN-kode" maxlength="20" onkeydown="if(event.key==='Enter')loginConnect()">
+      <button class="login-btn" onclick="loginConnect()">Logg inn med PIN</button>
+      <div style="font-size:11.5px;color:var(--muted);margin-top:8px;text-align:center;">PIN er fortsatt støttet for å logge inn på eldre data</div>
+    </div>
+
     <div id="loginStatus"></div>
   </div>
 </div>
@@ -29356,7 +29388,14 @@ font-family: 'Source Sans Pro'
       <div class="user-panel-status-dot offline" id="upDot"></div>
       <span id="upStatusText" style="font-size:13px;">Ikke tilkoblet</span>
     </div>
-    <button class="user-panel-switch-btn" onclick="switchUser()">🔄 Bytt bruker</button>
+    <div id="upUsernameRow" style="font-size:13px;margin-bottom:8px;color:var(--text);display:none;">
+      Innlogget som <strong id="userDisplayName" style="color:var(--gold);"></strong>
+    </div>
+    <div id="upUserAuthBtns" style="display:none;flex-direction:column;gap:6px;margin-bottom:10px;">
+      <button class="user-panel-switch-btn" onclick="openChangePasswordModal()">🔒 Endre passord</button>
+      <button class="user-panel-switch-btn" onclick="logoutUser()">🚪 Logg ut</button>
+    </div>
+    <button class="user-panel-switch-btn" onclick="switchUser()">🔄 Bytt bruker (PIN)</button>
     <div id="upOwnerSection" style="display:none;">
       <div class="up-section">
         <div class="up-section-label">Gjeste-tilgang</div>
@@ -29766,6 +29805,21 @@ font-family: 'Source Sans Pro'
 <!-- Cover zoom -->
 <div class="backdrop" id="coverZoomModal" style="cursor:zoom-out;" onclick="closeCoverZoom()">
   <img id="coverZoomImg" class="cover-zoom-img" alt="">
+</div>
+
+<!-- Endre passord -->
+<div class="backdrop" id="changePwModal" onclick="if(event.target===this)closeChangePasswordModal()">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-hdr"><h2>Endre passord</h2><button class="modal-close" onclick="closeChangePasswordModal()">✕</button></div>
+    <div class="fg"><label class="fl">Gammelt passord</label><input class="fi" type="password" id="cpOldPw" autocomplete="current-password"></div>
+    <div class="fg"><label class="fl">Nytt passord (minst 6 tegn)</label><input class="fi" type="password" id="cpNewPw" autocomplete="new-password"></div>
+    <div class="fg"><label class="fl">Bekreft nytt passord</label><input class="fi" type="password" id="cpNewPw2" autocomplete="new-password" onkeydown="if(event.key==='Enter')doChangePassword()"></div>
+    <div id="cpStatus" style="font-size:12px;color:var(--muted);min-height:18px;margin-bottom:8px;"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button class="btn-cancel" onclick="closeChangePasswordModal()">Avbryt</button>
+      <button class="btn-save" onclick="doChangePassword()">Lagre</button>
+    </div>
+  </div>
 </div>
 
 <!-- Filter-modal for mobil -->
@@ -34102,6 +34156,171 @@ function resolveConflict(choice) {
   if (_conflictResolve) { _conflictResolve(choice); _conflictResolve = null; }
 }
 
+// ── LOGIN-TABS ──
+function setLoginTab(name) {
+  ['login','register','legacy'].forEach(t => {
+    document.getElementById('loginPanel' + t.charAt(0).toUpperCase() + t.slice(1)).style.display = (t === name) ? '' : 'none';
+    const btn = document.getElementById('loginTab' + t.charAt(0).toUpperCase() + t.slice(1));
+    if (btn) {
+      const active = (t === name);
+      btn.style.background = active ? 'var(--gold)' : 'transparent';
+      btn.style.color = active ? '#0a0a0c' : 'var(--muted)';
+      btn.style.fontWeight = active ? '600' : '400';
+    }
+  });
+  setLoginStatus('');
+}
+// PIN-overføring toggle
+document.addEventListener('change', e => {
+  if (e.target.id === 'regMigratePin') {
+    document.getElementById('regMigratePinInput').style.display = e.target.checked ? '' : 'none';
+  }
+});
+
+async function doUserLogin() {
+  const username = document.getElementById('loginUsername').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  if (!username || !password) { setLoginStatus('Fyll inn brukernavn og passord', 'var(--red)'); return; }
+  const server = getServerUrl();
+  if (!server) { setLoginStatus('Ingen server funnet', 'var(--red)'); return; }
+  setLoginStatus('Logger inn…', 'var(--gold)');
+  try {
+    const r = await fetch(server + '/auth/login', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ username, password }),
+    });
+    const j = await r.json();
+    if (!r.ok || !j.ok) { setLoginStatus('✗ ' + (j.error || 'Feil ved innlogging'), 'var(--red)'); return; }
+    await applyAuthSession(j);
+  } catch(e) {
+    setLoginStatus('✗ Kunne ikke nå server: ' + (e.message || e), 'var(--red)');
+  }
+}
+
+async function doUserRegister() {
+  const username = document.getElementById('regUsername').value.trim();
+  const password = document.getElementById('regPassword').value;
+  const confirm  = document.getElementById('regPasswordConfirm').value;
+  if (!username || !password) { setLoginStatus('Fyll inn brukernavn og passord', 'var(--red)'); return; }
+  if (password !== confirm) { setLoginStatus('Passordene er ulike', 'var(--red)'); return; }
+  if (password.length < 6) { setLoginStatus('Passord må være minst 6 tegn', 'var(--red)'); return; }
+  const server = getServerUrl();
+  if (!server) { setLoginStatus('Ingen server funnet', 'var(--red)'); return; }
+  let migratePinHash = null;
+  if (document.getElementById('regMigratePin').checked) {
+    const pin = document.getElementById('regMigratePinInput').value.trim();
+    if (pin) migratePinHash = await pinHash(pin);
+  }
+  setLoginStatus('Lager bruker…', 'var(--gold)');
+  try {
+    const r = await fetch(server + '/auth/register', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ username, password, migratePinHash }),
+    });
+    const j = await r.json();
+    if (!r.ok || !j.ok) { setLoginStatus('✗ ' + (j.error || 'Feil'), 'var(--red)'); return; }
+    showToast('🎉 Bruker opprettet — velkommen ' + j.username + '!');
+    await applyAuthSession(j);
+  } catch(e) {
+    setLoginStatus('✗ ' + (e.message || e), 'var(--red)');
+  }
+}
+
+async function applyAuthSession(j) {
+  // j: { token, username, libraryKey }
+  localStorage.setItem('bibliothek_authToken', j.token);
+  localStorage.setItem('bibliothek_authUser', j.username);
+  localStorage.setItem('bibliothek_authLibKey', j.libraryKey);
+  window._authToken = j.token;
+  window._username = j.username;
+  window._pinKey = j.libraryKey; // gjenbruk eksisterende variabel for R2-paths
+  window._readOnly = false;
+
+  const server = getServerUrl();
+  setLoginStatus('Henter bibliotek…', 'var(--gold)');
+  try {
+    const resp = await fetch(server + '/library/' + encodeURIComponent(j.libraryKey));
+    const data = await resp.json();
+    loadGuestReads();
+    const serverTs = data.updatedAt ? new Date(data.updatedAt).getTime() : 0;
+    const localTs = parseInt(localStorage.getItem('bibliothek_ts') || '0');
+    const serverBooks = data.books || [];
+    if (serverBooks.length && (serverTs > localTs || !books.length)) {
+      books = serverBooks;
+      await saveBooks();
+    } else if (books.length && localTs >= serverTs) {
+      await pushToPin();
+    }
+    render();
+    document.getElementById('loginOverlay').classList.remove('visible');
+    setLoginStatus('');
+    updateUserDisplay();
+  } catch(e) {
+    setLoginStatus('✗ Kunne ikke hente bibliotek: ' + (e.message || e), 'var(--red)');
+  }
+}
+
+function updateUserDisplay() {
+  const el = document.getElementById('userDisplayName');
+  if (el) el.textContent = window._username || '';
+  const row = document.getElementById('upUsernameRow');
+  const authBtns = document.getElementById('upUserAuthBtns');
+  if (row) row.style.display = window._username ? '' : 'none';
+  if (authBtns) authBtns.style.display = window._username ? 'flex' : 'none';
+}
+
+function openChangePasswordModal() {
+  document.getElementById('cpOldPw').value = '';
+  document.getElementById('cpNewPw').value = '';
+  document.getElementById('cpNewPw2').value = '';
+  document.getElementById('cpStatus').textContent = '';
+  document.getElementById('changePwModal').classList.add('open');
+}
+function closeChangePasswordModal() {
+  document.getElementById('changePwModal').classList.remove('open');
+}
+async function doChangePassword() {
+  if (!window._username) { showToast('Ikke innlogget'); return; }
+  const oldPw = document.getElementById('cpOldPw').value;
+  const newPw = document.getElementById('cpNewPw').value;
+  const newPw2 = document.getElementById('cpNewPw2').value;
+  const status = document.getElementById('cpStatus');
+  if (!oldPw || !newPw) { status.textContent = 'Fyll ut alle felter'; status.style.color = 'var(--red)'; return; }
+  if (newPw !== newPw2) { status.textContent = 'Passordene er ulike'; status.style.color = 'var(--red)'; return; }
+  if (newPw.length < 6) { status.textContent = 'Minst 6 tegn'; status.style.color = 'var(--red)'; return; }
+  const server = getServerUrl();
+  if (!server) { status.textContent = 'Server-URL mangler'; status.style.color = 'var(--red)'; return; }
+  status.textContent = 'Lagrer…'; status.style.color = 'var(--gold)';
+  try {
+    const r = await fetch(server + '/auth/change-password', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ username: window._username, oldPassword: oldPw, newPassword: newPw }),
+    });
+    const j = await r.json();
+    if (!r.ok || !j.ok) { status.textContent = j.error || 'Feil'; status.style.color = 'var(--red)'; return; }
+    closeChangePasswordModal();
+    showToast('🔒 Passord endret');
+  } catch(e) {
+    status.textContent = e.message || 'Feil';
+    status.style.color = 'var(--red)';
+  }
+}
+
+async function logoutUser() {
+  const server = getServerUrl();
+  if (server && window._authToken) {
+    try { await fetch(server + '/auth/logout', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ token: window._authToken }) }); } catch(_) {}
+  }
+  localStorage.removeItem('bibliothek_authToken');
+  localStorage.removeItem('bibliothek_authUser');
+  localStorage.removeItem('bibliothek_authLibKey');
+  window._authToken = null;
+  window._username = null;
+  window._pinKey = null;
+  document.getElementById('loginOverlay').classList.add('visible');
+  setLoginStatus('Du er logget ut');
+}
+
 async function loginConnect() {
   var raw = (document.getElementById('loginPinInput')?.value || '').trim();
   if (!raw) { setLoginStatus('Skriv inn en PIN-kode'); return; }
@@ -34210,7 +34429,41 @@ async function init() {
   document.getElementById('vbtnGrid').classList.toggle('active', viewMode === 'grid');
   await loadBooks();
   var savedPin = localStorage.getItem('bibliothek_pin');
+  var savedAuthToken = localStorage.getItem('bibliothek_authToken');
+  var savedAuthUser = localStorage.getItem('bibliothek_authUser');
+  var savedAuthLibKey = localStorage.getItem('bibliothek_authLibKey');
   var overlay = document.getElementById('loginOverlay');
+
+  // Brukernavn-basert innlogging har prioritet
+  if (IS_WEB && AUTO_SERVER_URL && await serverAvailable(AUTO_SERVER_URL) && savedAuthToken && savedAuthLibKey) {
+    window._authToken = savedAuthToken;
+    window._username = savedAuthUser;
+    window._pinKey = savedAuthLibKey;
+    try {
+      const r = await fetch(AUTO_SERVER_URL + '/library/' + encodeURIComponent(savedAuthLibKey));
+      if (r.ok) {
+        const j = await r.json();
+        loadGuestReads();
+        const serverTs = j.updatedAt ? new Date(j.updatedAt).getTime() : 0;
+        const localTs = parseInt(localStorage.getItem('bibliothek_ts') || '0');
+        if (j.books?.length && (serverTs > localTs || !books.length)) {
+          books = j.books;
+          await saveBooks();
+        } else if (books.length && localTs >= serverTs) {
+          await pushToPin();
+        }
+      }
+    } catch(_) {}
+    updateUserDisplay();
+    await loadKindleDevices();
+    await loadServerUrl();
+    render();
+    if (AUTO_SERVER_URL) {
+      const sec = document.getElementById('serverUrlSection');
+      if (sec) sec.style.display = 'none';
+    }
+    return;
+  }
 
   if (IS_WEB && AUTO_SERVER_URL && await serverAvailable(AUTO_SERVER_URL)) {
     if (savedPin) {

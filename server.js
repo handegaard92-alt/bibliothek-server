@@ -35,6 +35,145 @@ function hashPin(pin) {
   return crypto.createHash('sha256').update(String(pin)).digest('hex').slice(0, 16);
 }
 
+// ── BRUKER-AUTENTISERING ──
+// Lagring: R2 under users/<usernameLower>.json
+//   { username, passwordHash, salt, libraryKey, createdAt, updatedAt }
+// passwordHash = scrypt(password, salt, 64) i hex
+// libraryKey = identifikator brukt som R2-prefix for biblioteket (bevarer eksisterende PIN-data ved migrering)
+const sessionStore = new Map(); // token -> { username, libraryKey, expiresAt }
+const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 dager
+
+function userKey(usernameLower) { return `users/${usernameLower}.json`; }
+
+async function loadUser(username) {
+  if (!r2) return null;
+  try {
+    const data = await r2.send(new GetObjectCommand({
+      Bucket: BUCKET, Key: userKey(String(username).toLowerCase().trim()),
+    }));
+    const chunks = [];
+    for await (const chunk of data.Body) chunks.push(chunk);
+    return JSON.parse(Buffer.concat(chunks).toString());
+  } catch(e) { return null; }
+}
+
+async function saveUser(user) {
+  if (!r2) throw new Error('R2 ikke konfigurert');
+  user.updatedAt = new Date().toISOString();
+  await r2.send(new PutObjectCommand({
+    Bucket: BUCKET, Key: userKey(user.username.toLowerCase()),
+    Body: JSON.stringify(user), ContentType: 'application/json',
+  }));
+}
+
+function hashPassword(password, salt) {
+  const s = salt || crypto.randomBytes(16).toString('hex');
+  const hash = crypto.scryptSync(String(password), s, 64).toString('hex');
+  return { salt: s, hash };
+}
+
+function verifyPassword(password, salt, expectedHash) {
+  const { hash } = hashPassword(password, salt);
+  // Konstant-tids sammenligning
+  const a = Buffer.from(hash, 'hex');
+  const b = Buffer.from(expectedHash, 'hex');
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
+}
+
+function makeToken() { return crypto.randomBytes(32).toString('base64url'); }
+
+function validateUsername(u) {
+  if (!u || typeof u !== 'string') return 'Brukernavn mangler';
+  const s = u.trim();
+  if (s.length < 2) return 'Brukernavn må være minst 2 tegn';
+  if (s.length > 32) return 'Brukernavn maks 32 tegn';
+  if (!/^[a-zA-ZæøåÆØÅ0-9_-]+$/.test(s)) return 'Brukernavn kan kun inneholde bokstaver, tall, _ og -';
+  return null;
+}
+
+// POST /auth/register — body: {username, password, migratePinHash?}
+app.post('/auth/register', async (req, res) => {
+  try {
+    const { username, password, migratePinHash } = req.body || {};
+    const err = validateUsername(username);
+    if (err) return res.status(400).json({ ok: false, error: err });
+    if (!password || password.length < 6) return res.status(400).json({ ok: false, error: 'Passord må være minst 6 tegn' });
+    const lower = username.trim().toLowerCase();
+    const existing = await loadUser(lower);
+    if (existing) return res.status(409).json({ ok: false, error: 'Brukernavnet er allerede tatt' });
+    const { salt, hash } = hashPassword(password);
+    // libraryKey: bruk eksisterende pinHash for migrering, ellers nytt
+    let libraryKey = (typeof migratePinHash === 'string' && /^[a-f0-9]{16,64}$/.test(migratePinHash))
+      ? migratePinHash
+      : crypto.randomBytes(16).toString('hex');
+    const user = {
+      username: username.trim(),
+      passwordHash: hash, salt,
+      libraryKey,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    await saveUser(user);
+    const token = makeToken();
+    sessionStore.set(token, { username: user.username, libraryKey, expiresAt: Date.now() + SESSION_TTL_MS });
+    res.json({ ok: true, token, username: user.username, libraryKey });
+  } catch(e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// POST /auth/login — body: {username, password}
+app.post('/auth/login', async (req, res) => {
+  try {
+    const { username, password } = req.body || {};
+    if (!username || !password) return res.status(400).json({ ok: false, error: 'Brukernavn og passord påkrevd' });
+    const user = await loadUser(username);
+    if (!user) return res.status(401).json({ ok: false, error: 'Feil brukernavn eller passord' });
+    if (!verifyPassword(password, user.salt, user.passwordHash)) {
+      return res.status(401).json({ ok: false, error: 'Feil brukernavn eller passord' });
+    }
+    const token = makeToken();
+    sessionStore.set(token, { username: user.username, libraryKey: user.libraryKey, expiresAt: Date.now() + SESSION_TTL_MS });
+    res.json({ ok: true, token, username: user.username, libraryKey: user.libraryKey });
+  } catch(e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// POST /auth/change-password — body: {username, oldPassword, newPassword}
+app.post('/auth/change-password', async (req, res) => {
+  try {
+    const { username, oldPassword, newPassword } = req.body || {};
+    if (!username || !oldPassword || !newPassword) return res.status(400).json({ ok: false, error: 'Alle felter påkrevd' });
+    if (newPassword.length < 6) return res.status(400).json({ ok: false, error: 'Nytt passord må være minst 6 tegn' });
+    const user = await loadUser(username);
+    if (!user) return res.status(404).json({ ok: false, error: 'Bruker finnes ikke' });
+    if (!verifyPassword(oldPassword, user.salt, user.passwordHash)) {
+      return res.status(401).json({ ok: false, error: 'Feil gammelt passord' });
+    }
+    const { salt, hash } = hashPassword(newPassword);
+    user.passwordHash = hash; user.salt = salt;
+    await saveUser(user);
+    res.json({ ok: true });
+  } catch(e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// GET /auth/exists/:username — sjekk om brukernavn finnes (for register-flow)
+app.get('/auth/exists/:username', async (req, res) => {
+  const user = await loadUser(req.params.username);
+  res.json({ ok: true, exists: !!user });
+});
+
+// POST /auth/logout — body: {token}
+app.post('/auth/logout', (req, res) => {
+  const { token } = req.body || {};
+  if (token) sessionStore.delete(token);
+  res.json({ ok: true });
+});
+
 // R2-nøkkel for gjeste-PIN-liste per eier
 function guestListKey(ownerKey) {
   return `${ownerKey}/_guests.json`;
