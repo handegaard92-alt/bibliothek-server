@@ -5,7 +5,7 @@
 //  - Bok-cover (R2 / openlibrary / google books): cache-first med 7 dagers utløp
 //  - API/auth: alltid nettverk (ingen cache)
 
-const VERSION = 'v1';
+const VERSION = 'v2';
 const STATIC_CACHE = 'bibliothek-static-' + VERSION;
 const COVER_CACHE  = 'bibliothek-covers-' + VERSION;
 const HTML_CACHE   = 'bibliothek-html-' + VERSION;

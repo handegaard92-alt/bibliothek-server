@@ -29763,6 +29763,10 @@ font-family: 'Source Sans Pro'
     </div>
     <h3 id="asTitle">Hva vil du gjøre?</h3>
     <div class="as-sub" id="asSub"></div>
+    <button class="as-btn" id="asReadBtn" onclick="pickAction('read')" style="display:none;">
+      <span class="as-ico">📖</span>
+      <span class="as-lbl">Les bok<span class="as-hint">Åpne i innebygd EPUB-leser</span></span>
+    </button>
     <button class="as-btn" id="asProgressBtn" onclick="pickAction('progress')" style="display:none;">
       <span class="as-ico">📈</span>
       <span class="as-lbl">Oppdater fremgang<span class="as-hint" id="asProgressHint"></span></span>
@@ -29798,6 +29802,23 @@ font-family: 'Source Sans Pro'
 <!-- Cover zoom -->
 <div class="backdrop" id="coverZoomModal" style="cursor:zoom-out;" onclick="closeCoverZoom()">
   <img id="coverZoomImg" class="cover-zoom-img" alt="">
+</div>
+
+<!-- EPUB-leser -->
+<div id="readerOverlay" style="display:none;position:fixed;inset:0;z-index:500;background:var(--bg);flex-direction:column;">
+  <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;">
+    <button onclick="closeReader()" style="background:transparent;border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 10px;cursor:pointer;font-family:Outfit,sans-serif;font-size:13px;">✕ Lukk</button>
+    <div id="readerTitle" style="flex:1;font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div>
+    <div id="readerProgress" style="font-size:12px;color:var(--muted);"></div>
+    <button onclick="readerSmaller()" title="Mindre tekst" style="background:transparent;border:1px solid var(--border);color:var(--text);border-radius:6px;padding:5px 9px;cursor:pointer;font-size:13px;">A−</button>
+    <button onclick="readerBigger()" title="Større tekst" style="background:transparent;border:1px solid var(--border);color:var(--text);border-radius:6px;padding:5px 9px;cursor:pointer;font-size:14px;">A+</button>
+    <button onclick="readerToggleTheme()" title="Tema" id="readerThemeBtn" style="background:transparent;border:1px solid var(--border);color:var(--text);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:13px;">🌙</button>
+  </div>
+  <div id="readerArea" style="flex:1;position:relative;overflow:hidden;background:var(--surface);"></div>
+  <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0;">
+    <button onclick="readerPrev()" style="flex:1;background:transparent;border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px;cursor:pointer;font-family:Outfit,sans-serif;">← Forrige</button>
+    <button onclick="readerNext()" style="flex:1;background:var(--gold);color:#0a0a0c;border:none;border-radius:8px;padding:10px;cursor:pointer;font-family:Outfit,sans-serif;font-weight:600;">Neste →</button>
+  </div>
 </div>
 
 <!-- Tilgang for Kindle-enhet -->
@@ -31190,8 +31211,13 @@ function openBookActions(id) {
   const gUnread = document.getElementById('asGuestUnreadBtn');
 
   const simBtn = document.getElementById('asSimilarBtn');
+  const readBtn = document.getElementById('asReadBtn');
+  const isEpub = (b.fileName || '').toLowerCase().endsWith('.epub');
+  const canRead = isEpub && (b.fileData || b.r2Key);
+  if (readBtn) readBtn.style.display = canRead ? '' : 'none';
+
   if (isRandom) {
-    // Tilfeldig bok: vis kun "Send til Kindle"
+    // Tilfeldig bok: vis kun "Send til Kindle" (+ Les hvis fil)
     editBtn.style.display = 'none';
     pBtn.style.display = 'none';
     if (simBtn) simBtn.style.display = 'none';
@@ -31230,6 +31256,7 @@ function pickAction(action) {
   if (action === 'edit') openEditModal(id);
   else if (action === 'kindle') openKindleModal(id);
   else if (action === 'progress') openQuickProgress(id);
+  else if (action === 'read') openReader(id);
   else if (action === 'similar') askAIAboutBook(id, 'similar');
   else if (action === 'guest-done') {
     setGuestRead(id, { status: 'done', progress: 100, finishedDate: new Date().toISOString().slice(0,10) });
@@ -31987,7 +32014,7 @@ function render() {
           <div class="prog-label"><span>Fremgang</span><span class="prog-quick-clickable" title="Klikk for å oppdatere fremgang" onclick="openQuickProgress(${b.id}, event)">${effectiveProgress(b)}%</span></div>
           <div class="prog-bar" title="Klikk for å oppdatere fremgang" style="cursor:pointer;" onclick="openQuickProgress(${b.id}, event)"><div class="prog-fill" style="width:${effectiveProgress(b)}%"></div></div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-            <button class="btn-read" onclick="event.stopPropagation()">▶ Fortsett</button>
+            ${(b.fileData||b.r2Key) && (b.fileName||'').toLowerCase().endsWith('.epub')?`<button class="btn-read" onclick="event.stopPropagation();openReader(${b.id})">▶ Fortsett å lese</button>`:`<button class="btn-read" onclick="event.stopPropagation();openBookActions(${b.id})">▶ Åpne</button>`}
             ${(b.fileData||b.r2Key)?`<button style="padding:9px 16px;background:transparent;border:1px solid var(--border2);color:var(--text);font-family:'Outfit',sans-serif;font-size:13px;border-radius:var(--r2);cursor:pointer;" onclick="event.stopPropagation();openKindleModal(${b.id})">📤 Send til Kindle</button>`:''}
           </div>
         </div>
@@ -33045,6 +33072,162 @@ async function refreshMissingCovers() {
   render();
   try { await saveBooks(); } catch(_) {}
   showToast('✓ Ferdig — fant ' + found + ' av ' + candidates.length + ' nye omslag');
+}
+
+// ── INNEBYGD EPUB-LESER ──
+let _epubJsLoaded = false;
+let _reader = { book: null, rendition: null, bookId: null, fontSize: 100, theme: 'dark' };
+
+async function loadEpubJs() {
+  if (_epubJsLoaded || window.ePub) { _epubJsLoaded = true; return; }
+  // JSZip må lastes før epub.js
+  await new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js';
+    s.onload = res; s.onerror = () => rej(new Error('Kunne ikke laste JSZip'));
+    document.head.appendChild(s);
+  });
+  await new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/epubjs@0.3.93/dist/epub.min.js';
+    s.onload = res; s.onerror = () => rej(new Error('Kunne ikke laste epub.js'));
+    document.head.appendChild(s);
+  });
+  _epubJsLoaded = true;
+}
+
+async function fetchEpubBlob(book) {
+  // Foretrekk r2Key først (server), fall back til fileData (lokal data-URL)
+  if (book.r2Key && window._pinKey && getServerUrl()) {
+    const url = getServerUrl() + '/files/download/' + encodeURIComponent(window._pinKey) + '/' + encodeURIComponent(book.id) + '/' + encodeURIComponent(book.fileName || 'bok.epub');
+    const r = await fetch(url);
+    if (!r.ok) throw new Error('Kunne ikke hente fil fra server');
+    return await r.blob();
+  }
+  if (book.fileData) {
+    // data:URL → blob
+    const arr = book.fileData.split(',');
+    const mime = arr[0].match(/:(.*?);/)[1];
+    const bstr = atob(arr[1]);
+    const u8 = new Uint8Array(bstr.length);
+    for (let i = 0; i < bstr.length; i++) u8[i] = bstr.charCodeAt(i);
+    return new Blob([u8], { type: mime });
+  }
+  throw new Error('Ingen fil tilgjengelig');
+}
+
+async function openReader(bookId) {
+  const b = books.find(x => x.id === bookId);
+  if (!b) return;
+  const ext = (b.fileName || '').toLowerCase();
+  if (!ext.endsWith('.epub')) {
+    showToast('⚠️ Innebygd leser støtter kun EPUB. Bruk "Send til Kindle" for andre formater.');
+    return;
+  }
+  const overlay = document.getElementById('readerOverlay');
+  overlay.style.display = 'flex';
+  document.getElementById('readerTitle').textContent = b.title || '';
+  document.getElementById('readerProgress').textContent = '⏳ Laster…';
+  const area = document.getElementById('readerArea');
+  area.innerHTML = '';
+
+  try {
+    await loadEpubJs();
+    const blob = await fetchEpubBlob(b);
+    const arrayBuf = await blob.arrayBuffer();
+    if (_reader.rendition) { try { _reader.rendition.destroy(); } catch(_) {} }
+    if (_reader.book) { try { _reader.book.destroy(); } catch(_) {} }
+    const epubBook = ePub(arrayBuf);
+    _reader.book = epubBook;
+    _reader.bookId = bookId;
+    const isDark = _reader.theme === 'dark';
+    const rendition = epubBook.renderTo(area, {
+      width: '100%',
+      height: '100%',
+      flow: 'paginated',
+      manager: 'default',
+      spread: 'none',
+    });
+    _reader.rendition = rendition;
+    applyReaderTheme();
+
+    // Restore lagret posisjon
+    const cfi = b.readerLocation || (b.progress ? null : null);
+    await rendition.display(cfi || undefined);
+
+    // Oppdater fremgang ved hver lokasjon
+    rendition.on('relocated', (location) => {
+      const idx = location?.start?.percentage;
+      if (typeof idx === 'number') {
+        const pct = Math.max(0, Math.min(100, Math.round(idx * 100)));
+        document.getElementById('readerProgress').textContent = pct + '%';
+        const bIdx = books.findIndex(x => x.id === _reader.bookId);
+        if (bIdx !== -1) {
+          books[bIdx].progress = pct;
+          books[bIdx].readerLocation = location.start.cfi;
+          if (books[bIdx].status === 'unread' && pct > 0) books[bIdx].status = 'reading';
+          if (pct >= 99 && books[bIdx].status !== 'done') {
+            books[bIdx].status = 'done';
+            if (!books[bIdx].finishedDate) books[bIdx].finishedDate = new Date().toISOString().slice(0,10);
+          }
+          // Lagre med litt debounce — ikke ved hver page-flip
+          clearTimeout(window._readerSaveTimer);
+          window._readerSaveTimer = setTimeout(() => {
+            saveBooks().catch(() => {});
+            logReadingActivity();
+          }, 1500);
+        }
+      }
+    });
+
+    // Pil-taster og swipes
+    document.addEventListener('keydown', readerKeyHandler);
+    rendition.on('keyup', readerKeyHandler);
+
+  } catch(e) {
+    document.getElementById('readerProgress').textContent = '';
+    area.innerHTML = '<div style="padding:40px;text-align:center;color:var(--red);">⚠️ Kunne ikke åpne boken: ' + (e.message || e) + '</div>';
+  }
+}
+
+function readerKeyHandler(e) {
+  if (!_reader.rendition) return;
+  if (e.key === 'ArrowLeft' || e.key === 'PageUp') readerPrev();
+  else if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') readerNext();
+  else if (e.key === 'Escape') closeReader();
+}
+function readerPrev() { _reader.rendition?.prev(); }
+function readerNext() { _reader.rendition?.next(); }
+function closeReader() {
+  document.removeEventListener('keydown', readerKeyHandler);
+  document.getElementById('readerOverlay').style.display = 'none';
+  if (_reader.rendition) { try { _reader.rendition.destroy(); } catch(_) {} }
+  if (_reader.book) { try { _reader.book.destroy(); } catch(_) {} }
+  _reader.rendition = null; _reader.book = null;
+  saveBooks().catch(() => {});
+  render();
+}
+function readerSmaller() { _reader.fontSize = Math.max(70, _reader.fontSize - 10); applyReaderFont(); }
+function readerBigger()  { _reader.fontSize = Math.min(180, _reader.fontSize + 10); applyReaderFont(); }
+function applyReaderFont() {
+  if (_reader.rendition) _reader.rendition.themes.fontSize(_reader.fontSize + '%');
+}
+function readerToggleTheme() {
+  _reader.theme = _reader.theme === 'dark' ? 'light' : (_reader.theme === 'light' ? 'sepia' : 'dark');
+  applyReaderTheme();
+  const btn = document.getElementById('readerThemeBtn');
+  if (btn) btn.textContent = _reader.theme === 'dark' ? '🌙' : (_reader.theme === 'sepia' ? '📜' : '☀️');
+}
+function applyReaderTheme() {
+  if (!_reader.rendition) return;
+  const themes = {
+    dark:  { body: { background: '#0a0a0c', color: '#e8e6e0' }, a: { color: '#c8a96e' } },
+    light: { body: { background: '#fafaf7', color: '#1a1a1a' }, a: { color: '#9c7a3a' } },
+    sepia: { body: { background: '#f4ecd8', color: '#3a2d1a' }, a: { color: '#7a5520' } },
+  };
+  _reader.rendition.themes.register('current', themes[_reader.theme]);
+  _reader.rendition.themes.select('current');
+  _reader.rendition.themes.fontSize(_reader.fontSize + '%');
 }
 
 // ── #12: ISBN-STREKKODELESER ──
