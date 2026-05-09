@@ -10,6 +10,22 @@ const app = express();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 100 * 1024 * 1024 } });
 
 app.use(express.json({ limit: '10mb' }));
+
+// Automatisk redirect fra Render-URL til primær-domene (hvis satt)
+// PRIMARY_HOST kan være "minebøker.no" eller punycode-formen "xn--minebker-94a.no"
+const PRIMARY_HOST = process.env.PRIMARY_HOST || '';
+app.use((req, res, next) => {
+  if (PRIMARY_HOST) {
+    const host = (req.headers.host || '').toLowerCase();
+    const primaryLower = PRIMARY_HOST.toLowerCase();
+    // Redirect bare hvis vi er på et annet vertsnavn enn primær OG ikke et IP/lokal-call
+    if (host && host !== primaryLower && host.endsWith('.onrender.com')) {
+      return res.redirect(301, 'https://' + PRIMARY_HOST + req.originalUrl);
+    }
+  }
+  next();
+});
+
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', process.env.ALLOWED_ORIGIN || '*');
   res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
