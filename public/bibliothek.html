@@ -34371,6 +34371,18 @@ async function applyAuthSession(j) {
     } else if (books.length && localTs >= serverTs) {
       await pushToPin();
     }
+    // Hent Kindle-enheter fra server
+    try {
+      const devResp = await fetch(server + '/library/' + encodeURIComponent(j.libraryKey + '_devices'));
+      if (devResp.ok) {
+        const devJson = await devResp.json();
+        if (Array.isArray(devJson.books) && devJson.books.length > 0) {
+          kindleDevices = devJson.books;
+          await saveKindleDevices();
+          renderKindleDeviceList();
+        }
+      }
+    } catch(_) {}
     render();
     document.getElementById('loginOverlay').classList.remove('visible');
     setLoginStatus('');
@@ -34591,6 +34603,15 @@ async function init() {
           await saveBooks();
         } else if (books.length && localTs >= serverTs) {
           await pushToPin();
+        }
+      }
+      // Hent Kindle-enheter fra server
+      const devResp = await fetch(AUTO_SERVER_URL + '/library/' + encodeURIComponent(savedAuthLibKey + '_devices'));
+      if (devResp.ok) {
+        const devJson = await devResp.json();
+        if (Array.isArray(devJson.books) && devJson.books.length > 0) {
+          kindleDevices = devJson.books;
+          await storageSet(DEVICES_KEY, JSON.stringify(kindleDevices));
         }
       }
     } catch(_) {}
