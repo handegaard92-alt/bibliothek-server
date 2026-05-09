@@ -29789,6 +29789,18 @@ font-family: 'Source Sans Pro'
   <img id="coverZoomImg" class="cover-zoom-img" alt="">
 </div>
 
+<!-- Tilgang for Kindle-enhet -->
+<div class="backdrop" id="devAccessModal" onclick="if(event.target===this)closeDeviceAccessModal()">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-hdr"><h2 id="devAccessTitle">Tilgang</h2><button class="modal-close" onclick="closeDeviceAccessModal()">✕</button></div>
+    <div id="devAccessBody"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
+      <button class="btn-cancel" onclick="closeDeviceAccessModal()">Avbryt</button>
+      <button class="btn-save" onclick="saveDeviceAccess()">Lagre</button>
+    </div>
+  </div>
+</div>
+
 <!-- Lag ny full-tilgang-bruker (eier-tilsvarende) -->
 <div class="backdrop" id="createUserModal" onclick="if(event.target===this)closeCreateUserModal()">
   <div class="modal" style="max-width:420px;">
@@ -30074,14 +30086,27 @@ async function saveKindleDevices() {
   }
 }
 
+// Hvilke enheter er synlige for innlogget bruker?
+// Eier: ser alle. Gjest: ser kun enheter uten assigned-liste, eller hvor brukernavnet er listet.
+function visibleKindleDevices() {
+  if (!window._readOnly) return kindleDevices;
+  const me = (window._username || '').toLowerCase();
+  return kindleDevices.filter(d => {
+    const assigned = Array.isArray(d.assignedTo) ? d.assignedTo : null;
+    if (!assigned || !assigned.length) return true; // felles enhet
+    return assigned.map(s => String(s).toLowerCase()).includes(me);
+  });
+}
+
 function renderKindleDeviceList() {
   const el = document.getElementById('kindleDeviceList');
   if (!el) return;
-  if (!kindleDevices.length) {
+  const list = visibleKindleDevices();
+  if (!list.length) {
     el.innerHTML = '<div style="font-size:11px;color:var(--muted2);padding:2px 0;">Ingen enheter lagt til</div>';
     return;
   }
-  el.innerHTML = kindleDevices.map((d,i) => `
+  el.innerHTML = list.map((d,i) => `
     <div style="display:flex;align-items:center;gap:6px;padding:5px 8px;background:var(--surface2);border-radius:6px;">
       <svg width="11" height="11" fill="none" stroke="var(--gold)" stroke-width="2" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18.01"/></svg>
       <span style="font-size:12px;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.name}</span>
@@ -30107,15 +30132,65 @@ function renderDeviceListEdit() {
     el.innerHTML = '<div style="font-size:13px;color:var(--muted);text-align:center;padding:12px;">Ingen enheter ennå</div>';
     return;
   }
-  el.innerHTML = kindleDevices.map((d,i) => `
-    <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface2);border-radius:var(--r2);border:1px solid var(--border);">
-      <div style="flex:1;min-width:0;">
+  el.innerHTML = kindleDevices.map((d,i) => {
+    const assigned = Array.isArray(d.assignedTo) ? d.assignedTo : [];
+    const accessLabel = !assigned.length ? 'Felles' : assigned.join(', ');
+    return `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface2);border-radius:var(--r2);border:1px solid var(--border);flex-wrap:wrap;">
+      <div style="flex:1 1 200px;min-width:0;">
         <div style="font-size:13.5px;font-weight:500;color:var(--text);">${d.name}</div>
         <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">${d.email}</div>
+        <div style="font-size:11px;color:${assigned.length?'var(--gold)':'var(--muted2)'};margin-top:4px;">👁 Tilgang: ${accessLabel}</div>
       </div>
+      <button onclick="openDeviceAccessModal(${i})" style="padding:5px 10px;background:transparent;border:1px solid var(--border2);color:var(--text);border-radius:6px;font-size:11px;cursor:pointer;flex-shrink:0;">⚙ Tilgang</button>
       <button onclick="removeKindleDevice(${i})" style="padding:5px 10px;background:transparent;border:1px solid rgba(224,85,85,0.3);color:var(--red);border-radius:6px;font-size:11px;cursor:pointer;flex-shrink:0;">Slett</button>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
+}
+
+let _devAccessIdx = null;
+async function openDeviceAccessModal(idx) {
+  _devAccessIdx = idx;
+  const dev = kindleDevices[idx];
+  const body = document.getElementById('devAccessBody');
+  body.innerHTML = '⏳ Henter gjeste-liste…';
+  document.getElementById('devAccessTitle').textContent = 'Tilgang: ' + (dev.name || '?');
+  document.getElementById('devAccessModal').classList.add('open');
+  // Hent gjeste-brukere
+  const server = getServerUrl();
+  let guests = [];
+  try {
+    const r = await fetch(server + '/auth/guests/' + encodeURIComponent(window._username));
+    const j = await r.json();
+    if (j.ok) guests = j.guests || [];
+  } catch(_) {}
+  if (!guests.length) {
+    body.innerHTML = '<div style="font-size:13px;color:var(--muted);">Ingen gjeste-brukere — opprett en først.</div>';
+    return;
+  }
+  const assigned = new Set((dev.assignedTo || []).map(s => String(s).toLowerCase()));
+  body.innerHTML =
+    '<div style="font-size:12.5px;color:var(--muted);margin-bottom:10px;">Hvis ingen er huket av blir enheten <strong style="color:var(--gold)">felles</strong> for deg + alle gjester.</div>' +
+    guests.map(g => `
+      <label style="display:flex;align-items:center;gap:10px;padding:8px;background:var(--surface2);border-radius:6px;margin-bottom:6px;cursor:pointer;">
+        <input type="checkbox" value="${g.username}" ${assigned.has(g.username.toLowerCase())?'checked':''}>
+        <span style="flex:1;font-size:13px;">${g.label || g.username} <span style="color:var(--muted);font-size:11.5px;">(${g.username})</span></span>
+      </label>`).join('');
+}
+function closeDeviceAccessModal() {
+  document.getElementById('devAccessModal').classList.remove('open');
+  _devAccessIdx = null;
+}
+async function saveDeviceAccess() {
+  if (_devAccessIdx == null) return;
+  const checks = document.querySelectorAll('#devAccessBody input[type=checkbox]');
+  const assigned = [...checks].filter(c => c.checked).map(c => c.value);
+  kindleDevices[_devAccessIdx].assignedTo = assigned;
+  await saveKindleDevices();
+  renderDeviceListEdit();
+  renderKindleDeviceList();
+  closeDeviceAccessModal();
+  showToast('✓ Tilgang oppdatert');
 }
 
 async function addKindleDevice() {
@@ -31603,14 +31678,16 @@ function openKindleModal(id) {
 
   const hasFile = !!(b.fileData || b.r2Key);
 
-  // Build device dropdown
+  // Build device dropdown — filtrerer på synlige enheter for innlogget bruker
   const sel  = document.getElementById('kmDeviceSelect');
   const wrap = document.getElementById('kmDeviceWrap');
   sel.innerHTML = '';
-  if (kindleDevices.length) {
-    kindleDevices.forEach((d, i) => {
+  const visible = visibleKindleDevices();
+  if (visible.length) {
+    visible.forEach((d) => {
+      const realIdx = kindleDevices.indexOf(d);
       const o = document.createElement('option');
-      o.value = i;
+      o.value = realIdx;
       o.textContent = d.name + ' — ' + d.email;
       sel.appendChild(o);
     });
@@ -31622,7 +31699,7 @@ function openKindleModal(id) {
   let info = '';
   if (!hasFile) {
     info = '<div class="km-no-email">📂 Last opp epub-filen på nytt for å sende til Kindle. Filer lagres ikke mellom sesjoner pga. størrelsesgrenser.</div>';
-  } else if (!kindleDevices.length) {
+  } else if (!visible.length) {
     info = '<div class="km-no-email">⚠️ Legg til en Kindle-enhet i sidemenyen først.</div>';
   } else {
     info = '<div class="km-info" style="font-size:12px;color:var(--muted);margin-bottom:12px;">Filen lastes ned og e-postklienten åpnes. Sørg for at Amazon-kontoen din tillater e-postadressen din som avsender.</div>';
