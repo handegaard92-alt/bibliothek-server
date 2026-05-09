@@ -1,8 +1,19 @@
 <html lang="no"><head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bibliothek</title>
-<link rel="icon" href="data:image/svg+xml,&lt;svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'&gt;&lt;text y='.9em' font-size='90'&gt;📚&lt;/text&gt;&lt;/svg&gt;">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Mine Bøker</title>
+<!-- PWA -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#0a0a0c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mine Bøker">
+<meta name="application-name" content="Mine Bøker">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+<link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&amp;family=Outfit:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
 <style>
 :root {
@@ -34780,6 +34791,60 @@ function applyTheme() {
   }
 }
 applyTheme();
+
+// ── PWA SERVICE WORKER + INSTALL PROMPT ──
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch((e) => console.warn('SW registration failed:', e));
+  });
+}
+
+let _deferredInstall = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  _deferredInstall = e;
+  showInstallButton();
+});
+window.addEventListener('appinstalled', () => {
+  _deferredInstall = null;
+  hideInstallButton();
+  showToast('🎉 Appen er installert');
+});
+
+function showInstallButton() {
+  if (document.getElementById('pwaInstallBtn')) return;
+  // Skjul automatisk hvis allerede installert
+  if (window.matchMedia('(display-mode: standalone)').matches) return;
+  const btn = document.createElement('button');
+  btn.id = 'pwaInstallBtn';
+  btn.textContent = '📱 Installer som app';
+  btn.style.cssText = 'position:fixed;bottom:90px;right:16px;z-index:200;background:var(--gold);color:#0a0a0c;border:none;border-radius:999px;padding:11px 18px;font-family:Outfit,sans-serif;font-size:13.5px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,0.5);cursor:pointer;';
+  btn.onclick = async () => {
+    if (!_deferredInstall) return;
+    _deferredInstall.prompt();
+    const choice = await _deferredInstall.userChoice;
+    if (choice.outcome === 'accepted') hideInstallButton();
+    _deferredInstall = null;
+  };
+  document.body.appendChild(btn);
+}
+function hideInstallButton() {
+  const b = document.getElementById('pwaInstallBtn');
+  if (b) b.remove();
+}
+
+// iOS-spesifikt: vis hjelpe-toast første gang siden iOS ikke trigger beforeinstallprompt
+function maybeShowIosInstallHint() {
+  const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const isStandalone = window.navigator.standalone === true;
+  if (!isIos || isStandalone) return;
+  if (localStorage.getItem('iosInstallHintShown')) return;
+  setTimeout(() => {
+    showToast('💡 Tips: Trykk på del-ikonet og "Legg til på Hjem-skjerm" for å installere appen');
+    localStorage.setItem('iosInstallHintShown', '1');
+  }, 4000);
+}
+maybeShowIosInstallHint();
 </script>
 
 

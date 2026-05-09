@@ -370,6 +370,14 @@ app.use(express.static(publicDir, {
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.html')) {
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    } else if (filePath.endsWith('manifest.json')) {
+      res.setHeader('Content-Type', 'application/manifest+json; charset=utf-8');
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+    } else if (filePath.endsWith('sw.js')) {
+      // Service worker: alltid hent ny versjon så oppdateringer slår igjennom
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    } else if (/\/icons\//.test(filePath)) {
+      res.setHeader('Cache-Control', 'public, max-age=86400');
     }
   }
 }));
