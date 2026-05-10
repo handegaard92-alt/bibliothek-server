@@ -65,6 +65,57 @@ function hashPin(pin) {
 const sessionStore = new Map(); // token -> { username, libraryKey, expiresAt }
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 dager
 
+function sessionR2Key(token) {
+  // Bruk hash av token som nøkkel (ikke rå token) for sikkerhet
+  return 'sessions/' + crypto.createHash('sha256').update(token).digest('hex') + '.json';
+}
+
+async function persistSession(token, data) {
+  if (!r2) return;
+  try {
+    await r2.send(new PutObjectCommand({
+      Bucket: BUCKET, Key: sessionR2Key(token),
+      Body: JSON.stringify(data), ContentType: 'application/json',
+    }));
+  } catch(e) { console.warn('Session persist failed:', e.message); }
+}
+
+async function loadSessionR2(token) {
+  if (!r2) return null;
+  try {
+    const data = await r2.send(new GetObjectCommand({ Bucket: BUCKET, Key: sessionR2Key(token) }));
+    const chunks = [];
+    for await (const chunk of data.Body) chunks.push(chunk);
+    const session = JSON.parse(Buffer.concat(chunks).toString());
+    if (!session?.expiresAt) return null;
+    if (Date.now() > session.expiresAt) {
+      r2.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: sessionR2Key(token) })).catch(() => {});
+      return null;
+    }
+    sessionStore.set(token, session); // cache i minnet
+    return session;
+  } catch(_) { return null; }
+}
+
+async function deleteSessionR2(token) {
+  if (!r2) return;
+  try { await r2.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: sessionR2Key(token) })); } catch(_) {}
+}
+
+async function getSession(token) {
+  if (!token) return null;
+  const mem = sessionStore.get(token);
+  if (mem) {
+    if (Date.now() > mem.expiresAt) {
+      sessionStore.delete(token);
+      deleteSessionR2(token).catch(() => {});
+      return null;
+    }
+    return mem;
+  }
+  return await loadSessionR2(token); // fall back til R2 etter restart
+}
+
 function userKey(usernameLower) { return `users/${usernameLower}.json`; }
 
 async function loadUser(username) {
@@ -162,7 +213,9 @@ app.post('/auth/register', async (req, res) => {
     };
     await saveUser(user);
     const token = makeToken();
-    sessionStore.set(token, { username: user.username, libraryKey, expiresAt: Date.now() + SESSION_TTL_MS });
+    const sessionData = { username: user.username, libraryKey, expiresAt: Date.now() + SESSION_TTL_MS };
+    sessionStore.set(token, sessionData);
+    await persistSession(token, sessionData);
     res.json({ ok: true, token, username: user.username, libraryKey });
   } catch(e) {
     res.status(500).json({ ok: false, error: e.message });
@@ -220,7 +273,9 @@ app.post('/auth/login', async (req, res) => {
     const isGuest = !!user.readOnlyForLibraryKey;
     const libraryKey = isGuest ? user.readOnlyForLibraryKey : user.libraryKey;
     const token = makeToken();
-    sessionStore.set(token, { username: user.username, libraryKey, readOnly: isGuest, expiresAt: Date.now() + SESSION_TTL_MS });
+    const sessionData = { username: user.username, libraryKey, readOnly: isGuest, expiresAt: Date.now() + SESSION_TTL_MS };
+    sessionStore.set(token, sessionData);
+    await persistSession(token, sessionData);
     res.json({ ok: true, token, username: user.username, libraryKey, readOnly: isGuest });
   } catch(e) {
     res.status(500).json({ ok: false, error: e.message });
@@ -335,10 +390,22 @@ app.get('/auth/exists/:username', async (req, res) => {
 });
 
 // POST /auth/logout — body: {token}
-app.post('/auth/logout', (req, res) => {
+app.post('/auth/logout', async (req, res) => {
   const { token } = req.body || {};
-  if (token) sessionStore.delete(token);
+  if (token) {
+    sessionStore.delete(token);
+    await deleteSessionR2(token);
+  }
   res.json({ ok: true });
+});
+
+// GET /auth/verify — verifiser at token fortsatt er gyldig (overlever server-restart via R2)
+app.get('/auth/verify', async (req, res) => {
+  const token = req.headers['x-auth-token'] || req.query.token;
+  if (!token) return res.status(401).json({ ok: false, error: 'Token mangler' });
+  const session = await getSession(token);
+  if (!session) return res.status(401).json({ ok: false, error: 'Ugyldig eller utløpt sesjon' });
+  res.json({ ok: true, username: session.username, libraryKey: session.libraryKey, readOnly: session.readOnly || false });
 });
 
 // R2-nøkkel for gjeste-PIN-liste per eier
