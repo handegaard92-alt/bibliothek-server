@@ -734,7 +734,11 @@ app.post('/send-to-kindle', upload.single('file'), async (req, res) => {
     let attachmentName = fileOriginalName;
     if (bookTitle && bookTitle.trim()) {
       const ext = (fileOriginalName.match(/\.[a-z0-9]+$/i) || ['.epub'])[0];
-      const safe = bookTitle.trim().replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, ' ').slice(0, 100);
+      const safe = bookTitle.trim()
+        .replace(/[æ]/g,'ae').replace(/[Æ]/g,'Ae')
+        .replace(/[ø]/g,'oe').replace(/[Ø]/g,'Oe')
+        .replace(/[å]/g,'aa').replace(/[Å]/g,'Aa')
+        .replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, ' ').slice(0, 100);
       if (safe) attachmentName = safe + ext;
     }
 

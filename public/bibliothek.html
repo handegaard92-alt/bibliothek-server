@@ -29963,6 +29963,7 @@ let view = 'all';
 let genreFilter = null;
 let seriesFilter = null;
 let authorFilter = null;
+let readFilter = null; // 'done' | 'reading' | 'unread' | null
 let viewMode = 'list';
 let editingId = null;
 let coverDebounceTimer = null;
@@ -31899,6 +31900,7 @@ function getFiltered() {
   if (seriesFilter === '__none__') f = f.filter(b => !b.series);
   else if (seriesFilter) f = f.filter(b => b.series === seriesFilter);
   if (authorFilter) f = f.filter(b => b.author === authorFilter);
+  if (readFilter) f = f.filter(b => effectiveStatus(b) === readFilter);
   if (q) f = f.filter(b =>
     b.title.toLowerCase().includes(q) ||
     b.author.toLowerCase().includes(q) ||
@@ -32031,7 +32033,7 @@ function render() {
   const allSeries = [...new Set(pillBase.map(b=>b.series).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'no'));
   const authors  = [...new Set(pillBase.map(b=>b.author).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'no'));
 
-  const anyFilter = genreFilter || seriesFilter || authorFilter;
+  const anyFilter = genreFilter || seriesFilter || authorFilter || readFilter;
   // Sorter serier og forfattere etter antall bøker (mest brukt først)
   const seriesCount = {}, authorCount = {};
   pillBase.forEach(b => {
@@ -32043,7 +32045,8 @@ function render() {
   const COMPACT_LIMIT = 8;
 
   // Mobil-knapp: vises kun under 700px via CSS
-  const activeLabel = seriesFilter || authorFilter || genreFilter;
+  const readFilterLabel = {done:'Lest',reading:'Leser nå',unread:'Ulest'}[readFilter] || null;
+  const activeLabel = seriesFilter || authorFilter || genreFilter || readFilterLabel;
   let pillsHtml = `<button class="filter-mobile-btn ${anyFilter?'has-filter':''}" onclick="openFilterModal()">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
     Filtrer${activeLabel ? ` <span class="filter-mobile-chip">${activeLabel}</span>` : ''}
@@ -32138,7 +32141,7 @@ function render() {
   if (viewMode === 'list') {
     grid.innerHTML = filtered.map((b,i) => `
       <div class="bk lv-item ${_selectedIds.has(b.id)?'is-selected':''}" data-bookid="${b.id}" style="animation-delay:${i*0.03}s">
-        <div class="bk-cover-wrap" onclick="${_selectMode?'toggleBookSelection('+b.id+')':'openBookActions('+b.id+')'}">${_selectMode?`<span class="bk-select-mark">${_selectedIds.has(b.id)?'✓':''}</span>`:''}${coverHtml(b)}</div>
+        <div class="bk-cover-wrap${effectiveStatus(b)==='done'?' is-done':''}" onclick="${_selectMode?'toggleBookSelection('+b.id+')':'openBookActions('+b.id+')'}">${_selectMode?`<span class="bk-select-mark">${_selectedIds.has(b.id)?'✓':''}</span>`:''}${coverHtml(b)}</div>
         <div class="lv-info" onclick="${_selectMode?'toggleBookSelection('+b.id+')':'openBookActions('+b.id+')'}">
           <div class="lv-t">${b.title}</div>
           <div class="lv-a">${b.author}</div>
@@ -32194,7 +32197,7 @@ function setViewMobile(el, v) {
   if (el) el.classList.add('active');
   const sideNav = document.querySelector('.nav-item[data-view="'+v+'"]');
   if (sideNav) setView(sideNav, v);
-  else { view = v; genreFilter = null; seriesFilter = null; authorFilter = null; render(); }
+  else { view = v; genreFilter = null; seriesFilter = null; authorFilter = null; readFilter = null; render(); }
   closeSidebar();
 }
 
@@ -32244,9 +32247,10 @@ function setAuthor(a) {
   render();
 }
 function clearFilters() {
-  genreFilter = null; seriesFilter = null; authorFilter = null;
+  genreFilter = null; seriesFilter = null; authorFilter = null; readFilter = null;
   render();
 }
+function setReadFilter(v) { readFilter = readFilter === v ? null : v; render(); }
 
 var _activeSort = '';
 const SORT_OPTIONS = [
@@ -32976,10 +32980,22 @@ function openFilterModal() {
     </div>`;
   };
 
+  const statusLabels = [
+    { v: 'done', lbl: '✓ Lest' },
+    { v: 'reading', lbl: '📖 Leser nå' },
+    { v: 'unread', lbl: '○ Ulest' },
+  ];
+
   const body = document.getElementById('filterModalBody');
   body.innerHTML =
     `<div style="margin-bottom:14px;">
-      <button class="pill ${!genreFilter && !seriesFilter && !authorFilter?'active':''}" onclick="clearFilters();closeFilterModal()">Alle bøker</button>
+      <button class="pill ${!genreFilter && !seriesFilter && !authorFilter && !readFilter?'active':''}" onclick="clearFilters();closeFilterModal()">Alle bøker</button>
+    </div>` +
+    `<div style="margin-bottom:18px;">
+      <div style="font-size:11px;color:var(--muted);letter-spacing:0.12em;text-transform:uppercase;font-weight:600;margin-bottom:8px;">Status</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        ${statusLabels.map(s => `<button class="pill ${readFilter===s.v?'active':''}" onclick="setReadFilter('${s.v}');closeFilterModal()">${s.lbl}</button>`).join('')}
+      </div>
     </div>` +
     section('Sjanger', genres, genreFilter, 'setGenre') +
     section('Serie', seriesAll, seriesFilter, 'setSeries', s => '📚 ' + s + ' (' + seriesCount[s] + ')') +
