@@ -32065,6 +32065,15 @@ function render() {
     }
   }
   pillsHtml += `<div class="pills-row">`;
+  // Status-rad (lest / ikke lest) — vises kun i "Alle bøker"-visningen
+  if (view === 'all') {
+    pillsHtml += `<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">`;
+    pillsHtml += `<span class="filter-label">Status</span>`;
+    pillsHtml += `<button class="pill ${readFilter==='done'?'active':''}" onclick="setReadFilter('done')">✓ Lest</button>`;
+    pillsHtml += `<button class="pill ${readFilter==='unread'?'active':''}" onclick="setReadFilter('unread')">○ Ikke lest</button>`;
+    pillsHtml += `<button class="pill ${readFilter==='reading'?'active':''}" onclick="setReadFilter('reading')">📖 Leser nå</button>`;
+    pillsHtml += `</div>`;
+  }
   // Sjanger-rad
   pillsHtml += `<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">`;
   pillsHtml += `<button class="pill ${!anyFilter?'active':''}" onclick="clearFilters()">Alle</button>`;
