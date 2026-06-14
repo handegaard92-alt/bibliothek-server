@@ -461,7 +461,7 @@ app.get('/health', (req, res) => {
     status: 'ok',
     features: {
       app: fs.existsSync(path.join(publicDir, 'bibliothek.html')),
-      kindle: !!(process.env.SENDGRID_API_KEY && process.env.FROM_EMAIL),
+      kindle: !!(process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD),
       ai: !!process.env.ANTHROPIC_API_KEY,
       r2: !!r2,
       sync: true
@@ -703,22 +703,22 @@ app.get('/files/download/:pin/:bookId/:fileName', async (req, res) => {
   }
 });
 
-// Send to Kindle - hent fra R2 og send via SendGrid
+// Send to Kindle - hent fra R2 og send via Nodemailer (Gmail)
 app.post('/send-to-kindle', upload.single('file'), async (req, res) => {
   try {
     const { toEmail, bookTitle, pin, bookId, fileName } = req.body;
     if (!toEmail) return res.status(400).json({ ok: false, error: 'No target email' });
-    if (!process.env.SENDGRID_API_KEY) return res.status(503).json({ ok: false, error: 'SendGrid not configured' });
+    if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+      return res.status(503).json({ ok: false, error: 'E-post ikke konfigurert (GMAIL_USER / GMAIL_APP_PASSWORD mangler)' });
+    }
 
     let fileBuffer, fileOriginalName, fileMime;
 
     if (req.file) {
-      // Direkte opplastet fil
       fileBuffer = req.file.buffer;
       fileOriginalName = req.file.originalname;
       fileMime = req.file.mimetype;
     } else if (r2 && pin && bookId && fileName) {
-      // Hent fra R2
       const key = hashPin(pin) + '/' + bookId + '/' + fileName;
       const data = await r2.send(new GetObjectCommand({ Bucket: BUCKET, Key: key }));
       const chunks = [];
@@ -730,7 +730,7 @@ app.post('/send-to-kindle', upload.single('file'), async (req, res) => {
       return res.status(400).json({ ok: false, error: 'No file provided' });
     }
 
-    // Build attachment filename from bookTitle so Kindle shows title, not ISBN
+    // Bygg filnavn fra boktittel — normaliser ÆØÅ så Kindle viser riktig tittel
     let attachmentName = fileOriginalName;
     if (bookTitle && bookTitle.trim()) {
       const ext = (fileOriginalName.match(/\.[a-z0-9]+$/i) || ['.epub'])[0];
@@ -742,24 +742,30 @@ app.post('/send-to-kindle', upload.single('file'), async (req, res) => {
       if (safe) attachmentName = safe + ext;
     }
 
-    const sgMail = require('@sendgrid/mail');
-    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-    await sgMail.send({
+    const nodemailer = require('nodemailer');
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_APP_PASSWORD,
+      },
+    });
+
+    await transporter.sendMail({
+      from: process.env.GMAIL_USER,
       to: toEmail,
-      from: process.env.FROM_EMAIL,
       subject: 'Convert',
       text: 'Bok sendt fra Bibliothek: ' + (bookTitle || fileOriginalName),
       attachments: [{
-        content: fileBuffer.toString('base64'),
         filename: attachmentName,
-        type: fileMime,
-        disposition: 'attachment'
-      }]
+        content: fileBuffer,
+        contentType: fileMime,
+      }],
     });
+
     res.json({ ok: true, message: 'Sent to ' + toEmail });
   } catch (err) {
-    const msg = err.response?.body?.errors?.[0]?.message || err.message;
-    res.status(500).json({ ok: false, error: msg });
+    res.status(500).json({ ok: false, error: err.message });
   }
 });
 
