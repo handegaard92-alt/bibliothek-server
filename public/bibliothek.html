@@ -34864,77 +34864,88 @@ async function checkRegistrationOpen() {
 async function init() {
   document.getElementById('vbtnList').classList.toggle('active', viewMode === 'list');
   document.getElementById('vbtnGrid').classList.toggle('active', viewMode === 'grid');
-  await loadBooks();
-  checkRegistrationOpen();
-  var savedPin = localStorage.getItem('bibliothek_pin');
-  var savedAuthToken = localStorage.getItem('bibliothek_authToken');
-  var savedAuthUser = localStorage.getItem('bibliothek_authUser');
-  var savedAuthLibKey = localStorage.getItem('bibliothek_authLibKey');
-  var overlay = document.getElementById('loginOverlay');
 
-  // Brukernavn-basert innlogging har prioritet
-  if (IS_WEB && AUTO_SERVER_URL && await serverAvailable(AUTO_SERVER_URL) && savedAuthToken && savedAuthLibKey) {
-    window._authToken = savedAuthToken;
-    window._username = savedAuthUser;
-    window._pinKey = savedAuthLibKey;
-    window._readOnly = localStorage.getItem('bibliothek_authReadOnly') === '1';
-    try {
-      const r = await fetch(AUTO_SERVER_URL + '/library/' + encodeURIComponent(savedAuthLibKey));
-      if (r.ok) {
-        const j = await r.json();
-        loadGuestReads();
-        const serverTs = j.updatedAt ? new Date(j.updatedAt).getTime() : 0;
-        const localTs = parseInt(localStorage.getItem('bibliothek_ts') || '0');
-        if (j.books?.length && (serverTs > localTs || !books.length)) {
-          books = j.books;
-          await saveBooks();
-        } else if (books.length && localTs >= serverTs) {
-          await pushToPin();
-        }
-      }
-      // Hent Kindle-enheter fra server
-      const devResp = await fetch(AUTO_SERVER_URL + '/library/' + encodeURIComponent(savedAuthLibKey + '_devices'));
-      if (devResp.ok) {
-        const devJson = await devResp.json();
-        if (Array.isArray(devJson.books) && devJson.books.length > 0) {
-          kindleDevices = devJson.books;
-          await storageSet(DEVICES_KEY, JSON.stringify(kindleDevices));
-        }
-      }
-    } catch(_) {}
-    updateUserDisplay();
-    await loadKindleDevices();
-    await loadServerUrl();
-    render();
+  // Last bøker fra localStorage og vis dem UMIDDELBART — ikke vent på server
+  await loadBooks();
+  await loadKindleDevices();
+  await loadServerUrl();
+
+  const savedPin      = localStorage.getItem('bibliothek_pin');
+  const savedAuthToken  = localStorage.getItem('bibliothek_authToken');
+  const savedAuthUser   = localStorage.getItem('bibliothek_authUser');
+  const savedAuthLibKey = localStorage.getItem('bibliothek_authLibKey');
+  const overlay = document.getElementById('loginOverlay');
+
+  if (IS_WEB && AUTO_SERVER_URL) {
     if (AUTO_SERVER_URL) {
       const sec = document.getElementById('serverUrlSection');
       if (sec) sec.style.display = 'none';
     }
-    return;
-  }
 
-  if (IS_WEB && AUTO_SERVER_URL && await serverAvailable(AUTO_SERVER_URL)) {
+    if (savedAuthToken && savedAuthLibKey) {
+      // Brukernavn-innlogging: sett opp session og vis bibliotek med én gang
+      window._authToken   = savedAuthToken;
+      window._username    = savedAuthUser;
+      window._pinKey      = savedAuthLibKey;
+      window._readOnly    = localStorage.getItem('bibliothek_authReadOnly') === '1';
+      updateUserDisplay();
+      render(); // ← vis localStorage-data umiddelbart
+
+      // Synk med server i bakgrunnen (ikke blokker UI)
+      checkRegistrationOpen();
+      (async () => {
+        try {
+          // Parallell henting av bibliotek + Kindle-enheter
+          const [libResp, devResp] = await Promise.all([
+            fetch(AUTO_SERVER_URL + '/library/' + encodeURIComponent(savedAuthLibKey)),
+            fetch(AUTO_SERVER_URL + '/library/' + encodeURIComponent(savedAuthLibKey + '_devices')),
+          ]);
+
+          if (libResp.ok) {
+            const j = await libResp.json();
+            loadGuestReads();
+            const serverTs = j.updatedAt ? new Date(j.updatedAt).getTime() : 0;
+            const localTs  = parseInt(localStorage.getItem('bibliothek_ts') || '0');
+            if (j.books?.length && (serverTs > localTs || !books.length)) {
+              books = j.books;
+              await saveBooks();
+              render(); // oppdater UI med server-data
+            } else if (books.length && localTs >= serverTs) {
+              pushToPin().catch(() => {});
+            }
+          }
+
+          if (devResp.ok) {
+            const devJson = await devResp.json();
+            if (Array.isArray(devJson.books) && devJson.books.length > 0) {
+              kindleDevices = devJson.books;
+              await storageSet(DEVICES_KEY, JSON.stringify(kindleDevices));
+            }
+          }
+        } catch(_) {}
+      })();
+      return;
+    }
+
     if (savedPin) {
-      // Returnererende bruker: koble til i bakgrunnen, ikke vis overlay
-      var pinEl = document.getElementById('pinInput');
-      if (pinEl) pinEl.value = savedPin;
+      // PIN-innlogging: vis localStorage-data, synk i bakgrunnen
+      render();
       pinHash(savedPin).then(async function(k) {
         window._pinKey = k;
         try {
-          var resp = await fetch(AUTO_SERVER_URL + '/library/' + encodeURIComponent(k));
+          const resp = await fetch(AUTO_SERVER_URL + '/library/' + encodeURIComponent(k));
           if (resp.ok) {
-            var json = await resp.json();
+            const json = await resp.json();
             window._readOnly = !!json.readOnly;
-            var serverTs = json.updatedAt ? new Date(json.updatedAt).getTime() : 0;
-            var localTs = parseInt(localStorage.getItem('bibliothek_ts') || '0');
+            const serverTs = json.updatedAt ? new Date(json.updatedAt).getTime() : 0;
+            const localTs  = parseInt(localStorage.getItem('bibliothek_ts') || '0');
             if (serverTs > localTs && json.books?.length) {
               books = json.books;
               await saveBooks();
+              render();
             } else if (!window._readOnly && books.length) {
-              // Server er tom (f.eks. etter redeploy) — push lokal data tilbake
-              await pushToPin();
+              pushToPin().catch(() => {});
             }
-            render();
           }
           if (!window._readOnly) {
             fetch(AUTO_SERVER_URL + '/guest-links/' + encodeURIComponent(k) + '/restore', { method: 'POST' }).catch(()=>{});
@@ -34943,35 +34954,23 @@ async function init() {
         } catch(e) {}
         setPinStatus('✓ Tilkoblet med PIN', 'var(--green)');
       });
-    } else {
-      // Ny bruker: vis login-overlay
-      if (overlay) overlay.classList.add('visible');
+      return;
     }
-  } else {
-    // Ikke selvhostet, preview-panel, eller server utilgjengelig
-    if (savedPin) {
-      var pinEl = document.getElementById('pinInput');
-      if (pinEl) pinEl.value = savedPin;
-      pinHash(savedPin).then(function(k){ window._pinKey = k; setPinStatus('✓ Tilkoblet med PIN', 'var(--green)'); });
-    }
+
+    // Ny bruker uten lagret innlogging — vis overlay
+    if (overlay) overlay.classList.add('visible');
+    render();
+    checkRegistrationOpen();
+    return;
   }
 
-  await loadKindleDevices();
-  await loadServerUrl();
+  // Ikke selvhostet / sandkasse
+  if (savedPin) {
+    const pinEl = document.getElementById('pinInput');
+    if (pinEl) pinEl.value = savedPin;
+    pinHash(savedPin).then(function(k){ window._pinKey = k; setPinStatus('✓ Tilkoblet med PIN', 'var(--green)'); });
+  }
   render();
-
-  if (AUTO_SERVER_URL) {
-    const sec = document.getElementById('serverUrlSection');
-    if (sec) sec.style.display = 'none';
-  }
-
-  console.log(IS_WEB
-    ? 'Bibliothek kjorer som nettside — localStorage og server aktivert'
-    : 'Bibliothek kjorer i sandkasse — begrenset funksjonalitet'
-  );
-
-  var pinEl2 = document.getElementById('pinInput');
-  if (pinEl2 && pinEl2.value) pinEl2.type = 'password';
 }
 init();
 

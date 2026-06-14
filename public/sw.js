@@ -5,7 +5,7 @@
 //  - Bok-cover (R2 / openlibrary / google books): cache-first med 7 dagers utløp
 //  - API/auth: alltid nettverk (ingen cache)
 
-const VERSION = 'v2';
+const VERSION = 'v3';
 const STATIC_CACHE = 'bibliothek-static-' + VERSION;
 const COVER_CACHE  = 'bibliothek-covers-' + VERSION;
 const HTML_CACHE   = 'bibliothek-html-' + VERSION;
@@ -76,18 +76,21 @@ self.addEventListener('fetch', (event) => {
 });
 
 async function networkFirst(req, cacheName) {
-  try {
-    const fresh = await fetch(req);
-    if (fresh && fresh.ok) {
-      const cache = await caches.open(cacheName);
-      cache.put(req, fresh.clone());
-    }
+  // Stale-while-revalidate: vis cachet versjon umiddelbart,
+  // hent ny versjon i bakgrunnen (klar til neste besøk)
+  const cache = await caches.open(cacheName);
+  const cached = await cache.match(req);
+  const fetchPromise = fetch(req).then(fresh => {
+    if (fresh && fresh.ok) cache.put(req, fresh.clone());
     return fresh;
-  } catch (_) {
-    const cached = await caches.match(req);
-    if (cached) return cached;
-    throw _;
+  }).catch(() => null);
+  // Hvis vi har cache: returner den med én gang, oppdater stille i bg
+  if (cached) {
+    fetchPromise.catch(() => {});
+    return cached;
   }
+  // Ingen cache ennå: vent på nettverket
+  return await fetchPromise;
 }
 
 async function cacheFirst(req, cacheName) {
