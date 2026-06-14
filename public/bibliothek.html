@@ -32140,7 +32140,7 @@ function render() {
 
   if (viewMode === 'list') {
     grid.innerHTML = filtered.map((b,i) => `
-      <div class="bk lv-item ${_selectedIds.has(b.id)?'is-selected':''}" data-bookid="${b.id}" style="animation-delay:${i*0.03}s">
+      <div class="bk lv-item ${_selectedIds.has(b.id)?'is-selected':''}" data-bookid="${b.id}">
         <div class="bk-cover-wrap${effectiveStatus(b)==='done'?' is-done':''}" onclick="${_selectMode?'toggleBookSelection('+b.id+')':'openBookActions('+b.id+')'}">${_selectMode?`<span class="bk-select-mark">${_selectedIds.has(b.id)?'✓':''}</span>`:''}${coverHtml(b)}</div>
         <div class="lv-info" onclick="${_selectMode?'toggleBookSelection('+b.id+')':'openBookActions('+b.id+')'}">
           <div class="lv-t">${b.title}</div>
@@ -32163,7 +32163,7 @@ function render() {
     const bmap = {reading:'b-reading',done:'b-done',wishlist:'b-wish',unread:''};
     const blbl = {reading:'Leser nå',done:'Lest',wishlist:'Ønskeliste',unread:''};
     grid.innerHTML = filtered.map((b,i) => `
-      <div class="bk ${_selectedIds.has(b.id)?'is-selected':''}" data-bookid="${b.id}" style="animation-delay:${i*0.04}s" onclick="${_selectMode?'toggleBookSelection('+b.id+')':'openBookActions('+b.id+')'}">
+      <div class="bk ${_selectedIds.has(b.id)?'is-selected':''}" data-bookid="${b.id}" onclick="${_selectMode?'toggleBookSelection('+b.id+')':'openBookActions('+b.id+')'}">
         <div class="bk-cover-wrap${effectiveStatus(b)==='done'?' is-done':''}">
           ${_selectMode?`<span class="bk-select-mark">${_selectedIds.has(b.id)?'✓':''}</span>`:''}
           ${coverHtml(b)}
