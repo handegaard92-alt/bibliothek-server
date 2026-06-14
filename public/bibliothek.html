@@ -34975,19 +34975,29 @@ async function init() {
 }
 init();
 
+function setThemeColor(isLight) {
+  const color = isLight ? '#f4f1ec' : '#0a0a0c';
+  let meta = document.querySelector('meta[name="theme-color"]');
+  if (!meta) { meta = document.createElement('meta'); meta.name = 'theme-color'; document.head.appendChild(meta); }
+  meta.content = color;
+}
+
 function toggleTheme() {
   const isLight = document.documentElement.classList.toggle('light');
   document.getElementById('themeToggle').textContent = isLight ? '☀️' : '🌙';
   localStorage.setItem('bibliothek_theme', isLight ? 'light' : 'dark');
+  setThemeColor(isLight);
 }
 
 function applyTheme() {
   const saved = localStorage.getItem('bibliothek_theme');
-  if (saved === 'light') {
+  const isLight = saved === 'light';
+  if (isLight) {
     document.documentElement.classList.add('light');
     const btn = document.getElementById('themeToggle');
     if (btn) btn.textContent = '☀️';
   }
+  setThemeColor(isLight);
 }
 applyTheme();
 
