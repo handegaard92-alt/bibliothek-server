@@ -367,7 +367,7 @@ body {
 
 /* GRID */
 .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:26px 20px; justify-content:start; }
-.grid.lv { grid-template-columns:1fr; gap:8px; }
+.grid.lv { grid-template-columns:1fr; gap:6px; }
 
 /* Book card – grid */
 .bk {
@@ -526,14 +526,15 @@ body {
 .bk.lv-item {
   display:flex; align-items:center; gap:14px;
   background:var(--surface); border:1px solid var(--border);
-  border-radius:var(--r); padding:12px 16px;
+  border-radius:12px; padding:10px 14px;
   transition:border-color 0.13s;
 }
-.bk.lv-item:hover { border-color:rgba(200,169,110,0.22); }
+.bk.lv-item:hover { border-color:color-mix(in srgb, var(--accent) 25%, transparent); }
 .bk.lv-item .bk-cover-wrap {
-  width:44px; height:66px; aspect-ratio:unset;
+  width:40px; height:60px; aspect-ratio:unset;
   flex-shrink:0; margin-bottom:0;
-  border-radius:5px;
+  border-radius:3px 5px 5px 3px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.25);
 }
 .bk.lv-item:hover .bk-cover-wrap { transform:none; }
 .lv-info { flex:1; min-width:0; }
@@ -29989,7 +29990,7 @@ let genreFilter = null;
 let seriesFilter = null;
 let authorFilter = null;
 let readFilter = null; // 'done' | 'reading' | 'unread' | null
-let viewMode = 'list';
+let viewMode = 'grid';
 let editingId = null;
 let coverDebounceTimer = null;
 let pendingCoverUrl = null;
