@@ -3,13 +3,23 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
+const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
 const { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 
 const app = express();
+app.set('trust proxy', 1); // nødvendig for rate limiting bak Render sin proxy
+
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 100 * 1024 * 1024 } });
 
 app.use(express.json({ limit: '10mb' }));
+
+// Sikkerhetsheaders (CSP deaktivert — bibliothek.html bruker inline scripts)
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false,
+}));
 
 // Automatisk redirect til primær-domene (hvis satt)
 // PRIMARY_HOST kan være "minebøker.no" eller punycode-formen "xn--minebker-94a.no"
@@ -33,9 +43,10 @@ app.use((req, res, next) => {
 });
 
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', process.env.ALLOWED_ORIGIN || '*');
+  const allowed = process.env.ALLOWED_ORIGIN || (PRIMARY_HOST ? 'https://' + PRIMARY_HOST : '');
+  if (allowed) res.header('Access-Control-Allow-Origin', allowed);
   res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  res.header('Access-Control-Allow-Headers', 'Content-Type,X-Auth-Token');
   if (req.method === 'OPTIONS') return res.sendStatus(200);
   next();
 });
@@ -116,6 +127,38 @@ async function getSession(token) {
   return await loadSessionR2(token); // fall back til R2 etter restart
 }
 
+// Rate limiter for autentiseringsendepunkter
+const authLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  message: { ok: false, error: 'For mange forsøk. Prøv igjen om ett minutt.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Middleware: krev gyldig innlogget sesjon
+async function requireAuth(req, res, next) {
+  const token = req.headers['x-auth-token'];
+  if (!token) return res.status(401).json({ ok: false, error: 'Innlogging påkrevd' });
+  const session = await getSession(token);
+  if (!session) return res.status(401).json({ ok: false, error: 'Ugyldig eller utløpt sesjon' });
+  req.session = session;
+  next();
+}
+
+// Middleware: krev auth + at session.libraryKey matcher :pin-parameteret
+async function requireLibraryAccess(req, res, next) {
+  const token = req.headers['x-auth-token'];
+  if (!token) return res.status(401).json({ ok: false, error: 'Innlogging påkrevd' });
+  const session = await getSession(token);
+  if (!session) return res.status(401).json({ ok: false, error: 'Ugyldig eller utløpt sesjon' });
+  if (session.libraryKey !== req.params.pin) {
+    return res.status(403).json({ ok: false, error: 'Ingen tilgang til dette biblioteket' });
+  }
+  req.session = session;
+  next();
+}
+
 function userKey(usernameLower) { return `users/${usernameLower}.json`; }
 
 async function loadUser(username) {
@@ -185,7 +228,7 @@ app.get('/auth/registration-open', async (req, res) => {
 
 // POST /auth/register — body: {username, password, migratePinHash?}
 // Tillates KUN hvis det ikke finnes brukere (førstegangsoppsett)
-app.post('/auth/register', async (req, res) => {
+app.post('/auth/register', authLimiter, async (req, res) => {
   try {
     if (await anyUserExists()) {
       return res.status(403).json({
@@ -196,7 +239,7 @@ app.post('/auth/register', async (req, res) => {
     const { username, password, migratePinHash } = req.body || {};
     const err = validateUsername(username);
     if (err) return res.status(400).json({ ok: false, error: err });
-    if (!password || password.length < 6) return res.status(400).json({ ok: false, error: 'Passord må være minst 6 tegn' });
+    if (!password || password.length < 8) return res.status(400).json({ ok: false, error: 'Passord må være minst 8 tegn' });
     const lower = username.trim().toLowerCase();
     const existing = await loadUser(lower);
     if (existing) return res.status(409).json({ ok: false, error: 'Brukernavnet er allerede tatt' });
@@ -238,7 +281,7 @@ app.post('/auth/create-user', async (req, res) => {
     }
     const err = validateUsername(newUsername);
     if (err) return res.status(400).json({ ok: false, error: err });
-    if (!newPassword || newPassword.length < 6) return res.status(400).json({ ok: false, error: 'Passord må være minst 6 tegn' });
+    if (!newPassword || newPassword.length < 8) return res.status(400).json({ ok: false, error: 'Passord må være minst 8 tegn' });
     const lower = newUsername.trim().toLowerCase();
     if (lower === ownerUsername.trim().toLowerCase()) return res.status(400).json({ ok: false, error: 'Brukernavnet må være forskjellig fra ditt eget' });
     const existing = await loadUser(lower);
@@ -260,7 +303,7 @@ app.post('/auth/create-user', async (req, res) => {
 });
 
 // POST /auth/login — body: {username, password}
-app.post('/auth/login', async (req, res) => {
+app.post('/auth/login', authLimiter, async (req, res) => {
   try {
     const { username, password } = req.body || {};
     if (!username || !password) return res.status(400).json({ ok: false, error: 'Brukernavn og passord påkrevd' });
@@ -293,7 +336,7 @@ app.post('/auth/create-guest', async (req, res) => {
     }
     const err = validateUsername(guestUsername);
     if (err) return res.status(400).json({ ok: false, error: err });
-    if (!guestPassword || guestPassword.length < 6) return res.status(400).json({ ok: false, error: 'Gjeste-passord må være minst 6 tegn' });
+    if (!guestPassword || guestPassword.length < 8) return res.status(400).json({ ok: false, error: 'Gjeste-passord må være minst 8 tegn' });
     const lower = guestUsername.trim().toLowerCase();
     if (lower === ownerUsername.trim().toLowerCase()) return res.status(400).json({ ok: false, error: 'Gjeste-brukernavn må være forskjellig fra eier' });
     const existing = await loadUser(lower);
@@ -322,9 +365,12 @@ app.post('/auth/create-guest', async (req, res) => {
   }
 });
 
-// GET /auth/guests/:ownerUsername — list guests for an owner
-app.get('/auth/guests/:ownerUsername', async (req, res) => {
+// GET /auth/guests/:ownerUsername — list guests for an owner (krever at innlogget bruker ER eieren)
+app.get('/auth/guests/:ownerUsername', requireAuth, async (req, res) => {
   try {
+    if (req.session.username.toLowerCase() !== req.params.ownerUsername.toLowerCase()) {
+      return res.status(403).json({ ok: false, error: 'Ingen tilgang' });
+    }
     const owner = await loadUser(req.params.ownerUsername);
     if (!owner) return res.status(404).json({ ok: false, error: 'Eier ikke funnet' });
     const list = await loadGuestList(owner.libraryKey);
@@ -364,7 +410,7 @@ app.delete('/auth/guest/:username', async (req, res) => {
 });
 
 // POST /auth/change-password — body: {username, oldPassword, newPassword}
-app.post('/auth/change-password', async (req, res) => {
+app.post('/auth/change-password', authLimiter, async (req, res) => {
   try {
     const { username, oldPassword, newPassword } = req.body || {};
     if (!username || !oldPassword || !newPassword) return res.status(400).json({ ok: false, error: 'Alle felter påkrevd' });
@@ -401,7 +447,7 @@ app.post('/auth/logout', async (req, res) => {
 
 // GET /auth/verify — verifiser at token fortsatt er gyldig (overlever server-restart via R2)
 app.get('/auth/verify', async (req, res) => {
-  const token = req.headers['x-auth-token'] || req.query.token;
+  const token = req.headers['x-auth-token']; // ikke aksepter token i URL (logges i access-logs)
   if (!token) return res.status(401).json({ ok: false, error: 'Token mangler' });
   const session = await getSession(token);
   if (!session) return res.status(401).json({ ok: false, error: 'Ugyldig eller utløpt sesjon' });
@@ -457,16 +503,8 @@ app.get('/', (req, res) => {
 });
 
 app.get('/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    features: {
-      app: fs.existsSync(path.join(publicDir, 'bibliothek.html')),
-      kindle: !!(process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD),
-      ai: !!process.env.ANTHROPIC_API_KEY,
-      r2: !!r2,
-      sync: true
-    }
-  });
+  // Returner kun det absolutt nødvendige — ingen feature-flagg som avslører konfigurasjon
+  res.json({ status: 'ok' });
 });
 
 // PIN-based library sync
@@ -554,7 +592,7 @@ async function saveLibrary(key, books, updatedAt) {
   } catch(e) { console.warn('snapshot failed:', e.message); }
 }
 
-app.get('/library/:pin', async (req, res) => {
+app.get('/library/:pin', requireLibraryAccess, async (req, res) => {
   const key = req.params.pin;
   // Check if guest PIN
   let ownerKey = guestStore.get(key);
@@ -575,8 +613,9 @@ app.get('/library/:pin', async (req, res) => {
   res.json({ ok: true, books: data.books, updatedAt: data.updatedAt });
 });
 
-app.put('/library/:pin', async (req, res) => {
+app.put('/library/:pin', requireLibraryAccess, async (req, res) => {
   const key = req.params.pin;
+  if (req.session.readOnly) return res.status(403).json({ ok: false, error: 'Gjestebrukere kan ikke endre biblioteket' });
   const { books, force } = req.body;
   if (!Array.isArray(books)) return res.status(400).json({ ok: false, error: 'books must be array' });
   // Beskyttelse: avvis tom oppdatering hvis det allerede ligger bøker lagret
@@ -612,7 +651,7 @@ app.put('/library/:pin', async (req, res) => {
 });
 
 // List backups for a PIN
-app.get('/backups/:pin', async (req, res) => {
+app.get('/backups/:pin', requireLibraryAccess, async (req, res) => {
   if (!r2) return res.status(503).json({ ok: false, error: 'R2 not configured' });
   const key = req.params.pin;
   const { ListObjectsV2Command } = require('@aws-sdk/client-s3');
@@ -633,13 +672,14 @@ app.get('/backups/:pin', async (req, res) => {
 });
 
 // Restore a backup as the active library
-app.post('/library/:pin/restore', async (req, res) => {
+app.post('/library/:pin/restore', requireLibraryAccess, async (req, res) => {
   if (!r2) return res.status(503).json({ ok: false, error: 'R2 not configured' });
   const key = req.params.pin;
   const { snapshotKey } = req.body;
   if (!snapshotKey || !snapshotKey.startsWith(`${key}/snapshots/`)) {
     return res.status(400).json({ ok: false, error: 'invalid snapshotKey' });
   }
+  if (req.session.readOnly) return res.status(403).json({ ok: false, error: 'Gjestebrukere kan ikke gjenopprette backup' });
   try {
     const data = await r2.send(new GetObjectCommand({ Bucket: BUCKET, Key: snapshotKey }));
     const chunks = [];
@@ -655,11 +695,12 @@ app.post('/library/:pin/restore', async (req, res) => {
 });
 
 // R2 File upload - lagre epub permanent
-app.post('/files/upload', upload.single('file'), async (req, res) => {
+app.post('/files/upload', requireAuth, upload.single('file'), async (req, res) => {
   if (!r2) return res.status(503).json({ ok: false, error: 'R2 not configured' });
   if (!req.file) return res.status(400).json({ ok: false, error: 'No file' });
   const { pin, bookId } = req.body;
   if (!pin || !bookId) return res.status(400).json({ ok: false, error: 'Missing pin or bookId' });
+  if (pin !== req.session.libraryKey) return res.status(403).json({ ok: false, error: 'Ingen tilgang' });
 
   const key = hashPin(pin) + '/' + bookId + '/' + req.file.originalname;
   try {
@@ -676,9 +717,10 @@ app.post('/files/upload', upload.single('file'), async (req, res) => {
 });
 
 // R2 Get signed download URL
-app.get('/files/url/:pin/:bookId/:fileName', async (req, res) => {
+app.get('/files/url/:pin/:bookId/:fileName', requireAuth, async (req, res) => {
   if (!r2) return res.status(503).json({ ok: false, error: 'R2 not configured' });
   const { pin, bookId, fileName } = req.params;
+  if (pin !== req.session.libraryKey) return res.status(403).json({ ok: false, error: 'Ingen tilgang' });
   const key = hashPin(pin) + '/' + bookId + '/' + fileName;
   try {
     const url = await getSignedUrl(r2, new GetObjectCommand({ Bucket: BUCKET, Key: key }), { expiresIn: 3600 });
@@ -689,9 +731,10 @@ app.get('/files/url/:pin/:bookId/:fileName', async (req, res) => {
 });
 
 // R2 Stream file directly (for Kindle sending)
-app.get('/files/download/:pin/:bookId/:fileName', async (req, res) => {
+app.get('/files/download/:pin/:bookId/:fileName', requireAuth, async (req, res) => {
   if (!r2) return res.status(503).json({ ok: false, error: 'R2 not configured' });
   const { pin, bookId, fileName } = req.params;
+  if (pin !== req.session.libraryKey) return res.status(403).json({ ok: false, error: 'Ingen tilgang' });
   const key = hashPin(pin) + '/' + bookId + '/' + fileName;
   try {
     const data = await r2.send(new GetObjectCommand({ Bucket: BUCKET, Key: key }));
@@ -704,7 +747,7 @@ app.get('/files/download/:pin/:bookId/:fileName', async (req, res) => {
 });
 
 // Send to Kindle - hent fra R2 og send via Nodemailer (Gmail)
-app.post('/send-to-kindle', upload.single('file'), async (req, res) => {
+app.post('/send-to-kindle', requireAuth, upload.single('file'), async (req, res) => {
   try {
     const { toEmail, bookTitle, pin, bookId, fileName } = req.body;
     if (!toEmail) return res.status(400).json({ ok: false, error: 'No target email' });
@@ -770,7 +813,7 @@ app.post('/send-to-kindle', upload.single('file'), async (req, res) => {
 });
 
 // AI chat proxy (non-streaming fallback)
-app.post('/ai-chat', async (req, res) => {
+app.post('/ai-chat', requireAuth, async (req, res) => {
   try {
     const { systemPrompt, messages } = req.body;
     if (!process.env.ANTHROPIC_API_KEY) return res.status(503).json({ ok: false, error: 'No API key' });
@@ -790,7 +833,7 @@ app.post('/ai-chat', async (req, res) => {
 });
 
 // AI chat — streaming versjon (Server-Sent Events) for raskere oppfattet hastighet
-app.post('/ai-chat-stream', async (req, res) => {
+app.post('/ai-chat-stream', requireAuth, async (req, res) => {
   try {
     const { systemPrompt, messages } = req.body;
     if (!process.env.ANTHROPIC_API_KEY) return res.status(503).json({ ok: false, error: 'No API key' });
@@ -846,7 +889,7 @@ app.post('/ai-chat-stream', async (req, res) => {
 });
 
 // ebok.no series proxy (CORS workaround)
-app.get('/series-proxy', async (req, res) => {
+app.get('/series-proxy', requireAuth, async (req, res) => {
   const { title, author } = req.query;
   if (!title) return res.json({ ok: false });
   try {
