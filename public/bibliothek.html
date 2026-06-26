@@ -340,14 +340,14 @@ body {
   }
   .filter-mobile-btn.has-filter {
     background: var(--gold-dim);
-    border-color: var(--gold);
-    color: var(--gold);
+    border-color: var(--accent);
+    color: var(--accent);
   }
   .filter-mobile-chip {
     display: inline-block;
     margin-left: 6px;
     padding: 2px 8px;
-    background: var(--gold);
+    background: var(--accent);
     color: #0a0a0c;
     border-radius: 999px;
     font-size: 11px;
@@ -435,7 +435,7 @@ body {
 .ov-edit { background:rgba(255,255,255,0.18); color:#fff; }
 .ov-kindle { background:var(--accent); color:#fff; }
 /* Multi-select-modus */
-.bk.is-selected .bk-cover-wrap { box-shadow:0 0 0 3px var(--gold); }
+.bk.is-selected .bk-cover-wrap { box-shadow:0 0 0 3px var(--accent); }
 .bk-select-mark {
   position:absolute; top:7px; left:7px;
   width:24px; height:24px; border-radius:50%;
@@ -444,22 +444,22 @@ body {
   font-size:14px; color:#fff; font-weight:700;
   z-index:2;
 }
-.bk.is-selected .bk-select-mark { background:var(--gold); border-color:var(--gold); color:#0a0a0c; }
+.bk.is-selected .bk-select-mark { background:var(--accent); border-color:var(--accent); color:var(--brand-ink); }
 #selectModeBar {
   display:none; position:sticky; top:0; z-index:30;
-  background:var(--gold); color:#0a0a0c;
+  background:var(--accent); color:var(--brand-ink);
   padding:10px 14px; align-items:center; justify-content:space-between; gap:10px;
   font-family:'Hanken Grotesk',system-ui,sans-serif; font-size:13.5px; font-weight:600;
   border-radius:10px; margin-bottom:14px;
 }
 #selectModeBar.open { display:flex; }
 #selectModeBar button {
-  background:#0a0a0c; color:var(--gold);
+  background:var(--text); color:var(--accent);
   border:none; border-radius:6px; padding:7px 14px;
   font-family:'Hanken Grotesk',system-ui,sans-serif; font-size:13px; font-weight:600;
   cursor:pointer;
 }
-#selectModeBar .smb-cancel { background:transparent; color:#0a0a0c; }
+#selectModeBar .smb-cancel { background:transparent; color:var(--brand-ink); }
 
 .bk-badge {
   position:absolute; top:8px; right:8px;
@@ -507,7 +507,7 @@ body {
 .bk-a { font-size:12px; color:var(--muted); }
 .stars { display:flex; gap:2px; margin-top:4px; }
 .star { font-size:11px; }
-.s-on { color:var(--gold); }
+.s-on { color:var(--accent); }
 .s-off { color:var(--muted2); }
 .cover-loading {
   width:100%; height:100%; display:flex; align-items:center; justify-content:center;
@@ -516,7 +516,7 @@ body {
 .spin {
   width:20px; height:20px;
   border:2px solid var(--muted2);
-  border-top-color:var(--gold);
+  border-top-color:var(--accent);
   border-radius:50%;
   animation:spin 0.7s linear infinite;
 }
@@ -554,7 +554,7 @@ body {
   font-size:15px; cursor:pointer; line-height:1; flex-shrink:0;
   transition:border-color 0.13s, color 0.13s;
 }
-.user-menu-btn:hover { border-color:var(--gold); color:var(--gold); }
+.user-menu-btn:hover { border-color:var(--accent); color:var(--accent); }
 .user-panel {
   position:fixed; top:56px; right:12px; z-index:1200;
   background:var(--surface); border:1px solid var(--border2);
@@ -569,7 +569,7 @@ body {
 .user-panel-status-dot.guest { background:var(--blue); }
 .user-panel-status-dot.offline { background:var(--muted2); }
 .user-panel-switch-btn { width:100%; padding:9px 12px; border-radius:var(--r2); border:1px solid var(--border); background:transparent; color:var(--text); font-size:13px; cursor:pointer; font-family:'Hanken Grotesk',system-ui,sans-serif; text-align:left; margin-bottom:10px; }
-.user-panel-switch-btn:hover { border-color:var(--gold); color:var(--gold); }
+.user-panel-switch-btn:hover { border-color:var(--accent); color:var(--accent); }
 .up-section { border-top:1px solid var(--border); padding-top:10px; margin-top:4px; }
 .up-section-label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.07em; margin-bottom:8px; }
 .up-pin-row { display:flex; gap:6px; align-items:center; margin-bottom:8px; }
@@ -580,7 +580,7 @@ body {
 .conflict-desc { font-size:13px; color:var(--muted); margin-bottom:18px; line-height:1.5; }
 .conflict-options { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 .conflict-opt { padding:14px; border-radius:var(--r2); border:1px solid var(--border); background:var(--surface2); cursor:pointer; transition:border-color 0.13s; }
-.conflict-opt:hover { border-color:var(--gold); }
+.conflict-opt:hover { border-color:var(--accent); }
 .conflict-opt-label { font-size:12px; color:var(--muted); margin-bottom:4px; }
 .conflict-opt-val { font-size:14px; font-weight:500; }
 .lv-ic-btn {
@@ -589,7 +589,7 @@ body {
   font-size:11px; font-family:'Hanken Grotesk',system-ui,sans-serif;
   transition:all 0.13s; display:flex; align-items:center; gap:4px;
 }
-.lv-ic-btn:hover { border-color:var(--gold); color:var(--gold); }
+.lv-ic-btn:hover { border-color:var(--accent); color:var(--accent); }
 
 /* Empty */
 .empty { text-align:center; padding:60px 20px; grid-column:1/-1; }
@@ -599,42 +599,44 @@ body {
 /* ── MODAL ── */
 .backdrop {
   display:none; position:fixed; inset:0;
-  background:rgba(0,0,0,0.72); backdrop-filter:blur(10px);
+  background:color-mix(in srgb, var(--text) 42%, transparent);
+  -webkit-backdrop-filter:blur(5px); backdrop-filter:blur(5px);
   z-index:300; align-items:center; justify-content:center;
 }
 .backdrop.open { display:flex; }
 .modal {
   background:var(--surface);
-  border:1px solid var(--border2);
-  border-radius:18px;
-  padding:32px;
+  border:1px solid var(--border);
+  border-radius:22px;
+  padding:30px;
   width:100%; max-width:520px;
-  animation:mIn 0.22s ease;
+  animation:mIn 0.26s cubic-bezier(.22,1,.36,1);
   max-height:90vh; overflow-y:auto;
+  box-shadow:0 34px 80px -22px rgba(0,0,0,0.3);
 }
 .modal::-webkit-scrollbar { width:4px; }
 .modal::-webkit-scrollbar-thumb { background:var(--muted2); border-radius:2px; }
-@keyframes mIn { from{opacity:0;transform:scale(0.96) translateY(10px)} to{opacity:1;transform:none} }
+@keyframes mIn { from{opacity:0;transform:translateY(16px) scale(0.97)} to{opacity:1;transform:none} }
 .modal-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
-.modal-hdr h2 { font-family:'Newsreader',Georgia,serif; font-size:22px; font-weight:700; }
-.modal-close { background:none; border:none; color:var(--muted); cursor:pointer; font-size:20px; line-height:1; padding:0; }
-.modal-close:hover { color:var(--text); }
-.fg { margin-bottom:14px; }
-.fl { display:block; font-size:11px; color:var(--muted); letter-spacing:0.1em; text-transform:uppercase; margin-bottom:5px; font-weight:500; }
+.modal-hdr h2 { font-family:'Newsreader',Georgia,serif; font-size:24px; font-weight:500; letter-spacing:-0.01em; }
+.modal-close { background:none; border:none; color:var(--muted); cursor:pointer; font-size:18px; line-height:1; padding:4px; width:30px; height:30px; border-radius:8px; display:grid; place-items:center; transition:background 0.15s; }
+.modal-close:hover { background:var(--surface2); color:var(--text); }
+.fg { margin-bottom:16px; }
+.fl { display:block; font-size:12px; color:var(--muted); font-weight:600; margin-bottom:6px; }
 .fi, .fs {
   width:100%;
-  background:var(--surface2);
-  border:1px solid var(--border);
+  background:var(--surface);
+  border:1.5px solid var(--border);
   color:var(--text);
   font-family:'Hanken Grotesk',system-ui,sans-serif;
-  font-size:13.5px;
-  padding:10px 13px;
-  border-radius:var(--r2);
+  font-size:15px;
+  padding:13px 15px;
+  border-radius:11px;
   outline:none;
-  transition:border-color 0.15s;
+  transition:border-color 0.15s, box-shadow 0.15s;
 }
-.fi:focus, .fs:focus { border-color:var(--gold); }
-.fi::placeholder { color:var(--muted); opacity:0.85; }
+.fi:focus, .fs:focus { border-color:var(--brand); box-shadow:0 0 0 3px color-mix(in srgb, var(--brand) 12%, transparent); }
+.fi::placeholder { color:var(--muted2); }
 .fr { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
 .file-drop {
   border:2px dashed var(--muted2);
@@ -645,11 +647,11 @@ body {
   transition:all 0.15s;
   position:relative;
 }
-.file-drop:hover, .file-drop.drag { border-color:var(--gold); background:var(--gold-dim); }
+.file-drop:hover, .file-drop.drag { border-color:var(--accent); background:var(--gold-dim); }
 .file-drop input { position:absolute; inset:0; opacity:0; cursor:pointer; }
 .file-drop-icon { font-size:28px; margin-bottom:6px; }
 .file-drop p { font-size:13px; color:var(--muted); }
-.file-drop .filename { font-size:12.5px; color:var(--gold); margin-top:5px; }
+.file-drop .filename { font-size:12.5px; color:var(--accent); margin-top:5px; }
 .cover-preview {
   margin-top:10px;
   display:none;
@@ -663,19 +665,20 @@ body {
   padding-top:18px; border-top:1px solid var(--border);
 }
 .btn-cancel {
-  padding:9px 18px; background:transparent;
-  border:1px solid var(--border); color:var(--muted);
-  font-family:'Hanken Grotesk',system-ui,sans-serif; font-size:13px;
-  border-radius:var(--r2); cursor:pointer; transition:all 0.13s;
+  padding:11px 22px; background:transparent;
+  border:1.5px solid var(--border); color:var(--muted);
+  font-family:'Hanken Grotesk',system-ui,sans-serif; font-size:14px; font-weight:600;
+  border-radius:999px; cursor:pointer; transition:all 0.18s;
 }
-.btn-cancel:hover { border-color:var(--muted); color:var(--text); }
+.btn-cancel:hover { border-color:var(--text); color:var(--text); }
 .btn-save {
-  padding:9px 22px; background:var(--gold);
-  border:none; color:#0a0a0c;
-  font-family:'Hanken Grotesk',system-ui,sans-serif; font-size:13px; font-weight:600;
-  border-radius:var(--r2); cursor:pointer; transition:all 0.13s;
+  padding:11px 26px; background:var(--brand);
+  border:none; color:var(--brand-ink);
+  font-family:'Hanken Grotesk',system-ui,sans-serif; font-size:14px; font-weight:600;
+  border-radius:999px; cursor:pointer; transition:all 0.18s;
+  box-shadow:0 8px 22px -10px color-mix(in srgb, var(--brand) 80%, transparent);
 }
-.btn-save:hover { background:var(--gold2); }
+.btn-save:hover { background:var(--brand-2); }
 .btn-delete {
   padding:9px 18px; background:transparent;
   border:1px solid rgba(224,85,85,0.3); color:var(--red);
@@ -700,7 +703,7 @@ body {
 .km-author { font-size:13px; color:var(--muted); margin-top:3px; }
 .km-info { font-size:13px; color:var(--muted); line-height:1.6; margin-bottom:18px; }
 .km-info strong { color:var(--text); }
-.km-email { font-size:13px; color:var(--gold); word-break:break-all; margin-bottom:18px; }
+.km-email { font-size:13px; color:var(--accent); word-break:break-all; margin-bottom:18px; }
 .km-no-email {
   background:rgba(200,169,110,0.1); border:1px solid rgba(200,169,110,0.25);
   border-radius:var(--r2); padding:12px 14px; font-size:13px; color:var(--gold2);
@@ -709,17 +712,18 @@ body {
 .btn-send {
   display:flex; align-items:center; justify-content:center; gap:8px;
   width:100%; padding:12px; border-radius:var(--r2); border:none;
-  background:var(--gold); color:#0a0a0c;
+  background:var(--accent); color:var(--brand-ink);
   font-family:'Hanken Grotesk',system-ui,sans-serif; font-size:14px; font-weight:600;
   cursor:pointer; transition:all 0.15s;
 }
 .btn-send:hover { background:var(--gold2); }
 .toast {
   position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(80px);
-  background:var(--surface3); border:1px solid var(--border2);
-  color:var(--text); padding:11px 22px; border-radius:10px;
-  font-size:13.5px; z-index:9999;
-  transition:transform 0.3s ease, opacity 0.3s;
+  background:var(--text); color:var(--bg);
+  padding:13px 20px; border-radius:14px;
+  font-size:14.5px; font-weight:500; z-index:9999;
+  box-shadow:0 16px 40px -10px rgba(0,0,0,0.5);
+  transition:transform 0.4s cubic-bezier(.22,1,.36,1), opacity 0.3s;
   opacity:0; pointer-events:none;
 }
 .toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
@@ -728,18 +732,36 @@ body {
 }
 
   /* ── STATS VIEW ── */
-  .stats-big-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:12px; margin-bottom:28px; }
-  .stat-big { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:18px; transition:border-color 0.15s; }
-  .stat-big:hover { border-color:rgba(200,169,110,0.2); }
-  .stat-big .sv { font-family:'Newsreader',Georgia,serif; font-size:36px; font-weight:700; color:var(--gold); line-height:1; }
-  .stat-big .sl { font-size:12px; color:var(--muted); margin-top:4px; }
-  .bar-row { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
-  .bar-label { font-size:12px; color:var(--muted); width:80px; flex-shrink:0; text-align:right; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .bar-track { flex:1; height:8px; background:var(--surface2); border-radius:4px; overflow:hidden; }
-  .bar-fill { height:100%; background:linear-gradient(90deg,var(--gold),var(--gold2)); border-radius:4px; }
-  .bar-val { font-size:12px; color:var(--muted); width:20px; flex-shrink:0; }
-  .chart-section { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:20px; margin-bottom:20px; }
-  .chart-title { font-family:'Newsreader',Georgia,serif; font-size:16px; font-weight:700; margin-bottom:16px; color:var(--text); }
+  .stats-big-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:18px; margin-bottom:30px; }
+  .stat-big { background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:26px 24px; transition:border-color 0.15s; }
+  .stat-big:hover { border-color:color-mix(in srgb, var(--accent) 25%, transparent); }
+  .stat-big .sv { font-family:'Newsreader',Georgia,serif; font-size:38px; font-weight:400; color:var(--accent); line-height:1; letter-spacing:-0.01em; }
+  .stat-big .sl { font-size:13.5px; color:var(--muted); margin-top:7px; }
+  .bar-row { display:grid; grid-template-columns:90px 1fr 28px; gap:12px; align-items:center; margin-bottom:10px; }
+  .bar-label { font-size:13.5px; color:var(--text); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .bar-track { height:9px; background:var(--surface2); border-radius:999px; overflow:hidden; }
+  .bar-fill { height:100%; background:var(--accent); border-radius:999px; transition:width 0.5s cubic-bezier(.22,1,.36,1); }
+  .bar-val { font-size:13px; font-weight:700; color:var(--muted); text-align:right; }
+  .chart-section { background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:26px 28px; margin-bottom:18px; }
+  .chart-title { font-family:'Newsreader',Georgia,serif; font-size:21px; font-weight:500; margin-bottom:22px; color:var(--text); }
+  /* Reading goal card */
+  .goal-card { display:grid; grid-template-columns:auto 1fr; gap:40px; align-items:center; background:var(--brand); color:var(--brand-ink); border-radius:24px; padding:40px 44px; margin-bottom:30px; }
+  .goal-ring { width:150px; height:150px; border-radius:50%; display:grid; place-items:center; }
+  .goal-ring-in { width:118px; height:118px; border-radius:50%; background:var(--brand); display:grid; place-items:center; text-align:center; }
+  .gr-num { font-family:'Newsreader',Georgia,serif; font-size:44px; line-height:1; }
+  .gr-of { font-size:13px; opacity:0.7; }
+  .goal-text h2 { font-family:'Newsreader',Georgia,serif; font-weight:500; font-size:28px; margin-bottom:10px; }
+  .goal-text p { opacity:0.85; font-size:16px; margin-bottom:18px; max-width:36em; }
+  .goal-bar { height:8px; border-radius:999px; background:color-mix(in srgb, var(--brand-ink) 18%, transparent); overflow:hidden; }
+  .goal-bar i { display:block; height:100%; background:var(--accent-2); border-radius:999px; }
+  @media (max-width:680px) {
+    .stats-big-grid { grid-template-columns:repeat(2,1fr); gap:12px; }
+    .goal-card { grid-template-columns:1fr; text-align:center; justify-items:center; gap:22px; padding:28px 24px; }
+    .goal-ring { width:130px; height:130px; }
+    .goal-ring-in { width:102px; height:102px; }
+    .gr-num { font-size:38px; }
+    .chart-section { padding:22px 20px; }
+  }
 
   /* ── RECOMMENDATIONS VIEW ── */
   .rec-chat { display:flex; flex-direction:column; height:calc(100vh - 130px); }
@@ -749,11 +771,11 @@ body {
   .msg { display:flex; gap:10px; animation:fadeUp 0.3s ease; }
   .msg.user { flex-direction:row-reverse; }
   .msg-avatar { width:28px; height:28px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:13px; }
-  .msg.ai .msg-avatar { background:var(--gold-dim); border:1px solid rgba(200,169,110,0.3); }
+  .msg.ai .msg-avatar { background:var(--gold-dim); border:1px solid color-mix(in srgb, var(--accent) 30%, transparent); }
   .msg.user .msg-avatar { background:var(--surface2); }
   .msg-bubble { max-width:80%; padding:11px 14px; border-radius:12px; font-size:13.5px; line-height:1.6; }
   .msg.ai .msg-bubble { background:var(--surface); border:1px solid var(--border); color:var(--text); border-radius:4px 12px 12px 12px; }
-  .msg.user .msg-bubble { background:var(--gold); color:#0a0a0c; font-weight:500; border-radius:12px 4px 12px 12px; }
+  .msg.user .msg-bubble { background:var(--brand); color:var(--brand-ink); font-weight:500; border-radius:12px 4px 12px 12px; }
   .typing { display:flex; gap:5px; align-items:center; }
   .typing span { width:7px; height:7px; border-radius:50%; background:var(--muted); animation:typingDot 1.2s infinite; }
   .typing span:nth-child(2) { animation-delay:0.2s; }
@@ -761,17 +783,17 @@ body {
   @keyframes typingDot { 0%,60%,100%{opacity:0.25;transform:scale(0.8)} 30%{opacity:1;transform:scale(1)} }
   .rec-input-wrap { display:flex; gap:8px; padding-top:14px; border-top:1px solid var(--border); flex-shrink:0; }
   .rec-input { flex:1; background:var(--surface2); border:1px solid var(--border); color:var(--text); font-family:'Hanken Grotesk',system-ui,sans-serif; font-size:14px; padding:11px 14px; border-radius:var(--r2); outline:none; transition:border-color 0.15s; }
-  .rec-input:focus { border-color:var(--gold); }
+  .rec-input:focus { border-color:var(--brand); box-shadow:0 0 0 3px color-mix(in srgb, var(--brand) 12%, transparent); }
   .rec-input::placeholder { color:var(--muted); opacity:0.85; }
-  .rec-send { padding:11px 18px; background:var(--gold); border:none; color:#0a0a0c; border-radius:var(--r2); cursor:pointer; font-size:18px; transition:all 0.15s; flex-shrink:0; }
+  .rec-send { padding:11px 18px; background:var(--accent); border:none; color:var(--brand-ink); border-radius:var(--r2); cursor:pointer; font-size:18px; transition:all 0.15s; flex-shrink:0; }
   .rec-send:hover { background:var(--gold2); }
   .rec-send:disabled { opacity:0.4; cursor:default; }
   .chip { padding:6px 13px; border-radius:20px; border:1px solid var(--border); background:transparent; color:var(--muted); font-family:'Hanken Grotesk',system-ui,sans-serif; font-size:12px; cursor:pointer; transition:all 0.13s; white-space:nowrap; }
-  .chip:hover { border-color:var(--gold); color:var(--gold); }
+  .chip:hover { border-color:var(--accent); color:var(--accent); }
 
 
   /* ── BATCH UPLOAD ── */
-  #batchDrop.drag { border-color:var(--gold); background:var(--gold-dim); }
+  #batchDrop.drag { border-color:var(--accent); background:var(--gold-dim); }
   .batch-item {
     background:var(--surface2);
     border:1px solid var(--border);
@@ -802,7 +824,7 @@ body {
   .batch-status { font-size:11.5px; margin-top:3px; }
   .batch-status.ok  { color:var(--green); }
   .batch-status.err { color:var(--red); }
-  .batch-status.pending { color:var(--gold); }
+  .batch-status.pending { color:var(--accent); }
   .batch-actions { display:flex; gap:6px; flex-shrink:0; align-items:center; }
   .batch-remove { background:none; border:none; color:var(--muted); cursor:pointer; font-size:16px; padding:2px 4px; border-radius:4px; transition:color 0.13s; line-height:1; }
   .batch-remove:hover { color:var(--red); }
@@ -867,10 +889,10 @@ body {
   border-radius:var(--r2); color:var(--text);
   font-size:15px; font-family:'Hanken Grotesk',system-ui,sans-serif; outline:none;
 }
-.login-input:focus { border-color:var(--gold); }
+.login-input:focus { border-color:var(--accent); }
 .login-btn {
   width:100%; padding:11px;
-  background:var(--gold); color:#1a1408;
+  background:var(--accent); color:#1a1408;
   border:none; border-radius:var(--r2);
   font-size:14px; font-weight:600; font-family:'Hanken Grotesk',system-ui,sans-serif;
   cursor:pointer; transition:opacity 0.15s;
@@ -957,44 +979,46 @@ body {
 /* ── BOOK ACTION SHEET ── */
 .action-sheet {
   background:var(--surface);
-  border:1px solid var(--border2);
-  border-radius:18px;
-  padding:24px;
-  width:100%; max-width:380px;
+  border:1px solid var(--border);
+  border-radius:22px;
+  padding:28px;
+  width:100%; max-width:400px;
   animation:mIn 0.22s ease;
+  box-shadow:0 34px 80px -22px rgba(0,0,0,0.25);
 }
 .action-sheet h3 {
   font-family:'Newsreader',Georgia,serif;
-  font-size:22px; font-weight:700;
-  margin-bottom:6px;
+  font-size:24px; font-weight:500;
+  margin-bottom:6px; letter-spacing:-0.01em;
 }
 .action-sheet .as-sub {
-  font-size:13px; color:var(--muted);
-  margin-bottom:18px;
+  font-size:13.5px; color:var(--muted);
+  margin-bottom:20px;
 }
 .as-btn {
   display:flex; align-items:center; gap:14px;
   width:100%; padding:14px 16px;
-  background:var(--surface2);
+  background:var(--surface);
   border:1px solid var(--border);
-  border-radius:12px;
+  border-radius:14px;
   color:var(--text);
   font-family:'Hanken Grotesk',system-ui,sans-serif;
   font-size:14px; font-weight:500;
   cursor:pointer; text-align:left;
   margin-bottom:8px;
-  transition:border-color 0.15s, background 0.15s;
+  transition:border-color 0.18s, background 0.18s;
 }
-.as-btn:hover { border-color:var(--gold); background:var(--surface3); }
+.as-btn:hover { border-color:var(--accent); background:color-mix(in srgb, var(--accent) 5%, var(--surface)); }
 .as-btn[disabled] { opacity:0.45; cursor:not-allowed; }
-.as-btn .as-ico { font-size:20px; line-height:1; }
+.as-btn .as-ico { font-size:20px; line-height:1; width:28px; text-align:center; }
 .as-btn .as-lbl { flex:1; }
-.as-btn .as-hint { font-size:11px; color:var(--muted); display:block; margin-top:2px; }
+.as-btn .as-hint { font-size:11.5px; color:var(--muted); display:block; margin-top:2px; }
 .as-cancel {
-  width:100%; padding:11px;
-  background:transparent; border:none;
+  width:100%; padding:12px;
+  background:transparent; border:1.5px solid var(--border);
   color:var(--muted); font-family:'Hanken Grotesk',system-ui,sans-serif;
-  font-size:13px; cursor:pointer; margin-top:6px;
+  font-size:14px; font-weight:600; cursor:pointer; margin-top:10px;
+  border-radius:999px; transition:border-color 0.18s, color 0.18s;
 }
 .as-cancel:hover { color:var(--text); }
 
@@ -1003,12 +1027,12 @@ body {
   display:inline-flex; align-items:center; gap:4px;
   padding:3px 10px; margin-left:6px;
   background:var(--gold-dim); border:1px solid rgba(200,169,110,0.45);
-  color:var(--gold); border-radius:999px;
+  color:var(--accent); border-radius:999px;
   font-family:'Hanken Grotesk',system-ui,sans-serif; font-size:11.5px; font-weight:500;
   cursor:pointer; vertical-align:middle;
   transition:background 0.15s, border-color 0.15s;
 }
-.rec-add-wishlist:hover { background:rgba(200,169,110,0.18); border-color:var(--gold); }
+.rec-add-wishlist:hover { background:rgba(200,169,110,0.18); border-color:var(--accent); }
 .rec-add-disabled { font-size:12px; opacity:0.6; margin-left:6px; }
 .rec-search-link {
   display:inline-flex; align-items:center; gap:4px;
@@ -1019,7 +1043,7 @@ body {
   text-decoration:none; vertical-align:middle;
   transition:border-color 0.15s, color 0.15s;
 }
-.rec-search-link:hover { border-color:var(--gold); color:var(--gold); }
+.rec-search-link:hover { border-color:var(--accent); color:var(--accent); }
 
 /* ── QUICK PROGRESS EDIT ── */
 .prog-quick-clickable {
@@ -1028,7 +1052,7 @@ body {
   text-underline-offset:3px;
   transition:color 0.15s;
 }
-.prog-quick-clickable:hover { color:var(--gold); }
+.prog-quick-clickable:hover { color:var(--accent); }
 .prog-quick {
   background:var(--surface);
   border:1px solid var(--border2);
@@ -1044,7 +1068,7 @@ body {
 }
 .prog-quick .pq-sub { font-size:12px; color:var(--muted); margin-bottom:18px; }
 .pq-row { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
-.pq-range { flex:1; accent-color:var(--gold); }
+.pq-range { flex:1; accent-color:var(--accent); }
 .pq-num {
   width:64px; padding:8px 10px;
   background:var(--surface2);
@@ -1054,7 +1078,7 @@ body {
   font-family:'Hanken Grotesk',system-ui,sans-serif;
   font-size:14px; text-align:center;
 }
-.pq-num:focus { outline:none; border-color:var(--gold); }
+.pq-num:focus { outline:none; border-color:var(--accent); }
 .pq-actions { display:flex; gap:8px; justify-content:flex-end; }
 
 /* ── COVER ZOOM ── */
@@ -1070,7 +1094,7 @@ body {
 /* ── SERIE BADGE ── */
 .serie-badge {
   display:inline-flex; align-items:center; gap:4px;
-  font-size:10px; color:var(--gold);
+  font-size:10px; color:var(--accent);
   background:var(--gold-dim);
   border:1px solid rgba(200,169,110,0.2);
   border-radius:4px;
@@ -29243,7 +29267,7 @@ font-family: 'Source Sans Pro'
     <div class="login-subtitle">Ditt private bibliotek</div>
 
     <div id="loginTabs" style="display:flex;gap:4px;margin-bottom:14px;background:var(--surface2);padding:3px;border-radius:8px;">
-      <button id="loginTabLogin" onclick="setLoginTab('login')" style="flex:1;padding:8px;background:var(--gold);color:#0a0a0c;border:none;border-radius:6px;font-family:'Hanken Grotesk',system-ui,sans-serif;font-size:13px;font-weight:600;cursor:pointer;">Logg inn</button>
+      <button id="loginTabLogin" onclick="setLoginTab('login')" style="flex:1;padding:8px;background:var(--accent);color:var(--brand-ink);border:none;border-radius:6px;font-family:'Hanken Grotesk',system-ui,sans-serif;font-size:13px;font-weight:600;cursor:pointer;">Logg inn</button>
       <button id="loginTabRegister" onclick="setLoginTab('register')" style="flex:1;padding:8px;background:transparent;color:var(--muted);border:none;border-radius:6px;font-family:'Hanken Grotesk',system-ui,sans-serif;font-size:13px;cursor:pointer;display:none;">Førstegangsoppsett</button>
     </div>
 
@@ -29310,7 +29334,7 @@ font-family: 'Source Sans Pro'
       <div class="nav-item" onclick="openReadingGoalModal()">
         <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>
         Lesemål 🎯
-        <span id="goalProgressMini" style="margin-left:auto;font-size:11px;color:var(--gold);"></span>
+        <span id="goalProgressMini" style="margin-left:auto;font-size:11px;color:var(--accent);"></span>
       </div>
       <div class="nav-item" data-view="stats" onclick="setView(this,'stats')">
         <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
@@ -29414,7 +29438,7 @@ font-family: 'Source Sans Pro'
       <span id="upStatusText" style="font-size:13px;">Ikke tilkoblet</span>
     </div>
     <div id="upUsernameRow" style="font-size:13px;margin-bottom:8px;color:var(--text);display:none;">
-      Innlogget som <strong id="userDisplayName" style="color:var(--gold);"></strong>
+      Innlogget som <strong id="userDisplayName" style="color:var(--accent);"></strong>
     </div>
     <div id="upUserAuthBtns" style="display:none;flex-direction:column;gap:6px;margin-bottom:10px;">
       <button class="user-panel-switch-btn" onclick="openChangePasswordModal()">🔒 Endre passord</button>
@@ -29424,7 +29448,7 @@ font-family: 'Source Sans Pro'
       <div class="up-section">
         <div class="up-section-label">Brukere</div>
         <button onclick="openCreateUserModal()" style="padding:6px 12px;border-radius:6px;font-size:12px;font-family:'Hanken Grotesk',system-ui,sans-serif;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--text);width:100%;margin-bottom:6px;">+ Legg til ny full-tilgang-bruker</button>
-        <button onclick="openCreateGuestModal()" style="padding:6px 12px;border-radius:6px;font-size:12px;font-family:'Hanken Grotesk',system-ui,sans-serif;cursor:pointer;border:1px solid var(--gold);background:var(--gold-dim);color:var(--gold);width:100%;margin-bottom:8px;">+ Lag gjeste-bruker</button>
+        <button onclick="openCreateGuestModal()" style="padding:6px 12px;border-radius:6px;font-size:12px;font-family:'Hanken Grotesk',system-ui,sans-serif;cursor:pointer;border:1px solid var(--gold);background:var(--gold-dim);color:var(--accent);width:100%;margin-bottom:8px;">+ Lag gjeste-bruker</button>
         <div id="guestList" style="display:flex;flex-direction:column;gap:4px;"></div>
       </div>
       <div class="up-section" style="margin-top:10px;">
@@ -29536,7 +29560,7 @@ font-family: 'Source Sans Pro'
         <div>
           <div id="coverStatus" style="font-size: 12px; color: var(--green);">Omslag hentet fra epub-fil ✓</div>
           <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;" id="coverAltBtns"></div>
-          <label style="display:inline-block;margin-top:6px;font-size:11px;color:var(--gold);cursor:pointer;text-decoration:underline;text-underline-offset:2px;" title="Last opp eget omslags-bilde">
+          <label style="display:inline-block;margin-top:6px;font-size:11px;color:var(--accent);cursor:pointer;text-decoration:underline;text-underline-offset:2px;" title="Last opp eget omslags-bilde">
             📁 Last opp bilde
             <input type="file" accept="image/*" id="coverUploadInput" style="display:none" onchange="handleCoverUpload(this)">
           </label>
@@ -29599,7 +29623,7 @@ font-family: 'Source Sans Pro'
     <div class="fg">
       <label class="fl" style="display:flex;align-items:center;justify-content:space-between;">
         <span>Notater og sitater</span>
-        <button type="button" onclick="generateAISummary()" style="background:var(--surface2);border:1px solid var(--border);color:var(--gold);font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer;">✨ Hent AI-sammendrag</button>
+        <button type="button" onclick="generateAISummary()" style="background:var(--surface2);border:1px solid var(--border);color:var(--accent);font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer;">✨ Hent AI-sammendrag</button>
       </label>
       <textarea class="fi" id="fNotes" rows="4" placeholder="Sitater, tanker, AI-sammendrag…" style="resize:vertical;min-height:90px;font-family:'Hanken Grotesk',system-ui,sans-serif;"></textarea>
     </div>
@@ -29612,7 +29636,7 @@ font-family: 'Source Sans Pro'
         <div class="filename" id="fileLabel">9788284321103.epub (1.3 MB)</div>
       </div>
     </div>
-    <div id="isbnStatus" style="display: flex; font-size: 12.5px; margin-top: -6px; margin-bottom: 2px; padding: 9px 12px; background: var(--surface2); border-radius: var(--r2); border: 1px solid var(--border); gap: 6px; align-items: center; color: var(--green);"><span style="color:var(--green)">✓ Hentet direkte fra epub — Gursli Berg forlag · 2022</span> <a href="https://www.nb.no/search?q=isbn%3A9788284321103" target="_blank" style="color:var(--gold);text-decoration:underline;margin-left:6px;font-size:11.5px;">nb.no ↗</a></div>
+    <div id="isbnStatus" style="display: flex; font-size: 12.5px; margin-top: -6px; margin-bottom: 2px; padding: 9px 12px; background: var(--surface2); border-radius: var(--r2); border: 1px solid var(--border); gap: 6px; align-items: center; color: var(--green);"><span style="color:var(--green)">✓ Hentet direkte fra epub — Gursli Berg forlag · 2022</span> <a href="https://www.nb.no/search?q=isbn%3A9788284321103" target="_blank" style="color:var(--accent);text-decoration:underline;margin-left:6px;font-size:11.5px;">nb.no ↗</a></div>
     <div class="mfooter">
       <button class="btn-delete" id="deleteBtn" onclick="deleteBook()" style="display: none;">Slett bok</button>
       <button class="btn-cancel" onclick="closeModal()">Avbryt</button>
@@ -29648,24 +29672,24 @@ font-family: 'Source Sans Pro'
       <div style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;font-weight:600;">Slik sender du til Kindle</div>
       <div style="display:flex;flex-direction:column;gap:8px;">
         <div style="display:flex;gap:10px;align-items:flex-start;">
-          <div style="width:22px;height:22px;border-radius:50%;background:var(--gold);color:#0a0a0c;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">1</div>
+          <div style="width:22px;height:22px;border-radius:50%;background:var(--accent);color:var(--brand-ink);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">1</div>
           <div>
             <div style="font-size:13px;font-weight:500;color:var(--text);">Last ned filen</div>
             <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">Trykk knappen under for å lagre epub-filen til enheten</div>
           </div>
         </div>
         <div style="display:flex;gap:10px;align-items:flex-start;">
-          <div style="width:22px;height:22px;border-radius:50%;background:var(--gold);color:#0a0a0c;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">2</div>
+          <div style="width:22px;height:22px;border-radius:50%;background:var(--accent);color:var(--brand-ink);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">2</div>
           <div>
             <div style="font-size:13px;font-weight:500;color:var(--text);">Send som e-postvedlegg</div>
-            <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">Åpne Mail-appen, lag ny e-post til <span id="kmTargetEmail" style="color:var(--gold);font-weight:500;"></span>, legg ved filen og send</div>
+            <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">Åpne Mail-appen, lag ny e-post til <span id="kmTargetEmail" style="color:var(--accent);font-weight:500;"></span>, legg ved filen og send</div>
           </div>
         </div>
         <div style="display:flex;gap:10px;align-items:flex-start;">
-          <div style="width:22px;height:22px;border-radius:50%;background:var(--gold);color:#0a0a0c;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">3</div>
+          <div style="width:22px;height:22px;border-radius:50%;background:var(--accent);color:var(--brand-ink);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">3</div>
           <div>
             <div style="font-size:13px;font-weight:500;color:var(--text);">Boken dukker opp på Kindle</div>
-            <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">Husk at avsender-e-posten din må være godkjent i <a href="https://www.amazon.com/hz/mycd/myx#/home/settings/payment" target="_blank" style="color:var(--gold);">Amazon-innstillingene</a></div>
+            <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">Husk at avsender-e-posten din må være godkjent i <a href="https://www.amazon.com/hz/mycd/myx#/home/settings/payment" target="_blank" style="color:var(--accent);">Amazon-innstillingene</a></div>
           </div>
         </div>
       </div>
@@ -29690,7 +29714,7 @@ font-family: 'Source Sans Pro'
           <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
           Mail-appen
         </button>
-        <button class="btn-send" onclick="window.open('https://send.amazon.com','_blank')" style="flex:1;background:var(--surface2);color:var(--gold);border:1px solid rgba(200,169,110,0.25);font-size:12px;padding:9px 10px;">
+        <button class="btn-send" onclick="window.open('https://send.amazon.com','_blank')" style="flex:1;background:var(--surface2);color:var(--accent);border:1px solid rgba(200,169,110,0.25);font-size:12px;padding:9px 10px;">
           <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
           Amazon
         </button>
@@ -29783,7 +29807,7 @@ font-family: 'Source Sans Pro'
 <div class="backdrop" id="bookActionsModal" onclick="if(event.target===this)closeBookActions()">
   <div class="action-sheet">
     <div id="asCoverWrap" style="display:none;text-align:center;margin:-8px 0 14px;">
-      <div id="asCoverBadge" style="font-size:11px;color:var(--gold);letter-spacing:0.16em;text-transform:uppercase;font-weight:600;margin-bottom:10px;display:none;">🎲 Tilfeldig valg</div>
+      <div id="asCoverBadge" style="font-size:11px;color:var(--accent);letter-spacing:0.16em;text-transform:uppercase;font-weight:600;margin-bottom:10px;display:none;">🎲 Tilfeldig valg</div>
       <img id="asCoverImg" alt="" style="max-width:140px;max-height:210px;border-radius:8px;box-shadow:0 12px 32px rgba(0,0,0,0.5);cursor:zoom-in;" onclick="zoomCoverFromAS(this)" onerror="this.style.display='none';document.getElementById('asCoverFallback').style.display='flex';">
       <div id="asCoverFallback" style="display:none;width:140px;height:210px;border-radius:8px;box-shadow:0 12px 32px rgba(0,0,0,0.5);align-items:center;justify-content:center;flex-direction:column;padding:14px;text-align:center;margin:0 auto;"></div>
     </div>
@@ -29843,7 +29867,7 @@ font-family: 'Source Sans Pro'
   <div id="readerArea" style="flex:1;position:relative;overflow:hidden;background:var(--surface);"></div>
   <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0;">
     <button onclick="readerPrev()" style="flex:1;background:transparent;border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px;cursor:pointer;font-family:Outfit,sans-serif;">← Forrige</button>
-    <button onclick="readerNext()" style="flex:1;background:var(--gold);color:#0a0a0c;border:none;border-radius:8px;padding:10px;cursor:pointer;font-family:Outfit,sans-serif;font-weight:600;">Neste →</button>
+    <button onclick="readerNext()" style="flex:1;background:var(--accent);color:var(--brand-ink);border:none;border-radius:8px;padding:10px;cursor:pointer;font-family:Outfit,sans-serif;font-weight:600;">Neste →</button>
   </div>
 </div>
 
@@ -31067,7 +31091,7 @@ async function processFile(file) {
 
         setIsbnStatus(
           `<span style="color:var(--green)">✓ Hentet direkte fra epub${extras?' — '+extras:''}</span>` +
-          (epubMeta.epubIsbn ? ` <a href="https://www.nb.no/search?q=isbn%3A${epubMeta.epubIsbn}" target="_blank" style="color:var(--gold);text-decoration:underline;margin-left:6px;font-size:11.5px;">nb.no ↗</a>` : ''),
+          (epubMeta.epubIsbn ? ` <a href="https://www.nb.no/search?q=isbn%3A${epubMeta.epubIsbn}" target="_blank" style="color:var(--accent);text-decoration:underline;margin-left:6px;font-size:11.5px;">nb.no ↗</a>` : ''),
           'var(--green)'
         );
         return;
@@ -31087,7 +31111,7 @@ async function processFile(file) {
 
     if (!info?.title) {
       setIsbnStatus(
-        `ISBN ${isbn} ikke funnet. <a href="https://www.e-bok.no/search?q=${isbn}" target="_blank" style="color:var(--gold);text-decoration:underline;margin-left:6px;">Søk på e-bok.no ↗</a>`,
+        `ISBN ${isbn} ikke funnet. <a href="https://www.e-bok.no/search?q=${isbn}" target="_blank" style="color:var(--accent);text-decoration:underline;margin-left:6px;">Søk på e-bok.no ↗</a>`,
         'var(--muted)'
       );
       return;
@@ -31130,7 +31154,7 @@ async function processFile(file) {
     const extras = [info.pages ? `${info.pages} sider` : null, info.publisher||null].filter(Boolean).join(' · ');
     const sourceLabel = info.source || '';
     const nbLink = info.source === 'Nasjonalbiblioteket'
-      ? `<a href="https://www.nb.no/search?q=isbn%3A${isbn}" target="_blank" style="color:var(--gold);text-decoration:underline;margin-left:6px;font-size:11.5px;">nb.no ↗</a>` : '';
+      ? `<a href="https://www.nb.no/search?q=isbn%3A${isbn}" target="_blank" style="color:var(--accent);text-decoration:underline;margin-left:6px;font-size:11.5px;">nb.no ↗</a>` : '';
     setIsbnStatus(
       `<span style="color:var(--green)">✓ Hentet fra ${sourceLabel}${extras?' — '+extras:''}</span>${nbLink}`,
       'var(--green)'
@@ -32024,6 +32048,7 @@ function render() {
   const fourthBlock = window._readOnly
     ? '<div class="stat"><div class="stat-v">'+(ownedBooks.length-done)+'</div><div class="stat-l">Du kan lese</div></div>'
     : '<div class="stat"><div class="stat-v">'+withFile+'</div><div class="stat-l">Filer lastet opp</div></div>';
+  document.getElementById('statsRow').style.display = '';
   document.getElementById('statsRow').innerHTML = `
     <div class="stat"><div class="stat-v">${ownedBooks.length}</div><div class="stat-l">${totalLabel}</div></div>
     <div class="stat"><div class="stat-v">${reading}</div><div class="stat-l">${readingLabel}</div></div>
@@ -32150,7 +32175,7 @@ function render() {
   if (seriesFilter) {
     const missing = window._readOnly ? [] : detectMissingSeriesBooks(seriesFilter);
     pillsHtml += `<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">`;
-    pillsHtml += `<button class="pill" style="background:var(--gold-dim);border-color:var(--gold);color:var(--gold);" onclick="showSeriesGuide('${seriesFilter.replace(/'/g,"\\'")}')">📖 AI-leseguide</button>`;
+    pillsHtml += `<button class="pill" style="background:var(--gold-dim);border-color:var(--accent);color:var(--accent);" onclick="showSeriesGuide('${seriesFilter.replace(/'/g,"\\'")}')">📖 AI-leseguide</button>`;
     if (missing.length) {
       pillsHtml += `<span style="font-size:12px;color:var(--muted);">Mangler #${missing.join(', #')}</span>`;
       missing.slice(0, 5).forEach(num => {
@@ -32830,21 +32855,39 @@ function renderStatsView() {
   const grid = document.getElementById('booksGrid');
   const sec  = document.getElementById('secTitle');
   const cnt  = document.getElementById('secCnt');
-  sec.textContent = 'Statistikk';
+  sec.textContent = 'Leseåret ' + new Date().getFullYear();
   cnt.textContent = '';
+  document.getElementById('topbarTitle').textContent = 'Leseåret';
   document.getElementById('pillsWrap').innerHTML = '';
   document.getElementById('heroWrap').innerHTML  = '';
+  document.getElementById('statsRow').style.display = 'none';
 
   grid.className = '';
   grid.style.display = 'block';
+
+  // Reading goal
+  const goalNum = window._readingGoal || 12;
+  const goalPct = Math.min(100, Math.round((done.length / goalNum) * 100));
+
   grid.innerHTML = `
+    <div class="goal-card">
+      <div class="goal-ring" style="background:conic-gradient(var(--accent-2) ${goalPct}%, color-mix(in srgb, var(--brand-ink) 18%, transparent) 0);">
+        <div class="goal-ring-in">
+          <div><div class="gr-num">${done.length}</div><div class="gr-of">av ${goalNum}</div></div>
+        </div>
+      </div>
+      <div class="goal-text">
+        <h2>Leseåret ${new Date().getFullYear()}</h2>
+        <p>Du har lest <b>${done.length} av ${goalNum} bøker</b> — ${goalPct >= 100 ? 'målet er nådd!' : `${goalNum - done.length} igjen for å nå målet.`}</p>
+        <div class="goal-bar"><i style="width:${goalPct}%"></i></div>
+      </div>
+    </div>
+
     <div class="stats-big-grid">
       <div class="stat-big"><div class="sv">${books.length}</div><div class="sl">Bøker totalt</div></div>
       <div class="stat-big"><div class="sv">${done.length}</div><div class="sl">Lest</div></div>
       <div class="stat-big"><div class="sv">${reading.length}</div><div class="sl">Leser nå</div></div>
       <div class="stat-big"><div class="sv">${avgRating}</div><div class="sl">Snittkarakter</div></div>
-      <div class="stat-big"><div class="sv">${Object.keys(genreCounts).length}</div><div class="sl">Sjangre</div></div>
-      <div class="stat-big"><div class="sv">${Object.keys(authorCounts).length}</div><div class="sl">Forfattere</div></div>
     </div>
 
     ${genres.length ? `
@@ -32983,7 +33026,7 @@ function renderYearInReview() {
   return `<div class="chart-section" style="background:linear-gradient(145deg,rgba(200,169,110,0.06),rgba(200,169,110,0.02));border:1px solid rgba(200,169,110,0.3);">
     <div class="chart-title">✨ ${yr} så langt</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin:8px 0 16px;">
-      <div><div style="font-family:'Newsreader',Georgia,serif;font-size:32px;font-weight:700;color:var(--gold);">${yrDone.length}</div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;">Bøker lest${goal?` av ${goal}`:''}</div>${pct!==null?`<div class="prog-bar" style="margin-top:6px;"><div class="prog-fill" style="width:${pct}%"></div></div>`:''}</div>
+      <div><div style="font-family:'Newsreader',Georgia,serif;font-size:32px;font-weight:700;color:var(--accent);">${yrDone.length}</div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;">Bøker lest${goal?` av ${goal}`:''}</div>${pct!==null?`<div class="prog-bar" style="margin-top:6px;"><div class="prog-fill" style="width:${pct}%"></div></div>`:''}</div>
       ${topGenre?`<div><div style="font-family:'Newsreader',Georgia,serif;font-size:24px;font-weight:700;">${topGenre[0]}</div><div style="font-size:11px;color:var(--muted);">Topp-sjanger (${topGenre[1]})</div></div>`:''}
       ${topAuthor?`<div><div style="font-family:'Newsreader',Georgia,serif;font-size:20px;font-weight:700;">${topAuthor[0].split(',')[0]}</div><div style="font-size:11px;color:var(--muted);">Mest leste forfatter (${topAuthor[1]})</div></div>`:''}
       ${topSeries?`<div><div style="font-family:'Newsreader',Georgia,serif;font-size:20px;font-weight:700;">📚 ${topSeries[0]}</div><div style="font-size:11px;color:var(--muted);">Topp-serie (${topSeries[1]} bøker)</div></div>`:''}
@@ -33733,12 +33776,12 @@ function openReadingGoalModal() {
   document.getElementById('goalSummary').innerHTML = `
     <div style="font-size:13px;color:var(--muted);margin-bottom:8px;">${yr}-status</div>
     <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:10px;">
-      <div style="font-family:'Newsreader',Georgia,serif;font-size:32px;font-weight:700;color:var(--gold);">${done}</div>
+      <div style="font-family:'Newsreader',Georgia,serif;font-size:32px;font-weight:700;color:var(--accent);">${done}</div>
       <div style="font-size:13px;color:var(--muted);">lest${goal?(' av ' + goal):''}</div>
     </div>
     ${goal?`<div class="prog-bar" style="margin-bottom:14px;"><div class="prog-fill" style="width:${pct}%"></div></div>`:''}
     <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:12px;">
-      <span>🔥 Lese-streak</span><span style="color:var(--gold);font-weight:600;">${streak} dag${streak!==1?'er':''}</span>
+      <span>🔥 Lese-streak</span><span style="color:var(--accent);font-weight:600;">${streak} dag${streak!==1?'er':''}</span>
     </div>
     <button class="btn-cancel" onclick="showGoalPeriodBooks()" style="width:100%;font-size:13px;">📚 Vis bøker lest i ${yr}</button>
   `;
@@ -34114,7 +34157,7 @@ function renderRecMessages() {
         { name: 'ebok.no',  url: 'https://ebok.no/search/?q=' + q },
       ];
       const storeLinks = stores.map(s =>
-        `<a href="${s.url}" target="_blank" rel="noopener" style="color:var(--gold);text-decoration:underline;">${s.name}</a>`
+        `<a href="${s.url}" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline;">${s.name}</a>`
       ).join(' · ');
       return `🛒 <strong>${escHtml(ttl)}</strong> av ${escHtml(aut)}<br>` +
              `<span style="font-size:12.5px;color:var(--muted);">🔎 Søk hos: ${storeLinks}</span> ${wishBtn}`;
@@ -34131,7 +34174,7 @@ function renderRecMessages() {
         const trailingPunct = /[.,!?;:)\]}'"]+$/;
         const tm = url.match(trailingPunct);
         if (tm) { trail = tm[0]; url = url.slice(0, -trail.length); }
-        return `<a href="${url}" target="_blank" rel="noopener" style="color:var(--gold);text-decoration:underline;word-break:break-all;">${url}</a>${trail}`;
+        return `<a href="${url}" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline;word-break:break-all;">${url}</a>${trail}`;
       });
     const isUser = m.role === 'user';
     return '<div class="msg ' + (isUser?'user':'ai') + '">' +
@@ -35079,7 +35122,7 @@ function showInstallButton() {
   const btn = document.createElement('button');
   btn.id = 'pwaInstallBtn';
   btn.textContent = '📱 Installer som app';
-  btn.style.cssText = 'position:fixed;bottom:90px;right:16px;z-index:200;background:var(--gold);color:#0a0a0c;border:none;border-radius:999px;padding:11px 18px;font-family:Outfit,sans-serif;font-size:13.5px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,0.5);cursor:pointer;';
+  btn.style.cssText = 'position:fixed;bottom:90px;right:16px;z-index:200;background:var(--accent);color:var(--brand-ink);border:none;border-radius:999px;padding:11px 18px;font-family:Outfit,sans-serif;font-size:13.5px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,0.5);cursor:pointer;';
   btn.onclick = async () => {
     if (!_deferredInstall) return;
     _deferredInstall.prompt();
