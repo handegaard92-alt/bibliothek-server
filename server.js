@@ -267,7 +267,7 @@ app.post('/auth/register', authLimiter, async (req, res) => {
 
 // POST /auth/create-user — eier oppretter ny full bruker (ikke gjest)
 // Body: {ownerUsername, ownerPassword, newUsername, newPassword}
-app.post('/auth/create-user', async (req, res) => {
+app.post('/auth/create-user', authLimiter, async (req, res) => {
   try {
     const { ownerUsername, ownerPassword, newUsername, newPassword } = req.body || {};
     if (!ownerUsername || !ownerPassword) return res.status(400).json({ ok: false, error: 'Eier-credentials påkrevd' });
@@ -326,7 +326,7 @@ app.post('/auth/login', authLimiter, async (req, res) => {
 });
 
 // POST /auth/create-guest — body: {ownerUsername, ownerPassword, guestUsername, guestPassword, label?}
-app.post('/auth/create-guest', async (req, res) => {
+app.post('/auth/create-guest', authLimiter, async (req, res) => {
   try {
     const { ownerUsername, ownerPassword, guestUsername, guestPassword, label } = req.body || {};
     if (!ownerUsername || !ownerPassword) return res.status(400).json({ ok: false, error: 'Eier-credentials påkrevd' });
@@ -383,7 +383,7 @@ app.get('/auth/guests/:ownerUsername', requireAuth, async (req, res) => {
 });
 
 // DELETE /auth/guest/:username — body: {ownerUsername, ownerPassword}
-app.delete('/auth/guest/:username', async (req, res) => {
+app.delete('/auth/guest/:username', requireAuth, authLimiter, async (req, res) => {
   try {
     const { ownerUsername, ownerPassword } = req.body || {};
     const owner = await loadUser(ownerUsername);
@@ -414,7 +414,7 @@ app.post('/auth/change-password', authLimiter, async (req, res) => {
   try {
     const { username, oldPassword, newPassword } = req.body || {};
     if (!username || !oldPassword || !newPassword) return res.status(400).json({ ok: false, error: 'Alle felter påkrevd' });
-    if (newPassword.length < 6) return res.status(400).json({ ok: false, error: 'Nytt passord må være minst 6 tegn' });
+    if (newPassword.length < 8) return res.status(400).json({ ok: false, error: 'Nytt passord må være minst 8 tegn' });
     const user = await loadUser(username);
     if (!user) return res.status(404).json({ ok: false, error: 'Bruker finnes ikke' });
     if (!verifyPassword(oldPassword, user.salt, user.passwordHash)) {
@@ -694,6 +694,35 @@ app.post('/library/:pin/restore', requireLibraryAccess, async (req, res) => {
   }
 });
 
+// GET /library/:pin/devices — hent Kindle-enheter
+app.get('/library/:pin/devices', requireLibraryAccess, async (req, res) => {
+  if (!r2) return res.json({ ok: true, devices: [] });
+  const key = req.params.pin;
+  try {
+    const data = await r2.send(new GetObjectCommand({ Bucket: BUCKET, Key: `${key}/devices.json` }));
+    const chunks = [];
+    for await (const chunk of data.Body) chunks.push(chunk);
+    const json = JSON.parse(Buffer.concat(chunks).toString());
+    res.json({ ok: true, devices: json.devices || [] });
+  } catch(_) { res.json({ ok: true, devices: [] }); }
+});
+
+// PUT /library/:pin/devices — lagre Kindle-enheter
+app.put('/library/:pin/devices', requireLibraryAccess, async (req, res) => {
+  if (!r2) return res.status(503).json({ ok: false, error: 'R2 not configured' });
+  if (req.session.readOnly) return res.status(403).json({ ok: false, error: 'Gjestebrukere kan ikke endre enheter' });
+  const key = req.params.pin;
+  const { devices } = req.body;
+  if (!Array.isArray(devices)) return res.status(400).json({ ok: false, error: 'devices must be array' });
+  try {
+    await r2.send(new PutObjectCommand({
+      Bucket: BUCKET, Key: `${key}/devices.json`,
+      Body: JSON.stringify({ devices }), ContentType: 'application/json',
+    }));
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
 // R2 File upload - lagre epub permanent
 app.post('/files/upload', requireAuth, upload.single('file'), async (req, res) => {
   if (!r2) return res.status(503).json({ ok: false, error: 'R2 not configured' });
@@ -730,16 +759,27 @@ app.get('/files/url/:pin/:bookId/:fileName', requireAuth, async (req, res) => {
   }
 });
 
-// R2 Stream file directly (for Kindle sending)
-app.get('/files/download/:pin/:bookId/:fileName', requireAuth, async (req, res) => {
+// R2 Stream file directly (for Kindle sending and cover images)
+// Cover images (.jpg/.png/.webp) are served without session auth — the pin hash in the URL
+// provides path-level security; these are not sensitive files.
+// All other files (epub, pdf, etc.) require a valid session.
+app.get('/files/download/:pin/:bookId/:fileName', async (req, res) => {
   if (!r2) return res.status(503).json({ ok: false, error: 'R2 not configured' });
   const { pin, bookId, fileName } = req.params;
-  if (pin !== req.session.libraryKey) return res.status(403).json({ ok: false, error: 'Ingen tilgang' });
+  const ext = (fileName.split('.').pop() || '').toLowerCase();
+  const isImage = ['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext);
+  if (!isImage) {
+    const token = req.headers['x-auth-token'];
+    if (!token) return res.status(401).json({ ok: false, error: 'Innlogging påkrevd' });
+    const session = await getSession(token);
+    if (!session) return res.status(401).json({ ok: false, error: 'Ugyldig eller utløpt sesjon' });
+    if (session.libraryKey !== pin) return res.status(403).json({ ok: false, error: 'Ingen tilgang' });
+  }
   const key = hashPin(pin) + '/' + bookId + '/' + fileName;
   try {
     const data = await r2.send(new GetObjectCommand({ Bucket: BUCKET, Key: key }));
     res.setHeader('Content-Type', data.ContentType || 'application/octet-stream');
-    res.setHeader('Content-Disposition', 'attachment; filename="' + fileName + '"');
+    if (!isImage) res.setHeader('Content-Disposition', 'attachment; filename="' + fileName + '"');
     data.Body.pipe(res);
   } catch (err) {
     res.status(404).json({ ok: false, error: 'File not found' });

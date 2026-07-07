@@ -316,7 +316,6 @@ body {
 /* Section header */
 .sec-hdr { display:flex; align-items:baseline; gap:12px; margin-bottom:20px; }
 .sec-title { font-family:'Newsreader',Georgia,serif; font-size:clamp(22px,3vw,28px); font-weight:400; letter-spacing:-0.02em; }
-.sec-cnt { font-size:14px; color:var(--muted); }
 .sec-cnt { font-size:12px; color:var(--muted); }
 
 /* Genre pills */
@@ -335,7 +334,7 @@ body {
     border: 1px solid var(--border);
     color: var(--text);
     border-radius: 999px;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Hanken Grotesk', system-ui, sans-serif;
     font-size: 13px;
     cursor: pointer;
   }
@@ -477,10 +476,7 @@ body {
 .b-wish { background:var(--surface); color:var(--muted); border:1px solid var(--border); }
 .b-wish::before { content:'♡'; font-size:13px; }
 
-.bk-t {
-  font-family:'Newsreader',Georgia,serif; font-size:15px; font-weight:500;
-  line-height:1.18; margin:2px 0; letter-spacing:-0.01em;
-}
+.bk-t { font-family:'Newsreader',Georgia,serif; font-size:13px; font-weight:500; color:var(--text); line-height:1.18; letter-spacing:-0.01em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:2px; }
 .bk-a { font-size:12.5px; color:var(--muted); }
 /* LEST-badge på cover — subtil grønn pille */
 .bk-cover-wrap.is-done::after {
@@ -499,7 +495,6 @@ body {
   background:rgba(0,0,0,0.3); border-radius:0 0 8px 4px;
 }
 .prog-mini-fill { height:100%; background:linear-gradient(90deg,var(--accent),var(--accent-2)); }
-.bk-t { font-size:13px; font-weight:500; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:2px; }
 .bk-a { font-size:12px; color:var(--muted); }
 .stars { display:inline-flex; gap:1px; margin-top:4px; color:var(--star-gold, #B68A3E); }
 .star { font-size:12px; line-height:1; }
@@ -29288,7 +29283,7 @@ font-family: 'Source Sans Pro'
     <!-- Lag bruker -->
     <div id="loginPanelRegister" style="display:none;">
       <input class="login-input" id="regUsername" type="text" placeholder="Brukernavn (f.eks. Handegaard)" autocomplete="username" autocapitalize="off">
-      <input class="login-input" id="regPassword" type="password" placeholder="Passord (minst 6 tegn)" autocomplete="new-password">
+      <input class="login-input" id="regPassword" type="password" placeholder="Passord (minst 8 tegn)" autocomplete="new-password">
       <input class="login-input" id="regPasswordConfirm" type="password" placeholder="Bekreft passord" autocomplete="new-password" onkeydown="if(event.key==='Enter')doUserRegister()">
       <button class="login-btn" onclick="doUserRegister()">Lag bruker</button>
     </div>
@@ -29896,7 +29891,7 @@ font-family: 'Source Sans Pro'
     <div class="modal-hdr"><h2>Legg til ny bruker</h2><button class="modal-close" onclick="closeCreateUserModal()">✕</button></div>
     <div style="font-size:13px;color:var(--muted);margin-bottom:14px;">Den nye brukeren får et eget tomt bibliotek og full tilgang. Bruk gjeste-bruker hvis du vil dele <em>ditt</em> bibliotek skrivebeskyttet.</div>
     <div class="fg"><label class="fl">Brukernavn</label><input class="fi" type="text" id="cuUsername" autocapitalize="off"></div>
-    <div class="fg"><label class="fl">Passord (minst 6 tegn)</label><input class="fi" type="password" id="cuPassword"></div>
+    <div class="fg"><label class="fl">Passord (minst 8 tegn)</label><input class="fi" type="password" id="cuPassword"></div>
     <div class="fg"><label class="fl">Bekreft eier-passordet ditt</label><input class="fi" type="password" id="cuOwnerPassword" placeholder="Ditt passord" autocomplete="current-password" onkeydown="if(event.key==='Enter')doCreateUser()"></div>
     <div id="cuStatus" style="font-size:12px;color:var(--muted);min-height:18px;margin-bottom:8px;"></div>
     <div style="display:flex;gap:8px;justify-content:flex-end;">
@@ -29912,7 +29907,7 @@ font-family: 'Source Sans Pro'
     <div class="modal-hdr"><h2>Ny gjeste-bruker</h2><button class="modal-close" onclick="closeCreateGuestModal()">✕</button></div>
     <div style="font-size:13px;color:var(--muted);margin-bottom:14px;">Gjesten får skrivebeskyttet tilgang til biblioteket ditt med eget brukernavn og passord.</div>
     <div class="fg"><label class="fl">Brukernavn</label><input class="fi" type="text" id="cgUsername" placeholder="F.eks. mamma" autocapitalize="off"></div>
-    <div class="fg"><label class="fl">Passord (minst 6 tegn)</label><input class="fi" type="password" id="cgPassword"></div>
+    <div class="fg"><label class="fl">Passord (minst 8 tegn)</label><input class="fi" type="password" id="cgPassword"></div>
     <div class="fg"><label class="fl">Bekreft eier-passordet ditt</label><input class="fi" type="password" id="cgOwnerPassword" placeholder="Ditt passord" autocomplete="current-password" onkeydown="if(event.key==='Enter')doCreateGuest()"></div>
     <div id="cgStatus" style="font-size:12px;color:var(--muted);min-height:18px;margin-bottom:8px;"></div>
     <div style="display:flex;gap:8px;justify-content:flex-end;">
@@ -29927,7 +29922,7 @@ font-family: 'Source Sans Pro'
   <div class="modal" style="max-width:380px;">
     <div class="modal-hdr"><h2>Endre passord</h2><button class="modal-close" onclick="closeChangePasswordModal()">✕</button></div>
     <div class="fg"><label class="fl">Gammelt passord</label><input class="fi" type="password" id="cpOldPw" autocomplete="current-password"></div>
-    <div class="fg"><label class="fl">Nytt passord (minst 6 tegn)</label><input class="fi" type="password" id="cpNewPw" autocomplete="new-password"></div>
+    <div class="fg"><label class="fl">Nytt passord (minst 8 tegn)</label><input class="fi" type="password" id="cpNewPw" autocomplete="new-password"></div>
     <div class="fg"><label class="fl">Bekreft nytt passord</label><input class="fi" type="password" id="cpNewPw2" autocomplete="new-password" onkeydown="if(event.key==='Enter')doChangePassword()"></div>
     <div id="cpStatus" style="font-size:12px;color:var(--muted);min-height:18px;margin-bottom:8px;"></div>
     <div style="display:flex;gap:8px;justify-content:flex-end;">
@@ -30150,6 +30145,13 @@ function getServerUrl() {
   if (AUTO_SERVER_URL) return AUTO_SERVER_URL;
   return (document.getElementById('serverUrl')?.value || '').trim().replace(/\/$/, '');
 }
+// Auth header helpers — add to every fetch call that hits a protected endpoint
+function authHdr() {
+  return { 'X-Auth-Token': window._authToken || '' };
+}
+function authJsonHdr() {
+  return { 'Content-Type': 'application/json', 'X-Auth-Token': window._authToken || '' };
+}
 
 async function loadKindleDevices() {
   try {
@@ -30169,9 +30171,9 @@ async function loadKindleDevices() {
 async function saveKindleDevices() {
   await storageSet(DEVICES_KEY, JSON.stringify(kindleDevices));
   if (window._pinKey && getServerUrl()) {
-    fetch(getServerUrl() + '/library/' + encodeURIComponent(window._pinKey + '_devices'), {
-      method: 'PUT', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ books: kindleDevices })
+    fetch(getServerUrl() + '/library/' + encodeURIComponent(window._pinKey) + '/devices', {
+      method: 'PUT', headers: authJsonHdr(),
+      body: JSON.stringify({ devices: kindleDevices })
     }).catch(function(e){ console.warn('device sync failed:', e); });
   }
 }
@@ -30250,7 +30252,7 @@ async function openDeviceAccessModal(idx) {
   const server = getServerUrl();
   let guests = [];
   try {
-    const r = await fetch(server + '/auth/guests/' + encodeURIComponent(window._username));
+    const r = await fetch(server + '/auth/guests/' + encodeURIComponent(window._username), { headers: authHdr() });
     const j = await r.json();
     if (j.ok) guests = j.guests || [];
   } catch(_) {}
@@ -30384,7 +30386,7 @@ async function fetchSeriesInfo(title, author) {
   if (server) {
     try {
       var ebUrl = server + '/series-proxy?title=' + encodeURIComponent(title) + (author ? '&author=' + encodeURIComponent(author) : '');
-      var ebData = await fetchJSON(ebUrl);
+      var ebData = await fetch(ebUrl, { headers: authHdr(), signal: AbortSignal.timeout(8000) }).then(r => r.ok ? r.json() : null).catch(() => null);
       if (ebData?.ok && ebData.series) return { series: ebData.series, seriesNum: ebData.seriesNum, genre: ebData.genre || null };
       if (ebData?.ok && ebData.genre) foundGenre = ebData.genre;
     } catch(e) {}
@@ -31572,7 +31574,7 @@ async function uploadToR2(bookId, fileData) {
     form.append('file', blob, fileData.name || 'bok.epub');
     form.append('pin', pin);
     form.append('bookId', String(bookId));
-    var res = await fetch(server + '/files/upload', { method: 'POST', body: form });
+    var res = await fetch(server + '/files/upload', { method: 'POST', headers: authHdr(), body: form });
     var json = await res.json();
     if (!json.ok) throw new Error(json.error || 'R2 upload failed');
     var idx = books.findIndex(function(b) { return b.id === bookId; });
@@ -31592,7 +31594,7 @@ async function uploadToR2(bookId, fileData) {
           cForm.append('file', cBlob, 'cover.jpg');
           cForm.append('pin', pin);
           cForm.append('bookId', String(bookId) + '_cover');
-          var cRes = await fetch(server + '/files/upload', { method: 'POST', body: cForm });
+          var cRes = await fetch(server + '/files/upload', { method: 'POST', headers: authHdr(), body: cForm });
           var cJson = await cRes.json();
           if (cJson.ok) {
             books[idx].coverUrl = server + '/files/download/' + encodeURIComponent(pin) + '/' + String(bookId) + '_cover/cover.jpg';
@@ -31624,7 +31626,7 @@ async function uploadCoverOnlyToR2(bookId, dataUrl) {
     form.append('file', blob, 'cover.jpg');
     form.append('pin', pin);
     form.append('bookId', String(bookId) + '_cover');
-    var res = await fetch(server + '/files/upload', { method: 'POST', body: form });
+    var res = await fetch(server + '/files/upload', { method: 'POST', headers: authHdr(), body: form });
     var json = await res.json();
     if (json.ok) {
       return server + '/files/download/' + encodeURIComponent(pin) + '/' + String(bookId) + '_cover/cover.jpg';
@@ -31751,7 +31753,15 @@ async function saveBook() {
 async function deleteBook() {
   localStorage.setItem('bibliothek_ts', String(Date.now()));
   if (!editingId) return;
-  if (!confirm('Slett denne boken fra biblioteket?')) return;
+  const choice = await askConfirm({
+    title: 'Slett bok?',
+    body: 'Er du sikker på at du vil slette denne boken fra biblioteket?',
+    options: [
+      { key: 'yes', label: '🗑 Slett', danger: true },
+      { key: 'no',  label: 'Avbryt' },
+    ],
+  });
+  if (choice !== 'yes') return;
   books = books.filter(b => b.id !== editingId);
   await saveBooks();
   closeModal();
@@ -31869,7 +31879,7 @@ async function sendDirectToKindle() {
       form.append('pin',      window._pinKey);
       form.append('bookId',   String(b.id));
       form.append('fileName', b.fileName || 'bok.epub');
-      const res  = await fetch(server + '/send-to-kindle', { method: 'POST', body: form });
+      const res  = await fetch(server + '/send-to-kindle', { method: 'POST', headers: authHdr(), body: form });
       const json = await res.json();
       if (json.ok) {
         showToast('✓ Sendt til ' + device.name + '!');
@@ -31900,7 +31910,7 @@ async function sendDirectToKindle() {
     form.append('toEmail',    device.email);
     form.append('bookTitle',  b.title || '');
     form.append('bookAuthor', b.author || '');
-    const res  = await fetch(server + '/send-to-kindle', { method: 'POST', body: form });
+    const res  = await fetch(server + '/send-to-kindle', { method: 'POST', headers: authHdr(), body: form });
     const json = await res.json();
     if (json.ok) {
       showToast('✓ Sendt til ' + device.name + '!');
@@ -32763,7 +32773,7 @@ async function uploadToR2Silent(bookId, fileData) {
   form.append('file', blob, fileData.name || 'bok.epub');
   form.append('pin', pin);
   form.append('bookId', String(bookId));
-  var res = await fetch(server + '/files/upload', { method: 'POST', body: form });
+  var res = await fetch(server + '/files/upload', { method: 'POST', headers: authHdr(), body: form });
   var json = await res.json();
   if (!json.ok) throw new Error(json.error || 'R2 upload failed');
   var idx = books.findIndex(function(b) { return b.id === bookId; });
@@ -32782,7 +32792,7 @@ async function uploadToR2Silent(bookId, fileData) {
         cForm.append('file', cBlob, 'cover.jpg');
         cForm.append('pin', pin);
         cForm.append('bookId', String(bookId) + '_cover');
-        var cRes = await fetch(server + '/files/upload', { method: 'POST', body: cForm });
+        var cRes = await fetch(server + '/files/upload', { method: 'POST', headers: authHdr(), body: cForm });
         var cJson = await cRes.json();
         if (cJson.ok) {
           books[idx].coverUrl = server + '/files/download/' + encodeURIComponent(pin) + '/' + String(bookId) + '_cover/cover.jpg';
@@ -33215,7 +33225,7 @@ async function fetchEpubBlob(book) {
   // Foretrekk r2Key først (server), fall back til fileData (lokal data-URL)
   if (book.r2Key && window._pinKey && getServerUrl()) {
     const url = getServerUrl() + '/files/download/' + encodeURIComponent(window._pinKey) + '/' + encodeURIComponent(book.id) + '/' + encodeURIComponent(book.fileName || 'bok.epub');
-    const r = await fetch(url);
+    const r = await fetch(url, { headers: authHdr() });
     if (!r.ok) throw new Error('Kunne ikke hente fil fra server');
     return await r.blob();
   }
@@ -33486,7 +33496,7 @@ async function callAIOnce(systemPrompt, userMsg, maxTokens) {
   if (!server) throw new Error('no_server');
   const r = await fetch(server + '/ai-chat', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: authJsonHdr(),
     body: JSON.stringify({ systemPrompt, messages: [{ role: 'user', content: userMsg }] })
   });
   const j = await r.json();
@@ -33535,7 +33545,7 @@ async function findMissingBookOnEbok(seriesName, num) {
   const server = getServerUrl();
   if (!server) return null;
   try {
-    const r = await fetch(server + '/series-proxy?title=' + encodeURIComponent(seriesName + ' ' + num));
+    const r = await fetch(server + '/series-proxy?title=' + encodeURIComponent(seriesName + ' ' + num), { headers: authHdr() });
     const j = await r.json();
     return j; // {ok, series, seriesNum, genre}
   } catch(_) { return null; }
@@ -33823,7 +33833,7 @@ async function openBackupModal() {
   const server = getServerUrl();
   if (!server || !window._pinKey) { listEl.innerHTML = '<em style="color:var(--muted2);">Trenger server-URL og innlogget PIN</em>'; return; }
   try {
-    const r = await fetch(server + '/backups/' + encodeURIComponent(window._pinKey));
+    const r = await fetch(server + '/backups/' + encodeURIComponent(window._pinKey), { headers: authHdr() });
     const j = await r.json();
     if (!j.ok || !j.backups?.length) { listEl.innerHTML = '<em style="color:var(--muted2);">Ingen snapshots ennå (lages automatisk når du gjør endringer)</em>'; return; }
     listEl.innerHTML = j.backups.map(b => {
@@ -33885,7 +33895,7 @@ async function restoreFromFile(input) {
       const server = getServerUrl();
       if (server) {
         await fetch(server + '/library/' + encodeURIComponent(window._pinKey), {
-          method: 'PUT', headers: { 'Content-Type': 'application/json' },
+          method: 'PUT', headers: authJsonHdr(),
           body: JSON.stringify({ books, force: true }),
         });
       }
@@ -33910,13 +33920,13 @@ async function restoreFromSnapshot(snapshotKey, date) {
   if (choice !== 'restore') return;
   try {
     const r = await fetch(server + '/library/' + encodeURIComponent(window._pinKey) + '/restore', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: authJsonHdr(),
       body: JSON.stringify({ snapshotKey }),
     });
     const j = await r.json();
     if (!j.ok) throw new Error(j.error || 'Feil');
     // Reload books fra server
-    const r2 = await fetch(server + '/library/' + encodeURIComponent(window._pinKey));
+    const r2 = await fetch(server + '/library/' + encodeURIComponent(window._pinKey), { headers: authHdr() });
     const j2 = await r2.json();
     if (j2.books) {
       books = j2.books;
@@ -34281,7 +34291,7 @@ async function sendRecMessage(preset) {
       // Streaming først — viser svaret mens det genereres for raskere oppfattet hastighet
       const res = await fetch(server + '/ai-chat-stream', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
+        headers: { ...authJsonHdr(), 'Accept': 'text/event-stream' },
         body: JSON.stringify({ systemPrompt, messages: apiMessages })
       });
 
@@ -34289,7 +34299,7 @@ async function sendRecMessage(preset) {
         // Fallback til non-streaming
         const fb = await fetch(server + '/ai-chat', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: authJsonHdr(),
           body: JSON.stringify({ systemPrompt, messages: apiMessages })
         });
         const data = await fb.json();
@@ -34389,7 +34399,7 @@ async function pushToPin() {
   });
   try {
     const r = await fetch(server + '/library/' + encodeURIComponent(key), {
-      method: 'PUT', headers: {'Content-Type':'application/json'},
+      method: 'PUT', headers: authJsonHdr(),
       body: JSON.stringify({ books: slim, updatedAt: Date.now() })
     });
     if (r.status === 409) {
@@ -34406,13 +34416,13 @@ async function pushToPin() {
       });
       if (choice === 'force') {
         await fetch(server + '/library/' + encodeURIComponent(key), {
-          method: 'PUT', headers: {'Content-Type':'application/json'},
+          method: 'PUT', headers: authJsonHdr(),
           body: JSON.stringify({ books: slim, updatedAt: Date.now(), force: true })
         });
       } else {
         // Hent serverens versjon tilbake til lokal
         try {
-          const r2 = await fetch(server + '/library/' + encodeURIComponent(key));
+          const r2 = await fetch(server + '/library/' + encodeURIComponent(key), { headers: authHdr() });
           const j2 = await r2.json();
           if (Array.isArray(j2.books)) {
             books = j2.books;
@@ -34466,7 +34476,7 @@ async function loadGuestLinks() {
   if (!el || !window._username || !server) return;
   try {
     // Hent bruker-baserte gjester
-    var resp = await fetch(server + '/auth/guests/' + encodeURIComponent(window._username));
+    var resp = await fetch(server + '/auth/guests/' + encodeURIComponent(window._username), { headers: authHdr() });
     var userGuests = [];
     if (resp.ok) { var json = await resp.json(); userGuests = json.guests || []; }
     if (!userGuests.length) {
@@ -34502,7 +34512,7 @@ async function doCreateUser() {
   const ownerPassword = document.getElementById('cuOwnerPassword').value;
   const status = document.getElementById('cuStatus');
   if (!newUsername || !newPassword || !ownerPassword) { status.textContent = 'Fyll ut alle felter'; status.style.color = 'var(--red)'; return; }
-  if (newPassword.length < 6) { status.textContent = 'Passord må være minst 6 tegn'; status.style.color = 'var(--red)'; return; }
+  if (newPassword.length < 8) { status.textContent = 'Passord må være minst 8 tegn'; status.style.color = 'var(--red)'; return; }
   const server = getServerUrl();
   status.textContent = 'Oppretter…'; status.style.color = 'var(--gold)';
   try {
@@ -34538,7 +34548,7 @@ async function doCreateGuest() {
   const ownerPassword = document.getElementById('cgOwnerPassword').value;
   const status = document.getElementById('cgStatus');
   if (!guestUsername || !guestPassword || !ownerPassword) { status.textContent = 'Fyll ut alle felter'; status.style.color = 'var(--red)'; return; }
-  if (guestPassword.length < 6) { status.textContent = 'Gjeste-passord må være minst 6 tegn'; status.style.color = 'var(--red)'; return; }
+  if (guestPassword.length < 8) { status.textContent = 'Gjeste-passord må være minst 8 tegn'; status.style.color = 'var(--red)'; return; }
   const server = getServerUrl();
   status.textContent = 'Oppretter…'; status.style.color = 'var(--gold)';
   try {
@@ -34708,7 +34718,7 @@ async function doUserRegister() {
   const confirm  = document.getElementById('regPasswordConfirm').value;
   if (!username || !password) { setLoginStatus('Fyll inn brukernavn og passord', 'var(--red)'); return; }
   if (password !== confirm) { setLoginStatus('Passordene er ulike', 'var(--red)'); return; }
-  if (password.length < 6) { setLoginStatus('Passord må være minst 6 tegn', 'var(--red)'); return; }
+  if (password.length < 8) { setLoginStatus('Passord må være minst 8 tegn', 'var(--red)'); return; }
   const server = getServerUrl();
   if (!server) { setLoginStatus('Ingen server funnet', 'var(--red)'); return; }
   let migratePinHash = null;
@@ -34745,7 +34755,7 @@ async function applyAuthSession(j) {
   const server = getServerUrl();
   setLoginStatus('Henter bibliotek…', 'var(--gold)');
   try {
-    const resp = await fetch(server + '/library/' + encodeURIComponent(j.libraryKey));
+    const resp = await fetch(server + '/library/' + encodeURIComponent(j.libraryKey), { headers: authHdr() });
     const data = await resp.json();
     loadGuestReads();
     const serverTs = data.updatedAt ? new Date(data.updatedAt).getTime() : 0;
@@ -34759,11 +34769,11 @@ async function applyAuthSession(j) {
     }
     // Hent Kindle-enheter fra server
     try {
-      const devResp = await fetch(server + '/library/' + encodeURIComponent(j.libraryKey + '_devices'));
+      const devResp = await fetch(server + '/library/' + encodeURIComponent(j.libraryKey) + '/devices', { headers: authHdr() });
       if (devResp.ok) {
         const devJson = await devResp.json();
-        if (Array.isArray(devJson.books) && devJson.books.length > 0) {
-          kindleDevices = devJson.books;
+        if (Array.isArray(devJson.devices) && devJson.devices.length > 0) {
+          kindleDevices = devJson.devices;
           await saveKindleDevices();
           renderKindleDeviceList();
         }
@@ -34805,7 +34815,7 @@ async function doChangePassword() {
   const status = document.getElementById('cpStatus');
   if (!oldPw || !newPw) { status.textContent = 'Fyll ut alle felter'; status.style.color = 'var(--red)'; return; }
   if (newPw !== newPw2) { status.textContent = 'Passordene er ulike'; status.style.color = 'var(--red)'; return; }
-  if (newPw.length < 6) { status.textContent = 'Minst 6 tegn'; status.style.color = 'var(--red)'; return; }
+  if (newPw.length < 8) { status.textContent = 'Minst 8 tegn'; status.style.color = 'var(--red)'; return; }
   const server = getServerUrl();
   if (!server) { status.textContent = 'Server-URL mangler'; status.style.color = 'var(--red)'; return; }
   status.textContent = 'Lagrer…'; status.style.color = 'var(--gold)';
@@ -34832,9 +34842,11 @@ async function logoutUser() {
   localStorage.removeItem('bibliothek_authToken');
   localStorage.removeItem('bibliothek_authUser');
   localStorage.removeItem('bibliothek_authLibKey');
+  localStorage.removeItem('bibliothek_authReadOnly');
   window._authToken = null;
   window._username = null;
   window._pinKey = null;
+  window._readOnly = false;
   document.getElementById('loginOverlay').classList.add('visible');
   setLoginStatus('Du er logget ut');
 }
@@ -34996,8 +35008,8 @@ async function init() {
         try {
           // Parallell henting av bibliotek + Kindle-enheter
           const [libResp, devResp] = await Promise.all([
-            fetch(AUTO_SERVER_URL + '/library/' + encodeURIComponent(savedAuthLibKey)),
-            fetch(AUTO_SERVER_URL + '/library/' + encodeURIComponent(savedAuthLibKey + '_devices')),
+            fetch(AUTO_SERVER_URL + '/library/' + encodeURIComponent(savedAuthLibKey), { headers: { 'X-Auth-Token': savedAuthToken || '' } }),
+            fetch(AUTO_SERVER_URL + '/library/' + encodeURIComponent(savedAuthLibKey) + '/devices', { headers: { 'X-Auth-Token': savedAuthToken || '' } }),
           ]);
 
           if (libResp.ok) {
@@ -35016,8 +35028,8 @@ async function init() {
 
           if (devResp.ok) {
             const devJson = await devResp.json();
-            if (Array.isArray(devJson.books) && devJson.books.length > 0) {
-              kindleDevices = devJson.books;
+            if (Array.isArray(devJson.devices) && devJson.devices.length > 0) {
+              kindleDevices = devJson.devices;
               await storageSet(DEVICES_KEY, JSON.stringify(kindleDevices));
             }
           }
@@ -35028,11 +35040,14 @@ async function init() {
 
     if (savedPin) {
       // PIN-innlogging: vis localStorage-data, synk i bakgrunnen
+      // (PIN-system krever nå bruker-innlogging for server-synk — vis data fra localStorage)
       render();
       pinHash(savedPin).then(async function(k) {
         window._pinKey = k;
         try {
-          const resp = await fetch(AUTO_SERVER_URL + '/library/' + encodeURIComponent(k));
+          // PIN-basert synk krever x-auth-token; uten token viser vi kun lokal data
+          if (!savedAuthToken) { render(); return; }
+          const resp = await fetch(AUTO_SERVER_URL + '/library/' + encodeURIComponent(k), { headers: { 'X-Auth-Token': savedAuthToken } });
           if (resp.ok) {
             const json = await resp.json();
             window._readOnly = !!json.readOnly;
