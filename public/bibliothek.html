@@ -88,6 +88,7 @@ body {
   backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
   border-bottom:1px solid var(--border);
   flex-shrink:0;
+  padding-top:env(safe-area-inset-top); /* iPhone notch/statuslinje i standalone PWA */
 }
 .header-inner {
   display:flex; align-items:center; gap:28px;
@@ -29476,6 +29477,7 @@ font-family: 'Source Sans Pro'
         <button class="user-panel-switch-btn" onclick="closeUserPanel();exportLibrary()">📄 Eksport CSV</button>
         <button class="user-panel-switch-btn" onclick="closeUserPanel();refreshMissingCovers()">🖼️ Hent manglende omslag</button>
         <button class="user-panel-switch-btn" onclick="closeUserPanel();normalizeAllAuthors()">✍️ Rydd forfatternavn</button>
+        <button class="user-panel-switch-btn" onclick="closeUserPanel();showMissingFiles()">🔍 Sjekk bøker uten fil</button>
       </div>
       <div class="up-section" style="margin-top:10px;">
         <div class="up-section-label">PIN-kode</div>
@@ -29772,6 +29774,21 @@ font-family: 'Source Sans Pro'
     </div>
     <div class="mfooter">
       <button class="btn-cancel" onclick="closeKindleDeviceModal()">Lukk</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── DIAGNOSE: BØKER UTEN FIL ── -->
+<div class="backdrop" id="missingFilesModal">
+  <div class="modal" style="max-width:460px;">
+    <div class="modal-hdr">
+      <h2>Bøker uten fil</h2>
+      <button class="modal-close" onclick="document.getElementById('missingFilesModal').classList.remove('open')">✕</button>
+    </div>
+    <div id="missingFilesInfo" style="font-size:13px;color:var(--muted);margin-bottom:12px;"></div>
+    <div id="missingFilesList" style="display:flex;flex-direction:column;gap:6px;max-height:50vh;overflow-y:auto;"></div>
+    <div class="mfooter">
+      <button class="btn-cancel" onclick="document.getElementById('missingFilesModal').classList.remove('open')">Lukk</button>
     </div>
   </div>
 </div>
@@ -32437,6 +32454,26 @@ function setViewMode(m) {
   render();
 }
 
+// Diagnose: list bøker som mangler EPUB-fil i skyen (verken r2Key eller fileData)
+function showMissingFiles() {
+  var owned = books.filter(function(b){ return effectiveStatus(b) !== 'wishlist'; });
+  var missing = owned.filter(function(b){ return !b.r2Key && !b.fileData; });
+  var info = document.getElementById('missingFilesInfo');
+  var list = document.getElementById('missingFilesList');
+  if (!missing.length) {
+    info.innerHTML = 'Alle <b>' + owned.length + '</b> bøker har en EPUB-fil lagret i skyen. 🎉';
+    list.innerHTML = '';
+  } else {
+    info.innerHTML = '<b>' + missing.length + '</b> av ' + owned.length + ' bøker mangler EPUB-fil i skyen. Trykk på en for å åpne → ✏️ Rediger → last opp filen på nytt.';
+    list.innerHTML = missing.map(function(b){
+      var t = (b.title||'(uten tittel)').replace(/</g,'&lt;');
+      var a = (b.author||'').replace(/</g,'&lt;');
+      return '<button class="user-panel-switch-btn" style="margin:0;" onclick="document.getElementById(\'missingFilesModal\').classList.remove(\'open\');openEditModal(' + b.id + ')">📕 ' + t + (a?' — ' + a:'') + '</button>';
+    }).join('');
+  }
+  document.getElementById('missingFilesModal').classList.add('open');
+}
+
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -34651,7 +34688,7 @@ function closeUserPanel() {
   document.getElementById('userPanel').classList.remove('open');
 }
 document.addEventListener('click', e => {
-  if (_userPanelOpen && !e.target.closest('#userPanel') && !e.target.closest('#userMenuBtn')) {
+  if (_userPanelOpen && !e.target.closest('#userPanel') && !e.target.closest('#userMenuBtn') && !e.target.closest('[data-tab="profil"]')) {
     closeUserPanel();
   }
 });
