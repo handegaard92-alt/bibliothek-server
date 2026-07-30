@@ -29454,6 +29454,17 @@ font-family: 'Source Sans Pro'
         <div id="guestList" style="display:flex;flex-direction:column;gap:4px;"></div>
       </div>
       <div class="up-section" style="margin-top:10px;">
+        <div class="up-section-label">Verktøy</div>
+        <button class="user-panel-switch-btn" onclick="closeUserPanel();openKindleDeviceModal()">📤 Kindle-enheter</button>
+        <button class="user-panel-switch-btn" onclick="closeUserPanel();openBatchModal()">📚 Last opp flere bøker</button>
+        <button class="user-panel-switch-btn" onclick="closeUserPanel();openIsbnScanner()">🔎 Skann ISBN</button>
+        <button class="user-panel-switch-btn" onclick="closeUserPanel();setView(null,'recommendations')">✨ AI-anbefalinger</button>
+        <button class="user-panel-switch-btn" onclick="closeUserPanel();openBackupModal()">💾 Sikkerhetskopi</button>
+        <button class="user-panel-switch-btn" onclick="closeUserPanel();exportLibrary()">📄 Eksport CSV</button>
+        <button class="user-panel-switch-btn" onclick="closeUserPanel();refreshMissingCovers()">🖼️ Hent manglende omslag</button>
+        <button class="user-panel-switch-btn" onclick="closeUserPanel();normalizeAllAuthors()">✍️ Rydd forfatternavn</button>
+      </div>
+      <div class="up-section" style="margin-top:10px;">
         <div class="up-section-label">PIN-kode</div>
         <div class="up-pin-row">
           <input class="kindle-input" id="pinInput" type="password" placeholder="PIN-kode" maxlength="20" style="font-size:12px;flex:1;" onkeydown="if(event.key==='Enter')connectPin()">
@@ -29698,7 +29709,7 @@ font-family: 'Source Sans Pro'
     </div>
 
     <div id="kmNoFile" style="display:none;" class="km-no-email">⚠️ Ingen fil er lastet opp for denne boken. Last opp en epub/mobi-fil først.</div>
-    <div id="kmNoDevice" style="display:none;" class="km-no-email">⚠️ Legg til en Kindle-enhet i sidemenyen først.</div>
+    <div id="kmNoDevice" style="display:none;" class="km-no-email">⚠️ Legg til en Kindle-enhet under Profil (brukerikonet) → Verktøy → Kindle-enheter først.</div>
 
     <div class="mfooter" style="margin-top:0;padding-top:12px;border-top:1px solid var(--border);flex-direction:column;gap:8px;">
       <!-- Primary: direct send via server -->
@@ -31806,7 +31817,7 @@ function openKindleModal(id) {
   if (!hasFile) {
     info = '<div class="km-no-email">📂 Last opp epub-filen på nytt for å sende til Kindle. Filer lagres ikke mellom sesjoner pga. størrelsesgrenser.</div>';
   } else if (!visible.length) {
-    info = '<div class="km-no-email">⚠️ Legg til en Kindle-enhet i sidemenyen først.</div>';
+    info = '<div class="km-no-email">⚠️ Legg til en Kindle-enhet under Profil (brukerikonet) → Verktøy → Kindle-enheter først.</div>';
   } else {
     info = '<div class="km-info" style="font-size:12px;color:var(--muted);margin-bottom:12px;">Filen lastes ned og e-postklienten åpnes. Sørg for at Amazon-kontoen din tillater e-postadressen din som avsender.</div>';
   }
@@ -31830,7 +31841,7 @@ function updateKindleSteps() {
   const hasServer = !!getServerUrl();
 
   document.getElementById('kmNoFile').style.display   = !hasFile ? 'block' : 'none';
-  document.getElementById('kmNoDevice').style.display = hasFile && !hasDev ? 'block' : 'none';
+  document.getElementById('kmNoDevice').style.display = 'none'; // dedupe: #kmInfo viser allerede no-device-meldingen
   document.getElementById('kmSteps').style.display    = hasFile && hasDev ? 'block' : 'none';
   document.getElementById('kmDeviceWrap').style.display = hasDev ? 'block' : 'none';
 
