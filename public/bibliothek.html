@@ -131,6 +131,10 @@ body {
 .icon-btn:hover { background:var(--surface2); color:var(--text); }
 .icon-btn svg { width:21px; height:21px; }
 
+/* Skjul «Legg til»-kontroller for read-only gjester (openAddModal er uansett vaktet) */
+body.is-readonly #headerAddBtn,
+body.is-readonly .tabbar .tab[data-tab="add"] { display:none !important; }
+
 /* ── BOTTOM TAB BAR (mobile only) ── */
 .tabbar { display:none; }
 @media (max-width:680px) {
@@ -563,6 +567,10 @@ body {
   border-radius:18px; padding:20px; min-width:280px;
   box-shadow:0 20px 60px -15px rgba(0,0,0,0.25);
   display:none;
+  max-height:calc(100vh - 96px);
+  max-height:calc(100dvh - 96px);
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
 }
 .user-panel.open { display:block; }
 .user-panel-header { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:12px; }
@@ -925,7 +933,8 @@ body {
   }
   .search-wrap { max-width:none !important; }
   .sort-sel { font-size:12px !important; padding:6px 10px !important; }
-  .view-btns { display:none; }
+  .view-btns { display:flex; }                 /* list/grid-toggle tilgjengelig på mobil */
+  #headerAddBtn { display:none !important; }    /* «Legg til» finnes i tabbar på mobil (inline display:flex krever !important) */
 
   .content { padding:16px 18px 90px !important; box-sizing:border-box; max-width:100vw; overflow-x:hidden; }
 
@@ -939,6 +948,10 @@ body {
     box-sizing:border-box;
   }
   .grid.lv { grid-template-columns:1fr !important; }
+  /* Uniform kort-høyde i covervisning på mobil → jevn, tett avstand (serie/stjerner vises i listevisning + detalj) */
+  .grid:not(.lv) .bk .serie-badge,
+  .grid:not(.lv) .bk .stars { display:none !important; }
+  .grid:not(.lv) .bk-cover-wrap { margin-bottom:7px; }
   .bk.lv-item {
     flex-wrap:nowrap;
     padding:8px 12px !important;
@@ -29425,7 +29438,7 @@ font-family: 'Source Sans Pro'
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
       </button>
       <button id="clearSortBtn" onclick="clearSort()" title="Fjern sortering" style="display:none;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:var(--r2);padding:5px 8px;font-size:13px;cursor:pointer;line-height:1;">×</button>
-      <button class="sort-sel" onclick="openAddModal()" title="Legg til bok" style="display:flex;align-items:center;gap:6px;cursor:pointer;background:var(--brand);color:var(--brand-ink);border-color:var(--brand);">
+      <button id="headerAddBtn" class="sort-sel" onclick="openAddModal()" title="Legg til bok" style="display:flex;align-items:center;gap:6px;cursor:pointer;background:var(--brand);color:var(--brand-ink);border-color:var(--brand);">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
         <span>Legg til</span>
       </button>
@@ -29513,7 +29526,7 @@ font-family: 'Source Sans Pro'
     <div class="grid" id="booksGrid">
       <div class="bk" style="animation-delay:0s" onclick="openEditModal(1777008165351)">
         <div class="bk-cover-wrap">
-          <img src="https://bibliothek-server-1.onrender.com/files/download/0670783b46c5906cf84d0501e8a44dc5a1e446dad06a4b2f443d54242cb78054/1777008165351_cover/cover.jpg" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.style.display='none';this.nextSibling.style.display='flex'">
+          <img src="https://bibliothek-server-1.onrender.com/files/download/0670783b46c5906cf84d0501e8a44dc5a1e446dad06a4b2f443d54242cb78054/1777008165351_cover/cover.jpg" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
     <div class="cover-fallback" style="display:none;background:linear-gradient(145deg,#2d3a5a,#1a2235);width:100%;height:100%;"><div class="cover-fallback-t">Ingenting å tape</div><div class="cover-fallback-a">Child, Lee</div></div>
           
           <div class="bk-overlay">
@@ -29530,7 +29543,7 @@ font-family: 'Source Sans Pro'
     
       <div class="bk" style="animation-delay:0.04s" onclick="openEditModal(1777015924358)">
         <div class="bk-cover-wrap">
-          <img src="https://bibliothek-server-1.onrender.com/files/download/0670783b46c5906cf84d0501e8a44dc5a1e446dad06a4b2f443d54242cb78054/1777015924358_cover/cover.jpg" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.style.display='none';this.nextSibling.style.display='flex'">
+          <img src="https://bibliothek-server-1.onrender.com/files/download/0670783b46c5906cf84d0501e8a44dc5a1e446dad06a4b2f443d54242cb78054/1777015924358_cover/cover.jpg" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
     <div class="cover-fallback" style="display:none;background:linear-gradient(145deg,#2d3a5a,#1a2235);width:100%;height:100%;"><div class="cover-fallback-t">Kulen som bommet</div><div class="cover-fallback-a">Richard Osman</div></div>
           
           <div class="bk-overlay">
@@ -29708,7 +29721,7 @@ font-family: 'Source Sans Pro'
       </div>
     </div>
 
-    <div id="kmNoFile" style="display:none;" class="km-no-email">⚠️ Ingen fil er lastet opp for denne boken. Last opp en epub/mobi-fil først.</div>
+    <div id="kmNoFile" style="display:none;" class="km-no-email">⚠️ Ingen EPUB-fil er lagret i skyen for denne boken. Åpne boka → ✏️ Rediger → last opp filen på nytt.</div>
     <div id="kmNoDevice" style="display:none;" class="km-no-email">⚠️ Legg til en Kindle-enhet under Profil (brukerikonet) → Verktøy → Kindle-enheter først.</div>
 
     <div class="mfooter" style="margin-top:0;padding-top:12px;border-top:1px solid var(--border);flex-direction:column;gap:8px;">
@@ -31815,7 +31828,7 @@ function openKindleModal(id) {
 
   let info = '';
   if (!hasFile) {
-    info = '<div class="km-no-email">📂 Last opp epub-filen på nytt for å sende til Kindle. Filer lagres ikke mellom sesjoner pga. størrelsesgrenser.</div>';
+    info = '<div class="km-no-email">📂 Denne boka har ingen EPUB-fil lagret i skyen. Åpne boka → ✏️ Rediger → last opp EPUB-filen (vent på «☁ Fil lagret i skyen»), så kan du sende til Kindle.</div>';
   } else if (!visible.length) {
     info = '<div class="km-no-email">⚠️ Legg til en Kindle-enhet under Profil (brukerikonet) → Verktøy → Kindle-enheter først.</div>';
   } else {
@@ -32029,7 +32042,7 @@ function renderStars(r) {
 
 function coverHtml(b, w, h) {
   if (b.coverUrl) {
-    return `<img src="${b.coverUrl}" style="width:100%;height:100%;object-fit:cover;display:block;cursor:${_selectMode?'pointer':'zoom-in'};"${_selectMode?'':' onclick="event.stopPropagation();showCoverZoom(this.src)"'} onerror="this.style.display='none';this.nextSibling.style.display='flex'">
+    return `<img src="${b.coverUrl}" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover;display:block;cursor:${_selectMode?'pointer':'zoom-in'};"${_selectMode?'':' onclick="event.stopPropagation();showCoverZoom(this.src)"'} onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
     <div class="cover-fallback" style="display:none;${genreBg(b)}">
       <div><div class="cover-fallback-genre">${b.genre||''}</div></div>
       <div><div class="cover-fallback-rule"></div><div class="cover-fallback-t">${b.title}</div></div>
@@ -32049,6 +32062,7 @@ function genreBg(b) {
 }
 
 function render() {
+  document.body.classList.toggle('is-readonly', !!window._readOnly);
   const filtered = getFiltered();
   updateGoalMini();
 
@@ -32893,20 +32907,22 @@ function renderStatsView() {
   grid.className = '';
   grid.style.display = 'block';
 
-  // Reading goal
+  // Reading goal — teller KUN bøker ferdiglest i inneværende år (ikke alle 'done' gjennom tidene)
   const goalNum = window._readingGoal || 12;
-  const goalPct = Math.min(100, Math.round((done.length / goalNum) * 100));
+  const curYear = new Date().getFullYear();
+  const goalDone = books.filter(b => b.status === 'done' && (b.finishedDate||'').startsWith(String(curYear))).length;
+  const goalPct = Math.min(100, Math.round((goalDone / goalNum) * 100));
 
   grid.innerHTML = `
     <div class="goal-card">
       <div class="goal-ring" style="background:conic-gradient(var(--accent-2) ${goalPct}%, color-mix(in srgb, var(--brand-ink) 18%, transparent) 0);">
         <div class="goal-ring-in">
-          <div><div class="gr-num">${done.length}</div><div class="gr-of">av ${goalNum}</div></div>
+          <div><div class="gr-num">${goalDone}</div><div class="gr-of">av ${goalNum}</div></div>
         </div>
       </div>
       <div class="goal-text">
-        <h2>Leseåret ${new Date().getFullYear()}</h2>
-        <p>Du har lest <b>${done.length} av ${goalNum} bøker</b> — ${goalPct >= 100 ? 'målet er nådd!' : `${goalNum - done.length} igjen for å nå målet.`}</p>
+        <h2>Leseåret ${curYear}</h2>
+        <p>Du har lest <b>${goalDone} av ${goalNum} bøker</b> i ${curYear} — ${goalPct >= 100 ? 'målet er nådd!' : `${goalNum - goalDone} igjen for å nå målet.`}</p>
         <div class="goal-bar"><i style="width:${goalPct}%"></i></div>
       </div>
     </div>
