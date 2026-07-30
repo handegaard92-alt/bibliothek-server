@@ -34962,10 +34962,14 @@ async function checkRegistrationOpen() {
     const j = await r.json();
     const tabBtn = document.getElementById('loginTabRegister');
     const panel = document.getElementById('loginPanelRegister');
+    const tabs = document.getElementById('loginTabs');
     if (j?.open) {
       if (tabBtn) tabBtn.style.display = '';
+      if (tabs) tabs.style.display = 'flex';
     } else {
       if (tabBtn) tabBtn.style.display = 'none';
+      // Bare én fane igjen → skjul hele fanevelgeren (unngår dobbel «Logg inn»)
+      if (tabs) tabs.style.display = 'none';
       // Hvis vi er på register-tab og den er stengt, bytt til login
       if (panel && panel.style.display !== 'none') setLoginTab('login');
     }
