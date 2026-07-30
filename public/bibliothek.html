@@ -32901,7 +32901,7 @@ function renderStatsView() {
     </div>
 
     <div class="stats-big-grid">
-      <div class="stat-big"><div class="sv">${books.length}</div><div class="sl">Bøker totalt</div></div>
+      <div class="stat-big"><div class="sv">${books.filter(b=>effectiveStatus(b)!=='wishlist').length}</div><div class="sl">Bøker totalt</div></div>
       <div class="stat-big"><div class="sv">${done.length}</div><div class="sl">Lest</div></div>
       <div class="stat-big"><div class="sv">${reading.length}</div><div class="sl">Leser nå</div></div>
       <div class="stat-big"><div class="sv">${avgRating}</div><div class="sl">Snittkarakter</div></div>
