@@ -6,11 +6,21 @@ services:
     buildCommand: npm install
     startCommand: npm start
     envVars:
-      - key: SENDGRID_API_KEY
+      - key: GMAIL_USER
         sync: false
-      - key: FROM_EMAIL
+      - key: GMAIL_APP_PASSWORD
         sync: false
       - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: R2_ENDPOINT
+        sync: false
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: R2_BUCKET
+        sync: false
+      - key: PRIMARY_HOST
         sync: false
       - key: ALLOWED_ORIGIN
         sync: false
