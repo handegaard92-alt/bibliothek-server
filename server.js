@@ -885,6 +885,63 @@ app.post('/ai-chat', requireAuth, async (req, res) => {
   }
 });
 
+// AI-sammendrag av én bok — sterkere modell + websøk så den finner riktig bok (også norske/lite kjente titler)
+app.post('/ai-book-summary', requireAuth, async (req, res) => {
+  try {
+    if (!process.env.ANTHROPIC_API_KEY) return res.status(503).json({ ok: false, error: 'No API key' });
+    const b = req.body || {};
+    const clean = v => (typeof v === 'string' || typeof v === 'number') ? String(v).trim().slice(0, 1500) : '';
+    const title = clean(b.title);
+    if (!title) return res.status(400).json({ ok: false, error: 'Tittel mangler' });
+    const facts = [
+      ['Tittel', title], ['Forfatter', clean(b.author)], ['Utgivelsesår', clean(b.year)],
+      ['Forlag', clean(b.publisher)], ['ISBN', clean(b.isbn)], ['Sjanger', clean(b.genre)],
+      ['Serie', clean(b.series) + (clean(b.seriesNum) ? ' #' + clean(b.seriesNum) : '')],
+      ['Forlagets beskrivelse', clean(b.desc)],
+    ].filter(([, v]) => v).map(([k, v]) => k + ': ' + v).join('\n');
+
+    const system = 'Du skriver korte bokomtaler for et personlig norsk e-bokbibliotek. Svar alltid på norsk bokmål.';
+    const prompt =
+      'Skriv et spoilerfritt sammendrag (3–4 setninger) av denne boken:\n\n' + facts + '\n\n' +
+      'Finn først ut nøyaktig hvilken bok dette er — bruk websøk hvis du ikke kjenner den godt, og bruk forfatter, ISBN og år ' +
+      'til å skille den fra andre bøker med lik eller lignende tittel. Tittelen kan være norsk oversettelse av en utenlandsk bok. ' +
+      'Hvis du ikke finner boken sikkert, bygg på forlagets beskrivelse hvis den finnes, ellers svar kun: ' +
+      '«Fant ikke nok informasjon om denne boken.» Ikke dikt opp handling. ' +
+      'Skriv kun selve sammendraget, uten innledning, overskrift eller kildehenvisninger.';
+
+    const reqBody = {
+      model: 'claude-opus-5',
+      max_tokens: 16000,
+      output_config: { effort: 'medium' },
+      system,
+      tools: [{ type: 'web_search_20260209', name: 'web_search', max_uses: 4 }],
+      messages: [{ role: 'user', content: prompt }],
+    };
+    const callApi = (withFallback) => fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01',
+        ...(withFallback ? { 'anthropic-beta': 'server-side-fallback-2026-07-01' } : {}),
+      },
+      body: JSON.stringify(withFallback ? { ...reqBody, fallbacks: 'default' } : reqBody),
+    });
+    let response = await callApi(true);
+    if (response.status === 400) response = await callApi(false); // fallback-beta ikke tilgjengelig → prøv uten
+    const data = await response.json();
+    if (!response.ok) return res.status(response.status).json({ ok: false, error: data.error?.message || 'API error' });
+    if (data.stop_reason === 'refusal') return res.status(502).json({ ok: false, error: 'AI avslo forespørselen' });
+    // Svaret er teksten etter siste verktøykall (tidligere tekstblokker er mellomprat rundt søk)
+    const blocks = data.content || [];
+    let lastTool = -1;
+    blocks.forEach((c, i) => { if (c.type !== 'text') lastTool = i; });
+    const text = blocks.slice(lastTool + 1).filter(c => c.type === 'text').map(c => c.text).join('').trim();
+    if (!text) return res.status(500).json({ ok: false, error: 'Tomt svar' });
+    res.json({ ok: true, text });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
 // AI chat — streaming versjon (Server-Sent Events) for raskere oppfattet hastighet
 app.post('/ai-chat-stream', requireAuth, async (req, res) => {
   try {

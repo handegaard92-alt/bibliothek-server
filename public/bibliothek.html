@@ -33583,11 +33583,24 @@ async function generateAISummary() {
   notesEl.value = (orig ? orig + '\n\n' : '') + '⏳ Henter sammendrag…';
   notesEl.disabled = true;
   try {
-    const text = await callAIOnce(
-      'Du er en bokassistent. Svar alltid på norsk. Hold svaret til 3-4 setninger uten spoilere.',
-      'Lag et kort, spoilerfritt sammendrag av boken "' + title + '"' + (author ? ' av ' + author : '') + '. Skriv kun selve sammendraget, uten innledning.',
-      400
-    );
+    const existing = editingId !== null ? books.find(x => x.id === editingId) : null;
+    const pf = pendingFileData || {};
+    const val = id => document.getElementById(id)?.value?.trim() || '';
+    const r = await fetch(getServerUrl() + '/ai-book-summary', {
+      method: 'POST',
+      headers: authJsonHdr(),
+      body: JSON.stringify({
+        title, author,
+        year: val('fYear'), genre: val('fGenre'), series: val('fSeries'), seriesNum: val('fSeriesNum'),
+        isbn: pf.isbn || pf.epubIsbn || existing?.isbn || existing?.epubIsbn || '',
+        publisher: pf.publisher || existing?.publisher || '',
+        desc: pf.desc || existing?.desc || '',
+      })
+    });
+    if (r.status === 401) { handleExpiredSession(); throw new Error('Sesjonen er utløpt'); }
+    const j = await r.json();
+    if (!r.ok || !j.ok) throw new Error(j?.error || 'AI-feil ' + r.status);
+    const text = j.text || '';
     const summary = '📖 Sammendrag (AI):\n' + text.trim();
     notesEl.value = orig ? orig + '\n\n' + summary : summary;
   } catch(e) {

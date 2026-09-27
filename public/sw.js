@@ -5,7 +5,7 @@
 //  - Bok-cover (R2 / openlibrary / google books): cache-first med 7 dagers utløp
 //  - API/auth: alltid nettverk (ingen cache)
 
-const VERSION = 'v7';
+const VERSION = 'v8';
 const STATIC_CACHE = 'bibliothek-static-' + VERSION;
 const COVER_CACHE  = 'bibliothek-covers-' + VERSION;
 const HTML_CACHE   = 'bibliothek-html-' + VERSION;
@@ -36,7 +36,7 @@ self.addEventListener('activate', (event) => {
 
 function isApiRequest(url) {
   // Disse skal aldri caches
-  return /\/(library|files|auth|series-proxy|ai-chat|backups|guest-link|guest-links|send-to-kindle)\b/.test(url.pathname);
+  return /\/(library|files|auth|series-proxy|ai-chat|ai-book-summary|backups|guest-link|guest-links|send-to-kindle)\b/.test(url.pathname);
 }
 
 function isCoverRequest(url) {
