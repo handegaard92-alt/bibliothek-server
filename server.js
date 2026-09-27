@@ -74,7 +74,7 @@ function hashPin(pin) {
 // passwordHash = scrypt(password, salt, 64) i hex
 // libraryKey = identifikator brukt som R2-prefix for biblioteket (bevarer eksisterende PIN-data ved migrering)
 const sessionStore = new Map(); // token -> { username, libraryKey, expiresAt }
-const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 dager
+const SESSION_TTL_MS = 365 * 24 * 60 * 60 * 1000; // 1 år
 
 function sessionR2Key(token) {
   // Bruk hash av token som nøkkel (ikke rå token) for sikkerhet
