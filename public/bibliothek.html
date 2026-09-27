@@ -29902,7 +29902,7 @@ font-family: 'Source Sans Pro'
 
 <!-- EPUB-leser -->
 <div id="readerOverlay" style="display:none;position:fixed;inset:0;z-index:500;background:var(--bg);flex-direction:column;">
-  <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;">
+  <div style="display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right)) 10px calc(14px + env(safe-area-inset-left));border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;">
     <button onclick="closeReader()" style="background:transparent;border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 10px;cursor:pointer;font-family:Outfit,sans-serif;font-size:13px;">✕ Lukk</button>
     <div id="readerTitle" style="flex:1;font-family:'Newsreader',Georgia,serif;font-size:18px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div>
     <div id="readerProgress" style="font-size:12px;color:var(--muted);"></div>
@@ -29911,7 +29911,7 @@ font-family: 'Source Sans Pro'
     <button onclick="readerToggleTheme()" title="Tema" id="readerThemeBtn" style="background:transparent;border:1px solid var(--border);color:var(--text);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:13px;">🌙</button>
   </div>
   <div id="readerArea" style="flex:1;position:relative;overflow:hidden;background:var(--surface);"></div>
-  <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0;">
+  <div style="display:flex;align-items:center;gap:10px;padding:10px calc(14px + env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left));border-top:1px solid var(--border);background:var(--surface);flex-shrink:0;">
     <button onclick="readerPrev()" style="flex:1;background:transparent;border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px;cursor:pointer;font-family:Outfit,sans-serif;">← Forrige</button>
     <button onclick="readerNext()" style="flex:1;background:var(--accent);color:var(--brand-ink);border:none;border-radius:8px;padding:10px;cursor:pointer;font-family:Outfit,sans-serif;font-weight:600;">Neste →</button>
   </div>
