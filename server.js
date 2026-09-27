@@ -122,9 +122,21 @@ async function getSession(token) {
       deleteSessionR2(token).catch(() => {});
       return null;
     }
+    touchSession(token, mem);
     return mem;
   }
-  return await loadSessionR2(token); // fall back til R2 etter restart
+  const session = await loadSessionR2(token); // fall back til R2 etter restart
+  if (session) touchSession(token, session);
+  return session;
+}
+
+// Glidende utløp: forleng sesjonen ved bruk (maks én R2-skriving per døgn per sesjon)
+const SESSION_RENEW_MS = 24 * 60 * 60 * 1000;
+function touchSession(token, session) {
+  const newExpiry = Date.now() + SESSION_TTL_MS;
+  if (newExpiry - session.expiresAt < SESSION_RENEW_MS) return;
+  session.expiresAt = newExpiry;
+  persistSession(token, session).catch(() => {});
 }
 
 // Rate limiter for autentiseringsendepunkter
@@ -802,6 +814,7 @@ app.post('/send-to-kindle', requireAuth, upload.single('file'), async (req, res)
       fileOriginalName = req.file.originalname;
       fileMime = req.file.mimetype;
     } else if (r2 && pin && bookId && fileName) {
+      if (pin !== req.session.libraryKey) return res.status(403).json({ ok: false, error: 'Ingen tilgang' });
       const key = hashPin(pin) + '/' + bookId + '/' + fileName;
       const data = await r2.send(new GetObjectCommand({ Bucket: BUCKET, Key: key }));
       const chunks = [];

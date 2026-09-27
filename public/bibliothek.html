@@ -31924,6 +31924,7 @@ async function sendDirectToKindle() {
       form.append('bookId',   String(b.id));
       form.append('fileName', b.fileName || 'bok.epub');
       const res  = await fetch(server + '/send-to-kindle', { method: 'POST', headers: authHdr(), body: form });
+      if (res.status === 401) { closeKindleModal(); handleExpiredSession(); return; }
       const json = await res.json();
       if (json.ok) {
         showToast('✓ Sendt til ' + device.name + '!');
@@ -31955,6 +31956,7 @@ async function sendDirectToKindle() {
     form.append('bookTitle',  b.title || '');
     form.append('bookAuthor', b.author || '');
     const res  = await fetch(server + '/send-to-kindle', { method: 'POST', headers: authHdr(), body: form });
+    if (res.status === 401) { closeKindleModal(); handleExpiredSession(); return; }
     const json = await res.json();
     if (json.ok) {
       showToast('✓ Sendt til ' + device.name + '!');
@@ -34901,6 +34903,20 @@ async function doChangePassword() {
   }
 }
 
+// Serveren avviste tokenet (utløpt/ugyldig) → rydd lokalt og be om ny innlogging
+function handleExpiredSession() {
+  localStorage.removeItem('bibliothek_authToken');
+  localStorage.removeItem('bibliothek_authUser');
+  localStorage.removeItem('bibliothek_authLibKey');
+  localStorage.removeItem('bibliothek_authReadOnly');
+  window._authToken = null;
+  window._username = null;
+  window._pinKey = null;
+  window._readOnly = false;
+  document.getElementById('loginOverlay').classList.add('visible');
+  setLoginStatus('Sesjonen er utløpt – logg inn på nytt', 'var(--gold)');
+}
+
 async function logoutUser() {
   const server = getServerUrl();
   if (server && window._authToken) {
@@ -35082,6 +35098,8 @@ async function init() {
             fetch(AUTO_SERVER_URL + '/library/' + encodeURIComponent(savedAuthLibKey), { headers: { 'X-Auth-Token': savedAuthToken || '' } }),
             fetch(AUTO_SERVER_URL + '/library/' + encodeURIComponent(savedAuthLibKey) + '/devices', { headers: { 'X-Auth-Token': savedAuthToken || '' } }),
           ]);
+
+          if (libResp.status === 401) { handleExpiredSession(); return; }
 
           if (libResp.ok) {
             const j = await libResp.json();
