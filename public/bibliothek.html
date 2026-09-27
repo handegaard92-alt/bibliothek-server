@@ -943,11 +943,12 @@ body.is-readonly .tabbar .tab[data-tab="add"] { display:none !important; }
 
   .grid {
     grid-template-columns:repeat(2,1fr) !important;
-    gap:14px 12px !important;
+    gap:9px 12px !important;
     justify-content:start !important;
     width:100% !important;
     box-sizing:border-box;
   }
+  .grid:not(.lv) > .bk { min-width:0; }   /* hindrer at lange titler (nowrap) sprenger kolonnen */
   .grid.lv { grid-template-columns:1fr !important; }
   /* Uniform kort-høyde i covervisning på mobil → jevn, tett avstand (serie/stjerner vises i listevisning + detalj) */
   .grid:not(.lv) .bk .serie-badge,
@@ -980,8 +981,10 @@ body.is-readonly .tabbar .tab[data-tab="add"] { display:none !important; }
   .mobile-nav { display:none !important; }
 }
 
+@media (min-width: 681px) and (max-width: 900px) {
+  .grid:not(.lv) { grid-template-columns:repeat(3,1fr) !important; }  /* 3 kol kun på nettbrett, ikke telefon */
+}
 @media (max-width: 900px) {
-  .grid:not(.lv) { grid-template-columns:repeat(3,1fr) !important; }
   .header-inner { gap:18px; }
   .search-box { min-width:170px; }
 }
