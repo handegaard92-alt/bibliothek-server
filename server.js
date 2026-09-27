@@ -910,7 +910,7 @@ app.post('/ai-book-summary', requireAuth, async (req, res) => {
       'Skriv kun selve sammendraget, uten innledning, overskrift eller kildehenvisninger.';
 
     const reqBody = {
-      model: 'claude-opus-5',
+      model: 'claude-opus-5-5',
       max_tokens: 16000,
       output_config: { effort: 'medium' },
       system,
