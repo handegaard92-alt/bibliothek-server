@@ -1,11 +1,11 @@
 // Service Worker for Bibliothek PWA
 // Strategi:
-//  - HTML/JSON: nettverk først, fall back til cache (slik at ny versjon alltid prøves)
+//  - HTML: nettverk først (maks 4 s), fall back til cache
 //  - Statiske ikoner / manifest: cache-first
 //  - Bok-cover (R2 / openlibrary / google books): cache-first med 7 dagers utløp
 //  - API/auth: alltid nettverk (ingen cache)
 
-const VERSION = 'v9';
+const VERSION = 'v10';
 const STATIC_CACHE = 'bibliothek-static-' + VERSION;
 const COVER_CACHE  = 'bibliothek-covers-' + VERSION;
 const HTML_CACHE   = 'bibliothek-html-' + VERSION;
@@ -76,21 +76,19 @@ self.addEventListener('fetch', (event) => {
 });
 
 async function networkFirst(req, cacheName) {
-  // Stale-while-revalidate: vis cachet versjon umiddelbart,
-  // hent ny versjon i bakgrunnen (klar til neste besøk)
+  // Nettverk først (så ny versjon brukes med en gang), men fall tilbake til cache
+  // etter 4 s eller uten nett — Render gratis-tier kan bruke lang tid på kald start
   const cache = await caches.open(cacheName);
-  const cached = await cache.match(req);
   const fetchPromise = fetch(req).then(fresh => {
     if (fresh && fresh.ok) cache.put(req, fresh.clone());
     return fresh;
   }).catch(() => null);
-  // Hvis vi har cache: returner den med én gang, oppdater stille i bg
-  if (cached) {
-    fetchPromise.catch(() => {});
-    return cached;
-  }
-  // Ingen cache ennå: vent på nettverket
-  return await fetchPromise;
+  const timeout = new Promise(resolve => setTimeout(() => resolve(null), 4000));
+  const fresh = await Promise.race([fetchPromise, timeout]);
+  if (fresh && fresh.ok) return fresh;
+  const cached = await cache.match(req);
+  if (cached) return cached;
+  return (await fetchPromise) || Response.error();
 }
 
 async function cacheFirst(req, cacheName) {

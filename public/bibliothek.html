@@ -34868,6 +34868,14 @@ async function doUserRegister() {
 
 async function applyAuthSession(j) {
   // j: { token, username, libraryKey, readOnly? }
+  const lastLibKey = localStorage.getItem('bibliothek_lastLibKey');
+  if (lastLibKey && lastLibKey !== j.libraryKey) {
+    // Lokale bøker tilhører et annet bibliotek — ikke bland dem inn i dette
+    books = [];
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem('bibliothek_ts');
+  }
+  localStorage.removeItem('bibliothek_lastLibKey');
   localStorage.setItem('bibliothek_authToken', j.token);
   localStorage.setItem('bibliothek_authUser', j.username);
   localStorage.setItem('bibliothek_authLibKey', j.libraryKey);
@@ -34961,6 +34969,9 @@ async function doChangePassword() {
 
 // Serveren avviste tokenet (utløpt/ugyldig) → rydd lokalt og be om ny innlogging
 function handleExpiredSession() {
+  // Husk hvilket bibliotek de lokale bøkene tilhører — ved ny innlogging synkes de bare inn hvis det er samme bibliotek
+  if (window._pinKey) localStorage.setItem('bibliothek_lastLibKey', window._pinKey);
+  document.querySelectorAll('.user-panel.open').forEach(el => el.classList.remove('open'));
   localStorage.removeItem('bibliothek_authToken');
   localStorage.removeItem('bibliothek_authUser');
   localStorage.removeItem('bibliothek_authLibKey');
@@ -34975,19 +34986,18 @@ function handleExpiredSession() {
 
 async function logoutUser() {
   const server = getServerUrl();
+  // Sørg for at siste endringer er på serveren før vi rydder lokalt
+  if (!window._readOnly && window._pinKey && window._authToken) {
+    try { await pushToPin(); } catch(_) {}
+  }
   if (server && window._authToken) {
     try { await fetch(server + '/auth/logout', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ token: window._authToken }) }); } catch(_) {}
   }
-  localStorage.removeItem('bibliothek_authToken');
-  localStorage.removeItem('bibliothek_authUser');
-  localStorage.removeItem('bibliothek_authLibKey');
-  localStorage.removeItem('bibliothek_authReadOnly');
-  window._authToken = null;
-  window._username = null;
-  window._pinKey = null;
-  window._readOnly = false;
-  document.getElementById('loginOverlay').classList.add('visible');
-  setLoginStatus('Du er logget ut');
+  // Fjern innlogging OG lokale bibliotekdata, så neste bruker ikke arver (eller synker inn) forrige bibliotek
+  ['bibliothek_authToken', 'bibliothek_authUser', 'bibliothek_authLibKey', 'bibliothek_authReadOnly',
+   'bibliothek_lastLibKey', STORAGE_KEY, DEVICES_KEY, 'bibliothek_ts'].forEach(k => localStorage.removeItem(k));
+  // Last appen på nytt → ren tilstand uten åpne paneler (kontopanelet lå tidligere oppå innloggingen)
+  location.replace('/');
 }
 
 async function loginConnect() {
@@ -35265,8 +35275,23 @@ applyTheme();
 
 // ── PWA SERVICE WORKER + INSTALL PROMPT ──
 if ('serviceWorker' in navigator) {
+  // Ny versjon tatt i bruk → last på nytt én gang, så man slipper å lukke appen helt for å få oppdateringen
+  const hadController = !!navigator.serviceWorker.controller;
+  let reloadedForUpdate = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadController || reloadedForUpdate) return;
+    // Ikke avbryt noe brukeren holder på med (åpent skjema/leser)
+    if (document.querySelector('.backdrop.open') || document.getElementById('readerOverlay')?.style.display === 'flex') return;
+    reloadedForUpdate = true;
+    location.reload();
+  });
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch((e) => console.warn('SW registration failed:', e));
+    navigator.serviceWorker.register('/sw.js').then(reg => {
+      // iOS-PWA gjenopptas ofte i stedet for å starte på nytt — se etter ny versjon når appen kommer i forgrunnen
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') reg.update().catch(() => {});
+      });
+    }).catch((e) => console.warn('SW registration failed:', e));
   });
 }
 
