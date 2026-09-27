@@ -29595,6 +29595,7 @@ font-family: 'Source Sans Pro'
             📁 Last opp bilde
             <input type="file" accept="image/*" id="coverUploadInput" style="display:none" onchange="handleCoverUpload(this)">
           </label>
+          <button type="button" onclick="searchCoverAI()" style="margin-top:6px;margin-left:10px;background:none;border:none;padding:0;font-size:11px;color:var(--accent);cursor:pointer;text-decoration:underline;text-underline-offset:2px;font-family:inherit;" title="La AI søke opp riktig omslag">✨ Finn med AI</button>
         </div>
       </div>
     </div>
@@ -30555,6 +30556,7 @@ async function searchCover(title, author) {
 
   const alts = await fetchCover(title, author);
   if (!alts || !alts.length) {
+    if (getServerUrl() && window._authToken) { searchCoverAI(); return; }
     statusEl.textContent = 'Ingen omslag funnet – bruker autogenerert cover.';
     thumbEl.innerHTML = '<svg width="16" height="16" fill="none" stroke="var(--muted2)" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg>';
     return;
@@ -30562,6 +30564,43 @@ async function searchCover(title, author) {
 
   pendingCoverAlts = alts;
   selectCoverAlt(0);
+}
+
+// AI-cover: Opus søker opp riktig utgave; serveren henter bildene og sender dem som data-URL-er
+let _coverAISeq = 0;
+async function searchCoverAI() {
+  const info = bookInfoForAI();
+  if (!info.title) { showToast('⚠️ Skriv inn tittel først'); return; }
+  const statusEl = document.getElementById('coverStatus');
+  const thumbEl = document.getElementById('coverThumb');
+  const hadCover = !!pendingCoverUrl;
+  const seq = ++_coverAISeq;
+  statusEl.textContent = '✨ AI leter etter omslag… (kan ta opptil et halvt minutt)';
+  statusEl.style.color = 'var(--muted)';
+  if (!hadCover) thumbEl.innerHTML = '<div class="spin"></div>';
+  try {
+    const r = await fetch(getServerUrl() + '/ai-cover', { method: 'POST', headers: authJsonHdr(), body: JSON.stringify(info) });
+    if (r.status === 401) { handleExpiredSession(); return; }
+    const j = await r.json();
+    if (seq !== _coverAISeq) return; // nyere søk startet
+    if (!r.ok || !j.ok) throw new Error(j?.error || 'AI-feil ' + r.status);
+    if (!j.covers?.length) {
+      statusEl.textContent = hadCover ? 'AI fant ikke flere omslag.' : 'Ingen omslag funnet – bruker autogenerert cover.';
+      statusEl.style.color = 'var(--muted)';
+      if (!hadCover) thumbEl.innerHTML = '';
+      if (hadCover && pendingCoverAlts.length) selectCoverAlt(Math.max(0, pendingCoverAlts.findIndex(a => a.url === pendingCoverUrl)));
+      return;
+    }
+    if (j.isbn && pendingFileData && !pendingFileData.isbn) pendingFileData.isbn = j.isbn;
+    const aiAlts = j.covers.map(url => ({ url, title: info.title, upload: true }));
+    pendingCoverAlts = [...aiAlts, ...pendingCoverAlts.filter(a => !a.upload)].slice(0, 8);
+    selectCoverAlt(0);
+  } catch (e) {
+    if (seq !== _coverAISeq) return;
+    statusEl.textContent = '⚠️ AI-søk feilet: ' + (e.message || e).slice(0, 60);
+    statusEl.style.color = 'var(--red)';
+    if (!hadCover) thumbEl.innerHTML = '';
+  }
 }
 
 function handleCoverUpload(input) {
@@ -30584,9 +30623,10 @@ function selectCoverAlt(idx) {
   const alt = pendingCoverAlts[idx];
   if (!alt) return;
   pendingCoverUrl = alt.url;
+  pendingCoverIsUpload = !!alt.upload;
   const thumbEl = document.getElementById('coverThumb');
   thumbEl.innerHTML = `<img src="${alt.url}" style="width:100%;height:100%;object-fit:cover;border-radius:5px;" onerror="this.style.display='none'">`;
-  document.getElementById('coverStatus').textContent = 'Omslag funnet ✓';
+  document.getElementById('coverStatus').textContent = alt.upload ? 'Omslag funnet med AI ✓' : 'Omslag funnet ✓';
   document.getElementById('coverStatus').style.color = 'var(--green)';
 
   // Alt buttons
@@ -31673,7 +31713,7 @@ async function uploadCoverOnlyToR2(bookId, dataUrl) {
     var res = await fetch(server + '/files/upload', { method: 'POST', headers: authHdr(), body: form });
     var json = await res.json();
     if (json.ok) {
-      return server + '/files/download/' + encodeURIComponent(pin) + '/' + String(bookId) + '_cover/cover.jpg';
+      return server + '/files/download/' + encodeURIComponent(pin) + '/' + String(bookId) + '_cover/cover.jpg?v=' + Date.now(); // ny URL → cache viser nytt cover
     }
   } catch(e) { console.warn('cover upload failed:', e); }
   return null;
@@ -33573,6 +33613,20 @@ async function callAIOnce(systemPrompt, userMsg, maxTokens) {
   return j.text || '';
 }
 
+// Bokinfo fra skjemaet (+ fil-/lagret metadata) som AI-endepunktene bruker for å finne riktig bok
+function bookInfoForAI() {
+  const existing = editingId !== null ? books.find(x => x.id === editingId) : null;
+  const pf = pendingFileData || {};
+  const val = id => document.getElementById(id)?.value?.trim() || '';
+  return {
+    title: val('fTitle'), author: val('fAuthor'),
+    year: val('fYear'), genre: val('fGenre'), series: val('fSeries'), seriesNum: val('fSeriesNum'),
+    isbn: pf.isbn || pf.epubIsbn || existing?.isbn || existing?.epubIsbn || '',
+    publisher: pf.publisher || existing?.publisher || '',
+    desc: pf.desc || existing?.desc || '',
+  };
+}
+
 // ── #5: AI-SAMMENDRAG AV BOK ──
 async function generateAISummary() {
   const title = document.getElementById('fTitle').value.trim();
@@ -33583,19 +33637,8 @@ async function generateAISummary() {
   notesEl.value = (orig ? orig + '\n\n' : '') + '⏳ Henter sammendrag…';
   notesEl.disabled = true;
   try {
-    const existing = editingId !== null ? books.find(x => x.id === editingId) : null;
-    const pf = pendingFileData || {};
-    const val = id => document.getElementById(id)?.value?.trim() || '';
     const r = await fetch(getServerUrl() + '/ai-book-summary', {
-      method: 'POST',
-      headers: authJsonHdr(),
-      body: JSON.stringify({
-        title, author,
-        year: val('fYear'), genre: val('fGenre'), series: val('fSeries'), seriesNum: val('fSeriesNum'),
-        isbn: pf.isbn || pf.epubIsbn || existing?.isbn || existing?.epubIsbn || '',
-        publisher: pf.publisher || existing?.publisher || '',
-        desc: pf.desc || existing?.desc || '',
-      })
+      method: 'POST', headers: authJsonHdr(), body: JSON.stringify(bookInfoForAI())
     });
     if (r.status === 401) { handleExpiredSession(); throw new Error('Sesjonen er utløpt'); }
     const j = await r.json();

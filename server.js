@@ -885,58 +885,133 @@ app.post('/ai-chat', requireAuth, async (req, res) => {
   }
 });
 
-// AI-sammendrag av én bok — sterkere modell + websøk så den finner riktig bok (også norske/lite kjente titler)
+// ── AI med websøk (Opus 5.5) — brukes til sammendrag og cover-søk ──
+const bookFieldClean = v => (typeof v === 'string' || typeof v === 'number') ? String(v).trim().slice(0, 1500) : '';
+function bookFacts(b) {
+  const c = bookFieldClean;
+  return [
+    ['Tittel', c(b.title)], ['Forfatter', c(b.author)], ['Utgivelsesår', c(b.year)],
+    ['Forlag', c(b.publisher)], ['ISBN', c(b.isbn)], ['Sjanger', c(b.genre)],
+    ['Serie', c(b.series) + (c(b.seriesNum) ? ' #' + c(b.seriesNum) : '')],
+    ['Forlagets beskrivelse', c(b.desc)],
+  ].filter(([, v]) => v).map(([k, v]) => k + ': ' + v).join('\n');
+}
+
+// Returnerer { ok, text } eller { ok:false, status, error }. Teksten er det som kommer etter siste verktøykall.
+async function askClaudeWithSearch(system, prompt, { maxSearches = 4, effort = 'medium' } = {}) {
+  const baseBody = {
+    model: 'claude-opus-5-5',
+    max_tokens: 16000,
+    output_config: { effort },
+    system,
+    tools: [{ type: 'web_search_20260209', name: 'web_search', max_uses: maxSearches }],
+  };
+  const callApi = (messages, withFallback) => fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01',
+      ...(withFallback ? { 'anthropic-beta': 'server-side-fallback-2026-07-01' } : {}),
+    },
+    body: JSON.stringify({ ...baseBody, messages, ...(withFallback ? { fallbacks: 'default' } : {}) }),
+  });
+  const messages = [{ role: 'user', content: prompt }];
+  let withFallback = true;
+  let data;
+  for (let round = 0; round < 3; round++) {
+    let response = await callApi(messages, withFallback);
+    if (response.status === 400 && withFallback) { withFallback = false; response = await callApi(messages, false); } // fallback-beta ikke tilgjengelig
+    data = await response.json();
+    if (!response.ok) return { ok: false, status: response.status, error: data.error?.message || 'API error' };
+    if (data.stop_reason !== 'pause_turn') break;
+    messages.push({ role: 'assistant', content: data.content }); // lang søkerunde — la modellen fortsette
+  }
+  if (data.stop_reason === 'refusal') return { ok: false, status: 502, error: 'AI avslo forespørselen' };
+  const blocks = data.content || [];
+  let lastTool = -1;
+  blocks.forEach((c, i) => { if (c.type !== 'text') lastTool = i; });
+  const text = blocks.slice(lastTool + 1).filter(c => c.type === 'text').map(c => c.text).join('').trim();
+  if (!text) return { ok: false, status: 500, error: 'Tomt svar' };
+  return { ok: true, text };
+}
+
+// AI-sammendrag av én bok — websøk + metadata så den finner riktig bok (også norske/lite kjente titler)
 app.post('/ai-book-summary', requireAuth, async (req, res) => {
   try {
     if (!process.env.ANTHROPIC_API_KEY) return res.status(503).json({ ok: false, error: 'No API key' });
     const b = req.body || {};
-    const clean = v => (typeof v === 'string' || typeof v === 'number') ? String(v).trim().slice(0, 1500) : '';
-    const title = clean(b.title);
-    if (!title) return res.status(400).json({ ok: false, error: 'Tittel mangler' });
-    const facts = [
-      ['Tittel', title], ['Forfatter', clean(b.author)], ['Utgivelsesår', clean(b.year)],
-      ['Forlag', clean(b.publisher)], ['ISBN', clean(b.isbn)], ['Sjanger', clean(b.genre)],
-      ['Serie', clean(b.series) + (clean(b.seriesNum) ? ' #' + clean(b.seriesNum) : '')],
-      ['Forlagets beskrivelse', clean(b.desc)],
-    ].filter(([, v]) => v).map(([k, v]) => k + ': ' + v).join('\n');
-
+    if (!bookFieldClean(b.title)) return res.status(400).json({ ok: false, error: 'Tittel mangler' });
     const system = 'Du skriver korte bokomtaler for et personlig norsk e-bokbibliotek. Svar alltid på norsk bokmål.';
     const prompt =
-      'Skriv et spoilerfritt sammendrag (3–4 setninger) av denne boken:\n\n' + facts + '\n\n' +
+      'Skriv et spoilerfritt sammendrag (3–4 setninger) av denne boken:\n\n' + bookFacts(b) + '\n\n' +
       'Finn først ut nøyaktig hvilken bok dette er — bruk websøk hvis du ikke kjenner den godt, og bruk forfatter, ISBN og år ' +
       'til å skille den fra andre bøker med lik eller lignende tittel. Tittelen kan være norsk oversettelse av en utenlandsk bok. ' +
       'Hvis du ikke finner boken sikkert, bygg på forlagets beskrivelse hvis den finnes, ellers svar kun: ' +
       '«Fant ikke nok informasjon om denne boken.» Ikke dikt opp handling. ' +
       'Skriv kun selve sammendraget, uten innledning, overskrift eller kildehenvisninger.';
+    const r = await askClaudeWithSearch(system, prompt);
+    if (!r.ok) return res.status(r.status).json({ ok: false, error: r.error });
+    res.json({ ok: true, text: r.text });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
 
-    const reqBody = {
-      model: 'claude-opus-5-5',
-      max_tokens: 16000,
-      output_config: { effort: 'medium' },
-      system,
-      tools: [{ type: 'web_search_20260209', name: 'web_search', max_uses: 4 }],
-      messages: [{ role: 'user', content: prompt }],
-    };
-    const callApi = (withFallback) => fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01',
-        ...(withFallback ? { 'anthropic-beta': 'server-side-fallback-2026-07-01' } : {}),
-      },
-      body: JSON.stringify(withFallback ? { ...reqBody, fallbacks: 'default' } : reqBody),
+// Hent et bilde fra nettet og returner som data-URL (null hvis det ikke er et brukbart omslag)
+async function fetchImageAsDataUrl(url) {
+  try {
+    const u = new URL(url);
+    if (u.protocol !== 'https:' && u.protocol !== 'http:') return null;
+    if (/^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|\[)/i.test(u.hostname)) return null;
+    const r = await fetch(u.href, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15', 'Accept': 'image/*' },
+      redirect: 'follow', signal: AbortSignal.timeout(8000),
     });
-    let response = await callApi(true);
-    if (response.status === 400) response = await callApi(false); // fallback-beta ikke tilgjengelig → prøv uten
-    const data = await response.json();
-    if (!response.ok) return res.status(response.status).json({ ok: false, error: data.error?.message || 'API error' });
-    if (data.stop_reason === 'refusal') return res.status(502).json({ ok: false, error: 'AI avslo forespørselen' });
-    // Svaret er teksten etter siste verktøykall (tidligere tekstblokker er mellomprat rundt søk)
-    const blocks = data.content || [];
-    let lastTool = -1;
-    blocks.forEach((c, i) => { if (c.type !== 'text') lastTool = i; });
-    const text = blocks.slice(lastTool + 1).filter(c => c.type === 'text').map(c => c.text).join('').trim();
-    if (!text) return res.status(500).json({ ok: false, error: 'Tomt svar' });
-    res.json({ ok: true, text });
+    if (!r.ok) return null;
+    const type = (r.headers.get('content-type') || '').split(';')[0].trim();
+    if (!/^image\/(jpeg|png|webp|gif)$/.test(type)) return null;
+    const buf = Buffer.from(await r.arrayBuffer());
+    if (buf.length < 3000 || buf.length > 2 * 1024 * 1024) return null; // for lite = placeholder/1px, for stort = ikke cover
+    return 'data:' + type + ';base64,' + buf.toString('base64');
+  } catch (_) { return null; }
+}
+
+// AI-cover: Opus finner riktig utgave (ISBN) og bilde-URL-er, serveren henter og verifiserer bildene
+app.post('/ai-cover', requireAuth, async (req, res) => {
+  try {
+    if (!process.env.ANTHROPIC_API_KEY) return res.status(503).json({ ok: false, error: 'No API key' });
+    const b = req.body || {};
+    if (!bookFieldClean(b.title)) return res.status(400).json({ ok: false, error: 'Tittel mangler' });
+    const system = 'Du hjelper et personlig norsk e-bokbibliotek med å finne riktig bokomslag.';
+    const prompt =
+      'Finn omslagsbildet til denne boken:\n\n' + bookFacts(b) + '\n\n' +
+      'Bruk websøk til å finne nøyaktig hvilken bok og utgave dette er. Foretrekk den norske utgaven hvis tittelen er norsk. ' +
+      'Let etter direkte lenker til omslagsbildet (jpg/png/webp) hos f.eks. forlaget, bokhandlere (ark.no, norli.no, adlibris.com, ' +
+      'bokus.com), bokelskere.no, Google Books eller Open Library. ' +
+      'Svar KUN med JSON på formen {"isbn": ["978..."], "imageUrls": ["https://..."]} — ISBN-13 for utgaven(e) du fant, ' +
+      'og opptil 5 direkte bilde-URL-er, beste først. Ikke dikt opp URL-er; bruk bare URL-er du faktisk har sett. ' +
+      'Finner du ingenting, svar {"isbn": [], "imageUrls": []}.';
+    const r = await askClaudeWithSearch(system, prompt, { maxSearches: 5 });
+    if (!r.ok) return res.status(r.status).json({ ok: false, error: r.error });
+
+    let parsed = {};
+    try { parsed = JSON.parse((r.text.match(/\{[\s\S]*\}/) || ['{}'])[0]); } catch (_) {}
+    const isbns = [...new Set([...(parsed.isbn || []), bookFieldClean(b.isbn)]
+      .map(x => String(x || '').replace(/[^0-9Xx]/g, '')).filter(x => x.length === 10 || x.length === 13))].slice(0, 3);
+    const candidates = (parsed.imageUrls || []).filter(u => typeof u === 'string').slice(0, 5);
+    for (const isbn of isbns) {
+      candidates.push('https://covers.openlibrary.org/b/isbn/' + isbn + '-L.jpg?default=false');
+      try {
+        const gb = await fetch('https://www.googleapis.com/books/v1/volumes?q=isbn:' + isbn, { signal: AbortSignal.timeout(6000) }).then(x => x.json());
+        const il = gb?.items?.[0]?.volumeInfo?.imageLinks;
+        const t = il?.thumbnail || il?.smallThumbnail;
+        if (t) candidates.push(t.replace(/^http:/, 'https:').replace(/&zoom=\d+/, '&zoom=1').replace(/&edge=curl/, ''));
+      } catch (_) {}
+    }
+
+    const results = await Promise.all([...new Set(candidates)].map(fetchImageAsDataUrl));
+    const seen = new Set();
+    const covers = results.filter(Boolean).filter(d => { const k = d.length + d.slice(-64); if (seen.has(k)) return false; seen.add(k); return true; }).slice(0, 4);
+    res.json({ ok: true, covers, isbn: isbns[0] || null });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
   }
